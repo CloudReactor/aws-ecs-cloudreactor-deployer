@@ -15,7 +15,7 @@ echo "VAR_FILENAME = $VAR_FILENAME"
 
 if [[ ! -f $VAR_FILENAME ]]
   then
-    echo "$VAR_FILENAME does not exist, please copy vars/example.yml to $VAR_FILENAME and fill in your secrets."
+    echo "$VAR_FILENAME does not exist, please copy deploy_config/vars/example.yml to $VAR_FILENAME and fill in your secrets."
     exit 1
 fi
 
