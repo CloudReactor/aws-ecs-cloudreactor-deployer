@@ -1,0 +1,166 @@
+project_name: "aws-ecs-cloudreactor-deployer-sample"
+project_version_text: 1.0.0
+# Optionally, provide a steadily increasing whole number to indicate which
+# build is more updated than another.
+# project_version_number: 1
+project_url: "https://github.com/CloudReactor/aws-ecs-cloudreactor-deployer"
+
+default_cloudreactor:
+  api_base_url: https://api.cloudreactor.io
+  # Set to false to disable monitoring and management in CloudReactor
+  enabled: true
+
+# These settings will apply by default to all tasks and in all deployments.
+# They override the settings in your Run Environment.
+# To manage a setting in the CloudReactor UI, omit the property name and value.
+# To clear a property name and value, using the default value in the Run Environment,
+# set the property value to null.
+default_task_config:
+  #enabled: true
+  #max_concurrency: 1 # null for no concurrency limit
+  #max_age_seconds: 7200
+  #max_manual_start_delay_seconds: 60
+  #max_heartbeat_lateness_seconds: 120
+  ecs: &default_task_ecs
+    # See https://aws.amazon.com/fargate/pricing/
+    # for supported combinations.
+    cpu_units: 256
+    memory_mb: 512
+    # See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/platform_versions.html
+    # for supported platform versions. Can also be set to "LATEST".
+    # platform_version: "LATEST"
+    # task:
+    #   network:
+    #     subnets:
+    #       - subnet_1
+    #       - subnet_2
+    #     security_groups:
+    #       - sg_1
+    #       - sg_2
+    #     assign_public_ip: True
+
+    # Uncomment to add properties to the main container:
+    # extra_main_container_properties
+    #   secrets:
+    #     - name: environment_variable_name
+    #       valueFrom: arn:aws:secretsmanager:[aws_region]:[aws_account_id]:secret:[secret_name]
+
+    # Uncomment to add properties to the top-level ECS task definition:
+    # extra_task_definition_properties:
+    #   volumes:
+    #     - name: "database_scratch"
+    #       host: {}
+
+    # To add extra containers to the task:
+    # Extra CPU/memory allocated to the extra containers,
+    # will be taken away from the total cpu_units and memory_mb
+    # allocated for the entire task.
+    #extra_container_cpu_units: 32
+    #extra_container_memory_mb: 128
+    # Each definition has the properties for containers in an AWS ECS task
+    # definition,
+    # The following example uses nginx as a reverse proxy. It assumed that a Docker image
+    # based on nginx, with configuration, is available in ECR already.
+    # See https://medium.com/@stefanofrancavilla/deploy-web-apps-nginx-to-ecs-with-docker-580c6af827e8
+    # except ECS cluster configuration is not needed since we're using Fargate.
+    # additional_container_definitions:
+    #  - name: Some Container Name
+    #    image: XXXXXXXXXX.dkr.ecr.us-west-2.amazonaws.com/configured-nginx
+    #    cpu: 256
+    #    memory: 1024
+    #    essential: "true"
+    #    portMappings:
+    #      - containerPort: 80 # nginx default port is 80
+    #      - hostPort: 8000    # port of the target group
+    #      - protocol: tcp
+
+  wrapper: &default_task_wrapper
+    ## Working directory to execute command in
+    #work_dir: .
+    ## Enable/disable secret resolution (fetching from Secrets Manager and
+    ## JSON path splitting)
+    resolve_secrets: True
+    process_timeout_seconds: 600
+    process_max_retries: 1
+    #process_retry_delay_seconds: 120
+    #process_timeout_seconds: null
+    #process_check_interval: 10
+    #process_termination_grace_period: 30
+    ## process_max_retries: 1
+    ## This data is sent back from the wrapper to CloudReactor when it starts.
+    ## It may be used to identify properties about instance of the task that is
+    ## running.
+    # other_instance_metadata:
+    #   a: 'b'
+    #   embedded:
+    #     c: 'd'
+    #     f: 1
+    # send_pid: True
+    # send_hostname: True
+    # send_runtime_metadata: True
+    # api_heartbeat_interval_seconds: 120
+    # api_error_timeout_seconds: 300
+    # api_retry_delay_seconds: 120
+    # api_resume_delay_seconds: 300
+    # api_task_execution_creation_error_timeout_seconds: 300
+    # api_task_execution_creation_conflict_timeout_seconds: 300
+    # api_task_execution_creation_conflict_retry_delay_seconds: 300
+    # api_final_update_timeout_seconds: 300
+    # api_request_timeout_seconds: 300
+    # enable_status_update_listener: True
+    # status_update_interval_seconds: 60
+    # status_update_socket_port: 2373
+    log_level: DEBUG
+    # log_secrets: False
+    # Optional Rollbar token used by the wrapper script.
+    # Can point to AWS Secrets Manager, or be the access token itself.
+    # rollbar_access_token: "arn:aws:secretsmanager:[aws_region]:[aws_account_id]:secret:CloudReactor/example/common/rollbar_access_token-xxx"
+    # rollbar_retries: 2
+    # rollbar_retry_delay_seconds: 120
+    # rollbar_timeout_seconds: 30
+
+  env: &default_task_env
+    DEPLOYMENT: "{{env}}"
+
+  # alert_methods:
+  #   - Alert Method 1
+  # links:
+  #  - name: Rollbar
+  #    link_url_template: "https://rollbar.com/YourCompanyName/YourProject/"
+  #    icon_url: "https://cdn.rollbar.com/static/img/favicon.ico"
+  #  - name: SumoLogic
+  #    # We have to do some tricks because this file is parsed as Jinja2, then re-parsed on upload.
+  #    link_url_template: "https://service.us2.sumologic.com/ui/index.html#section/search/@{% raw %}{{ '{{' }}(current_timestamp * 1000) - 3600000{{ '}}' }},{{ '{{' }}current_timestamp * 1000{{ '}}' }}{% endraw %}@_sourceHost={{log_query | urlencode}}"
+  #    # Unfortunately, this icon does not show up, probably due to some cross-site inclusion limitations.
+  #    icon_url: "https://www.sumologic.com/favicon.ico"
+  #    description: "{{log_query}}"
+
+# These are per-task settings that will inherit and override the settings in
+# default_task_config, in all environments.
+# To add a task, add an additional property to task_name_to_config (e.g. task_1, file_io)
+# Each task must at a minimum define which command to run i.e. `command: python main.py`
+task_name_to_config:
+  smoke:
+    description: "This description shows up in CloudReactor dashboard"
+    command: "echo 'hi'"
+    schedule: cron(9 15 * * ? *)
+    wrapper:
+      <<: *default_task_wrapper
+      enable_status_update_listener: true
+  # This task shows how to use the temporary file system provided by ECS
+  write_file:
+    description: "File I/O"
+    command: "./write_file.sh"
+    ecs:
+      <<: *default_task_ecs
+      extra_main_container_properties:
+        mountPoints:
+          - sourceVolume: "database_scratch"
+            containerPath: "/home/appuser/scratch"
+      extra_task_definition_properties:
+        volumes:
+          - name: "database_scratch"
+            host: {}
+    env:
+      <<: *default_task_env
+      TEMP_FILE_DIR: "/home/appuser/scratch"

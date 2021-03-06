@@ -1,0 +1,7 @@
+.git
+build/
+copy_requirements.*
+deploy-requirements.txt
+deploy.env
+deploy.*.env
+build.sh
