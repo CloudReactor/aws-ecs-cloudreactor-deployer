@@ -1,4 +1,18 @@
 #!/bin/bash
+
+# This script deploys the sample tasks in sample_docker_context.
+# You can copy it and make modifications for your use case,
+# such as:
+#   - Specifying a different Docker build context directory
+#     (mapped to work/docker_context)
+#   - Specifying a different Dockerfile
+#     (mapped to work/docker_context/Dockerfile)
+#   - Passing secrets to the deploy container via environment variables
+#   - Using the host's AWS configuration files (map ~/.aws to /root/.aws)
+#   - Passing AWS (temporary) credentials to the deployer container
+#   - Passing Ansible decryption keys to the deployer container
+#   - Running a different container that has more build dependencies
+
 set -e
 
 if [ -z "$1" ]
@@ -34,7 +48,13 @@ echo "DEPLOYMENT_ENVIRONMENT = $DEPLOYMENT_ENVIRONMENT"
 export CLOUDREACTOR_TASK_VERSION_SIGNATURE=`git rev-parse HEAD`
 echo "CLOUDREACTOR_TASK_VERSION_SIGNATURE = $CLOUDREACTOR_TASK_VERSION_SIGNATURE"
 
-docker run --rm \
+
+if [ -z "$DEPLOY_ENTRYPOINT" ]
+  then
+    export DEPLOY_ENTRYPOINT="./deploy.sh $@"
+fi
+
+docker run -ti --rm \
  -e DEPLOYMENT_ENVIRONMENT \
  -e CLOUDREACTOR_TASK_VERSION_SIGNATURE \
  --env-file deploy.env \
@@ -42,4 +62,4 @@ docker run --rm \
  -v /var/run/docker.sock:/var/run/docker.sock \
  -v $PWD/deploy_config:/work/deploy_config \
  -v $PWD/sample_docker_context:/work/docker_context \
- cloudreactor/aws-ecs-cloudreactor-deployer ./deploy.sh "$@"
+ cloudreactor/aws-ecs-cloudreactor-deployer $DEPLOY_ENTRYPOINT
