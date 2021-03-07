@@ -6,7 +6,6 @@
     <img src="https://img.shields.io/docker/cloud/build/cloudreactor/aws-ecs-cloudreactor-deployer?style=flat-square" alt="Docker Build Status" >
   </a>
   <img src="https://img.shields.io/github/license/CloudReactor/aws-ecs-cloudreactor-deployer.svg?style=flat-square" alt="License">
-
 </p>
 
 Deploys tasks running in ECS Fargate and managed by CloudReactor
@@ -21,8 +20,8 @@ machine.
 ## Usage
 
 To use, copy and optionally modify `docker_deploy.sh`
-(or `docker_deploy.cmd` and `docker-compose-deploy.yml` if you are working on a Windows machine). `docker_deploy.sh`
-contains a line like this:
+(or `docker_deploy.cmd` and `docker-compose-deploy.yml` if you are working on a Windows machine).
+`docker_deploy.sh` contains a line like this:
 
     docker run --rm
       -e DEPLOYMENT_ENVIRONMENT
@@ -67,12 +66,15 @@ You can run custom build steps by adding steps to
 `deploy_config/hooks/pre_build.yml` and
 `deploy_config/hooks/post_build.yml` as necessary.
 
-Your custom build steps can either:
+If you need to use libraries (e.g. compilers) not available in this image,
+your custom build steps can either:
 
-1) Use the `docker` command to build intermediate files (like JAR files or executables). Use `docker build` to build images, `docker create` to
+1) Use the `docker` command to build intermediate files (like JAR files or executables).
+Use `docker build` to build images, `docker create` to
 create containers, and finally, `docker cp` to copy files from containers
 back to the host. When docker runs in the container, it will use the
 host machine's docker service.
+
 2) Use build tools installed in the deployer image. In this case, you'll
 want to create a new image based on `cloudreactor/aws-ecs-cloudreactor-deployer`:
 
@@ -83,7 +85,14 @@ want to create a new image based on `cloudreactor/aws-ecs-cloudreactor-deployer`
 
     ...
 
-Then run the deployment command using your new image instead of `cloudreactor/aws-ecs-cloudreactor-deployer`.
+Then run the deployment command using your new image instead of `cloudreactor/aws-ecs-cloudreactor-deployer`
+and use `javac` in your custom build steps.
+
+Also, check out
+[multi-stage Dockerfiles](https://docs.docker.com/develop/develop-images/multistage-build/)
+as a way to build dependencies in the same Dockerfile that creates the final
+container. This may complicate the use of the same Dockerfile during
+development, however.
 
 ## More customization
 
