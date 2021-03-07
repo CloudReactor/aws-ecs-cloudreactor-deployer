@@ -55,7 +55,10 @@ echo "CLOUDREACTOR_TASK_VERSION_SIGNATURE = $CLOUDREACTOR_TASK_VERSION_SIGNATURE
 
 if [ -z "$DEPLOY_ENTRYPOINT" ]
   then
-    export DEPLOY_ENTRYPOINT="./deploy.sh $@"
+    export DEPLOY_ENTRYPOINT="./deploy.sh"
+  else
+    # Remove deployment environment argument for $@ below
+    shift
 fi
 
 docker run -ti --rm \
@@ -66,4 +69,4 @@ docker run -ti --rm \
  -v /var/run/docker.sock:/var/run/docker.sock \
  -v $PWD/deploy_config:/work/deploy_config \
  -v $PWD/sample_docker_context:/work/docker_context \
- cloudreactor/aws-ecs-cloudreactor-deployer $DEPLOY_ENTRYPOINT
+ cloudreactor/aws-ecs-cloudreactor-deployer $DEPLOY_ENTRYPOINT "$@"

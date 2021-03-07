@@ -103,9 +103,19 @@ In bash environments:
 
     DEPLOY_ENTRYPOINT=bash ./docker_deploy.sh <environment>
 
-In any environment with docker-compose installed, including Windows:
+In a bash environment with docker-compose installed:
 
     DEPLOYMENT_ENVIRONMENT=<environment> docker-compose -f docker-compose-deployer.yml run --rm deployer-shell
+
+In a Windows shell:
+
+    set DEPLOYMENT_ENVIRONMENT=<environment>
+    docker-compose -f docker-compose-deployer.yml run --rm deployer-shell
+
+In a Windows PowerShell:
+
+    $env:DEPLOYMENT_ENVIRONMENT = '<environment>'
+    docker-compose -f docker-compose-deployer.yml run --rm deployer-shell
 
 This will take you to a bash shell in the container you can use to inspect
 the filesystem. Inside the bash shell you can start the deployment by running:
