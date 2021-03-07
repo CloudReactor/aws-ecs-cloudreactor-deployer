@@ -11,7 +11,7 @@
     env_task_name_to_config: "{{ task_name_to_env_config | default({}) }}"
     resolved_task_name_to_config: "{{ task_name_to_config | combine(env_task_name_to_config, recursive=True) }}"
     resolved_task_names: "{{ (resolved_task_name_to_config.keys() | list) if (task_names | upper) == 'ALL' else task_names.split(',') }}"
-    task_version_signature: "{{ lookup('env','CLOUDREACTOR_TASK_VERSION_SIGNATURE') | default(git_hash_cmd_result.stdout, true) }}"
+    task_version_signature: "{{ lookup('env','CLOUDREACTOR_TASK_VERSION_SIGNATURE') | default(ansible_date_time.iso8601_basic, true) }}"
     docker_image_name: "{{project_name}}:{{env}}_{{task_version_signature}}"
     run_environment_name: "{{ resolved_cloudreactor.run_environment | default(env) }}"
     run_environment: "{{ run_environment_result.json.results[0] }}"
@@ -22,16 +22,6 @@
     task_definition_arn: "{{ (register_task_result.stdout | from_json).taskDefinition.taskDefinitionArn }}"
 
   tasks:
-  - name: Compute git hash
-    command: "git rev-parse HEAD"
-    register: git_hash_cmd_result
-    when: lookup('env', 'CLOUDREACTOR_TASK_VERSION_SIGNATURE') == ''
-    tags:
-      - version
-      - build
-      - upload
-      - create_tasks
-
   - debug: msg="Task version signature is {{ task_version_signature }}"
     tags:
       - version

@@ -45,9 +45,13 @@ touch -a $PER_ENV_FILE
 
 echo "DEPLOYMENT_ENVIRONMENT = $DEPLOYMENT_ENVIRONMENT"
 
+# Optional: use the latest git commit hash to set the version signature,
+# so that the git commit can be linked in the CloudReactor dashboard.
+# Otherwise, ansible will use the current date/time as the task version signature.
+# You can comment out the next block if you don't use git.
 export CLOUDREACTOR_TASK_VERSION_SIGNATURE=`git rev-parse HEAD`
 echo "CLOUDREACTOR_TASK_VERSION_SIGNATURE = $CLOUDREACTOR_TASK_VERSION_SIGNATURE"
-
+# End Optional
 
 if [ -z "$DEPLOY_ENTRYPOINT" ]
   then
