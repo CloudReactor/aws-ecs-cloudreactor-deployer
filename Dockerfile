@@ -32,11 +32,6 @@ RUN pip-compile --allow-unsafe --generate-hashes \
 # https://stackoverflow.com/questions/45594707/what-is-pips-no-cache-dir-good-for
 RUN pip install --no-input --no-cache-dir -r /tmp/deploy-requirements.txt
 
-COPY inventory .
-COPY ansible.cfg .
-COPY deploy.yml .
-COPY create_task.yml .
-COPY templates ./templates
-COPY deploy.sh .
+COPY ansible/ .
 
 CMD [ "./deploy.sh" ]

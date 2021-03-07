@@ -45,7 +45,6 @@ ansible-playbook deploy.yml --extra-vars "env=${ENVIRONMENT} task_names=${TASK_N
 # this line:
 # ansible-playbook --vault-password-file my-vault-password --extra-vars "env=${ENVIRONMENT} task_names=$TASK_NAMES" "$@" deploy.yml;
 
-
 # Hint: you can store your vault password in AWS S3 and write a script like this:
 #
 #   echo `aws s3 cp s3://widgets-co/vault_pass.$ENVIRONMENT.txt -`
