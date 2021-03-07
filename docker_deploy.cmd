@@ -32,11 +32,4 @@ REM End Optional
 type nul >> deploy.env
 type nul >> "deploy.%DEPLOYMENT_ENVIRONMENT%.env"
 
-
-docker run --rm -e DEPLOYMENT_ENVIRONMENT ^
- -e CLOUDREACTOR_TASK_VERSION_SIGNATURE --env-file deploy.env ^
- --env-file "deploy.%DEPLOYMENT_ENVIRONMENT%.env" ^
- -v /var/run/docker.sock:/var/run/docker.sock ^
- -v %dp0\sample_docker_context:/work/docker_context ^
- -v %dp0\deploy_config:/work/deploy_config ^
- cloudreactor/aws-ecs-cloudreactor-deployer "./deploy.sh" %*
+docker-compose -f docker-compose-deployer.yml run --rm deploy %*

@@ -21,8 +21,8 @@ machine.
 ## Usage
 
 To use, copy and optionally modify `docker_deploy.sh`
-(or `docker_deploy.cmd` if you are working on a Windows machine),
-which contains a line like this:
+(or `docker_deploy.cmd` and `docker-compose-deploy.yml` if you are working on a Windows machine). `docker_deploy.sh`
+contains a line like this:
 
     docker run --rm
       -e DEPLOYMENT_ENVIRONMENT
@@ -34,7 +34,8 @@ which contains a line like this:
       -v $PWD/sample_docker_context:/work/docker_context \ # modify this line
       cloudreactor/aws-ecs-cloudreactor-deployer ./deploy.sh "$@"
 
-This assumes sample_docker_context has a `Dockerfile` in it and all the files
+This is because this project has a sample_docker_context
+directory which contains a `Dockerfile` in it and all the files
 your container needs to run. You will need to remap your files your project
 into the Docker build context like this:
 
@@ -43,12 +44,22 @@ into the Docker build context like this:
 
 Then your Dockerfile will see the contents of your `src` directory in `src`.
 
-Next copy the `deploy_config` directory of this project into your own,
+Next, copy the `deploy_config` directory of this project into your own,
 and customize it. Common properties for all deployment environments can
 be entered in `deploy_config/vars/common.yml`.
 For every deployment environment ("staging", "production") that
 you have, create a file `deploy_config/vars/<environment>.yml` that
 is based on `deploy_config/vars/example.yml` and add your settings there.
+
+Finally, deploy:
+
+    ./docker_deploy.sh <environment> [TASK_NAMES]
+
+or in Windows:
+
+    .\docker_deploy.cmd <environment> [TASK_NAMES]
+
+where `TASK_NAMES` is an optional, comma-separated list of Tasks to deploy.
 
 ## Custom Build Steps
 
@@ -88,13 +99,18 @@ pass these to the Docker command line:
 With the sample scripts, you can specify an entrypoint for the deployer
 container:
 
+In bash environments:
+
     DEPLOY_ENTRYPOINT=bash ./docker_deploy.sh <environment>
+
+In any environment with docker-compose installed, including Windows:
+
+    DEPLOYMENT_ENVIRONMENT=<environment> docker-compose -f docker-compose-deployer.yml run --rm deployer-shell
 
 This will take you to a bash shell in the container you can use to inspect
 the filesystem. Inside the bash shell you can start the deployment by running:
 
     ./deploy.sh <environment> [TASK_NAMES]
 
-where `TASK_NAMES` is an optional, comma-separated list of Tasks to deploy.
-After the script finishes (successfully or not), it should output intermediate files
-to `/work/build`.
+After the script finishes (successfully or not), it should output intermediate
+files to `/work/build`.

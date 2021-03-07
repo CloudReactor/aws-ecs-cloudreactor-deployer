@@ -1,0 +1,40 @@
+# This is a sample docker-compose.yml you can use for running/testing
+# your tasks locally.
+version: "3.7"
+
+x-sample-base: &sample-base
+  image: aws-ecs-cloudreactor-deployer-sample
+  build:
+    context: ./sample_docker_context/
+  volumes:
+    - ./sample_docker_context/src/:/home/appuser/src/
+    - ./deploy_config/files/.env.dev:/home/appuser/.env
+  environment: &sample-env-base
+    PROC_WRAPPER_OFFLINE_MODE: "TRUE"
+    PROC_WRAPPER_LOG_LEVEL: DEBUG
+
+services:
+  smoke:
+    <<: *sample-base
+    environment:
+      <<: *sample-env-base
+      TASK_COMMAND: "echo 'hi'"
+
+  write_file:
+    <<: *sample-base
+    environment:
+      <<: *sample-env-base
+      TASK_COMMAND: "./write_file.sh"
+
+  dev-shell:
+    <<: *sample-base
+    entrypoint: bash
+
+  # Check your Dockerfile against best-practices:
+  # See https://github.com/hadolint/hadolint
+  hadolint:
+    image: hadolint/hadolint
+    volumes:
+      - ./sample_docker_context/Dockerfile:/mnt/Dockerfile
+      - ./sample_docker_context/hadolint.yaml:/mnt/hadolint.yaml
+    entrypoint: /bin/hadolint --config /mnt/hadolint.yaml /mnt/Dockerfile
