@@ -19,7 +19,14 @@ x-deployer-base: &deployer-base
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock
     - ./deploy_config:/work/deploy_config
+
+    # For your own project, most likely, you will want to change the next line:
     - ./sample_docker_context:/work/docker_context
+    # To something like this:
+    # - ./requirements.in:/work/docker_context/requirements.in
+    # - ./src:/work/docker_context/src
+
+
   entrypoint: "./deploy.sh"
   env_file:
     - deploy.env
@@ -27,6 +34,17 @@ x-deployer-base: &deployer-base
   environment:
     - DEPLOYMENT_ENVIRONMENT
     - CLOUDREACTOR_TASK_VERSION_SIGNATURE
+    # Uncomment these to pass them from your host's environment to the deployer container.
+    # They will take precedence over the values in .env files.
+    # - AWS_ACCESS_KEY_ID
+    # - AWS_SECRET_ACCESS_KEY
+    # - AWS_DEFAULT_REGION
+    # - AWS_CA_BUNDLE
+    # - AWS_CONFIG_FILE
+    # - AWS_PROFILE
+    # - AWS_SESSION_TOKEN
+    # - AWS_SHARED_CREDENTIALS_FILE
+    # - AWS_ROLE_SESSION_NAME
 
 services:
   deploy:
