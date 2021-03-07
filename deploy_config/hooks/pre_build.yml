@@ -7,7 +7,7 @@
 #
 # After it is compiled, your Dockerfile should COPY the binary (JAR file in
 # the case of JDK projects).
-
+---
 - debug:
     msg: "Pre-build: nothing to do"
     verbosity: 1
