@@ -2,6 +2,10 @@ FROM python:3.9.2
 
 WORKDIR /work
 
+# See https://github.com/hadolint/hadolint/wiki/DL4006
+# Needed since we use pipes in the curl command
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # Output directly to the terminal to prevent logs from being lost
 # https://stackoverflow.com/questions/59812009/what-is-the-use-of-pythonunbuffered-in-docker-file
 ENV PYTHONUNBUFFERED 1
@@ -13,13 +17,27 @@ ENV PYTHONDONTWRITEBYTECODE 1
 # https://docs.python.org/3/library/faulthandler.html
 ENV PYTHONFAULTHANDLER 1
 
-RUN apt-get update
-RUN apt-get install binutils libproj-dev gdal-bin -y
-RUN apt-get -y install apt-transport-https ca-certificates curl gnupg2 software-properties-common
-RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    binutils=2.31.1-16 \
+    libproj-dev=5.2.0-1 \
+    gdal-bin=2.4.0+dfsg-1+b1 \
+    apt-transport-https=1.8.2.2 \
+    ca-certificates=20200601~deb10u2 \
+    curl=7.64.0-4+deb10u1 \
+    gnupg2=2.2.12-1+deb10u1 \
+    software-properties-common=0.96.20.2-2 \
+  && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
-RUN apt-get update
-RUN apt-get -y install docker-ce
+
+# apt-key doesn't like being used as stdout
+# https://stackoverflow.com/questions/48162574/how-to-circumvent-apt-key-output-should-not-be-parsed
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add -
+
+RUN apt-get update && \
+  apt-get -y --no-install-recommends install \
+    docker-ce=5:20.10.5~3-0~debian-buster \
+  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-input --no-cache-dir --upgrade pip==21.0.1 pip-tools==5.5.0 MarkupSafe==1.1.1 requests==2.24.0
 
