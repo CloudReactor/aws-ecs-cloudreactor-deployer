@@ -1,6 +1,5 @@
 # aws-ecs-cloudreactor-deployer
 
-
 <p>
   <a href="https://hub.docker.com/repository/docker/cloudreactor/aws-ecs-cloudreactor-deployer">
     <img src="https://img.shields.io/docker/cloud/build/cloudreactor/aws-ecs-cloudreactor-deployer?style=flat-square" alt="Docker Build Status" >
@@ -80,6 +79,7 @@ want to create a new image based on `cloudreactor/aws-ecs-cloudreactor-deployer`
 
     FROM cloudreactor/aws-ecs-cloudreactor-deployer
 
+    # Example: get the JDK to build JAR files
     RUN apt-get update && \
       apt-get -t stretch-backports install openjdk-11-jdk
 
@@ -116,7 +116,7 @@ In a bash environment with docker-compose installed:
 
     DEPLOYMENT_ENVIRONMENT=<environment> docker-compose -f docker-compose-deployer.yml run --rm deployer-shell
 
-In a Windows shell:
+In a Windows command prompt:
 
     set DEPLOYMENT_ENVIRONMENT=<environment>
     docker-compose -f docker-compose-deployer.yml run --rm deployer-shell
