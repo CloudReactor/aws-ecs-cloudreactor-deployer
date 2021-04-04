@@ -125,7 +125,7 @@
                     "value" : "{{ is_service | string | upper }}"
                 },
                 {
-                    "name" : "PROC_WRAPPER_MAX_CONCURRENCY",
+                    "name" : "PROC_WRAPPER_TASK_MAX_CONCURRENCY",
                     "value" : "{% if max_concurrency is number %}{{ max_concurrency }}{% else %}-1{% endif %}"
                 },
                 {{ env_def(wrapper, 'offline_mode') }}
