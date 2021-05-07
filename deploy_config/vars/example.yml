@@ -78,7 +78,7 @@ default_env_task_config:
         - name: PROC_WRAPPER_API_KEY
           valueFrom: "arn:aws:secretsmanager:[aws_region]:[aws_account_id]:secret:CloudReactor/example/common/cloudreactor_api_key-xxx"
 
-#     execution_role_arn:
+#     execution_role_arn: arn:aws:iam::12345678901:role/myrole
 #     task:
 #       network:
 #         security_groups:

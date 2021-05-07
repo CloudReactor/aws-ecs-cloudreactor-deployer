@@ -3,7 +3,7 @@
 # It is especially useful in Windows environments because Docker Desktop
 # always includes Docker Compose.
 #
-# To deploy from Windows:
+# To deploy the sample Tasks from a Windows command prompt:
 #
 # set DEPLOYMENT_ENVIRONMENT=staging
 # set CLOUDREACTOR_TASK_VERSION_SIGNATURE
@@ -23,11 +23,10 @@ x-deployer-base: &deployer-base
     # For your own project, most likely, you will want to change the next line:
     - ./sample_docker_context:/work/docker_context
     # To something like this:
-    # - ./requirements.in:/work/docker_context/requirements.in
+    # - ./Dockerfile:/work/docker_context/Dockerfile
     # - ./src:/work/docker_context/src
 
-
-  entrypoint: "./deploy.sh"
+  entrypoint: "python deploy.py"
   env_file:
     - deploy.env
     - deploy.${DEPLOYMENT_ENVIRONMENT}.env
@@ -49,12 +48,16 @@ x-deployer-base: &deployer-base
 services:
   deploy:
     <<: *deployer-base
-    entrypoint: "./deploy.sh"
+    entrypoint: "python deploy.py"
 
   # For debugging your Docker build
   deployer-shell:
     <<: *deployer-base
     entrypoint: bash
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./ansible:/work
+      - ./deploy_config:/work/deploy_config
 
   # Check your Dockerfile against best-practices:
   # See https://github.com/hadolint/hadolint

@@ -1,4 +1,4 @@
-FROM python:3.9.2
+FROM python:3.9.5
 
 WORKDIR /work
 
@@ -24,7 +24,7 @@ RUN apt-get update \
     gdal-bin=2.4.0+dfsg-1+b1 \
     apt-transport-https=1.8.2.2 \
     ca-certificates=20200601~deb10u2 \
-    curl=7.64.0-4+deb10u1 \
+    curl=7.64.0-4+deb10u2 \
     gnupg2=2.2.12-1+deb10u1 \
     software-properties-common=0.96.20.2-2 \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -52,4 +52,4 @@ RUN pip install --no-input --no-cache-dir -r /tmp/deploy-requirements.txt
 
 COPY ansible/ .
 
-CMD [ "./deploy.sh" ]
+CMD [ "python", "deploy.py" ]

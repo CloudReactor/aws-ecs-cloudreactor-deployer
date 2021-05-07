@@ -12,6 +12,7 @@
     resolved_task_name_to_config: "{{ task_name_to_config | combine(env_task_name_to_config, recursive=True) }}"
     resolved_task_names: "{{ (resolved_task_name_to_config.keys() | list) if (task_names | upper) == 'ALL' else task_names.split(',') }}"
     task_version_signature: "{{ lookup('env','CLOUDREACTOR_TASK_VERSION_SIGNATURE') | default(ansible_date_time.iso8601_basic, true) }}"
+    dockerfile_path: "{{ lookup('env','DOCKERFILE_PATH') | default('Dockerfile') }}"
     docker_image_name: "{{project_name}}:{{env}}_{{task_version_signature}}"
     run_environment_name: "{{ resolved_cloudreactor.run_environment | default(env) }}"
     run_environment: "{{ run_environment_result.json.results[0] }}"
@@ -104,7 +105,7 @@
       - build
 
   - name: Build Docker image
-    command: "docker --debug build -t {{docker_image_name}} ."
+    command: "docker --debug build -f {{dockerfile_path}} -t {{docker_image_name}} ."
     args:
       chdir: docker_context
     tags:

@@ -1,7 +1,7 @@
 @ECHO OFF
 
 if "%~1"=="" (
-    echo Usage: %0% ^<deployment^>
+    echo Usage: %0% ^<deployment^> [task_names]
     exit /b 1
 )
 
@@ -23,10 +23,12 @@ REM so that the git commit can be linked in the CloudReactor dashboard.
 REM Otherwise, ansible will compute the task version signature as the
 REM timestamp when it was started.
 REM You can comment out the next block if you don't use git.
-git rev-parse HEAD > commit_hash.txt
-set /p CLOUDREACTOR_TASK_VERSION_SIGNATURE= < commit_hash.txt
-del commit_hash.txt
-echo CLOUDREACTOR_TASK_VERSION_SIGNATURE = %CLOUDREACTOR_TASK_VERSION_SIGNATURE%
+if "%CLOUDREACTOR_TASK_VERSION_SIGNATURE%"=="" (
+  git rev-parse HEAD > commit_hash.txt
+  set /p CLOUDREACTOR_TASK_VERSION_SIGNATURE= < commit_hash.txt
+  del commit_hash.txt
+  echo CLOUDREACTOR_TASK_VERSION_SIGNATURE = %CLOUDREACTOR_TASK_VERSION_SIGNATURE%
+)
 REM End Optional
 
 type nul >> deploy.env

@@ -35,7 +35,7 @@ WORKDIR /home/appuser
 # when ECS mounts a volume, otherwise it will be owned by root.
 RUN mkdir scratch
 
-RUN wget https://github.com/CloudReactor/cloudreactor-procwrapper/raw/v2.1.0/pyinstaller_build/platforms/linux-amd64/proc_wrapper
+RUN wget https://github.com/CloudReactor/cloudreactor-procwrapper/raw/v2.1.1/pyinstaller_build/platforms/linux-amd64/proc_wrapper
 RUN chmod +x proc_wrapper
 
 COPY --chown=appuser:appuser src .
