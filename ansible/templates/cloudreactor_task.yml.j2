@@ -85,6 +85,10 @@ is_service: {{is_service}}
 schedule: {{ task_config.schedule }}
 {% endif %}
 
+{% if task_config.scheduled_instance_count is defined %}
+scheduled_instance_count: {{ task_config.scheduled_instance_count }}
+{% endif %}
+
 {% if service_instance_count != 'null' %}
 service_instance_count: {{service_instance_count}}
 {% endif %}
@@ -135,6 +139,10 @@ execution_method_capability:
   {% endif %}
   {% endif %}
 
+  {% if project_task_ecs.task.tags is defined %}
+  tags: {{ project_task_ecs.task.tags | to_yaml }}
+  {% endif %}
+
   {% if project_task_ecs.task.network.assign_public_ip is defined %}
   default_assign_public_ip: {{project_task_ecs.task.network.assign_public_ip}}
   {% endif %}
@@ -151,6 +159,10 @@ execution_method_capability:
   allocated_memory_mb: {{memory_mb}}
   main_container_name: "{{project_name}}_{{task_name}}_{{env}}"
 
+  {% if project_task_ecs.enable_ecs_managed_tags is defined %}
+  enable_ecs_managed_tags: {{ project_task_ecs.enable_ecs_managed_tags }}
+  {% endif %}
+
   {% if project_task_ecs.service is defined %}
   service_options:
     {% if project_task_ecs.service.load_balancers is defined %}
@@ -162,11 +174,23 @@ execution_method_capability:
         container_port: {{load_balancer.container_port}}
       {% endfor %}
     {% if project_task_ecs.service.load_balancer_health_check_grace_period_seconds is defined %}
-    load_balancer_health_check_grace_period_seconds: 300
+    load_balancer_health_check_grace_period_seconds: {{ project_task_ecs.service.load_balancer_health_check_grace_period_seconds }}
     {% endif %}
     {% else %}
     load_balancers: []
     {% endif %}
+    {% endif %}
+    {% if project_task_ecs.service.deployment_configuration is defined %}
+    force_new_deployment: {{ project_task_ecs.service.deployment_configuration.force_new_deployment | default(false) }}
+    deploy_minimum_healthy_percent: {{ project_task_ecs.service.deployment_configuration.minimum_healthy_percent | default(100) }}
+    deploy_maximum_percent: {{ project_task_ecs.service.deployment_configuration.maximum_percent | default(200) }}
+    deploy_rollback_on_failure: {{ project_task_ecs.service.deployment_configuration.rollback | default(true) }}
+    {% endif %}
+    {% if project_task_ecs.service.enable_ecs_managed_tags is defined %}
+    enable_ecs_managed_tags: {{ project_task_ecs.service.enable_ecs_managed_tags }}
+    {% endif %}
+    {% if project_task_ecs.service.propagate_tags is defined %}
+    propagate_tags: {{ project_task_ecs.service.propagate_tags }}
     {% endif %}
   {% endif %}
 

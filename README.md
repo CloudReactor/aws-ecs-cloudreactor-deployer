@@ -205,16 +205,37 @@ the filesystem. Inside the bash shell you can start the deployment by running:
 After the script finishes (successfully or not), it should output intermediate
 files to `/work/build` which you can inspect for problems.
 
+## Common errors
+
+* When deploying, you see
+
+      AnsibleFilterError: |combine expects dictionaries, got None"}
+
+This may be caused by defining a property like a task under `task_name_to_config`
+in `deploy_config/vars/common.yml`:
+
+    task_name_to_config:
+       some_task:
+       another_task:
+         schedule: cron(9 15 * * ? *)
+
+`some_task` is missing a dictionary value so the corrected version is:
+
+    task_name_to_config:
+       some_task: {}
+       another_task:
+         schedule: cron(9 15 * * ? *)
+
 ## Deploying Sample Tasks
 
 To check that your AWS account is setup properly with CloudReactor permissions,
 or to work on the development of the deployer,
 you can deploy sample Tasks with these steps:
 
-1) Clone this project
-2) Create a file `deploy_config/vars/<environment>.yml`, copied from
+1. Clone this project
+2. Create a file `deploy_config/vars/<environment>.yml`, copied from
 `deploy_config/vars/example.yml` with properties filled in
-3) In a bash shell in the project root directory, run:
+3. In a bash shell in the project root directory, run:
 
         ./deploy_sample.sh <environment>
 

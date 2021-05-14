@@ -20,8 +20,13 @@
     aws: "{{ run_environment_aws | default({}) | combine(project_aws | default({}), recursive=True) }}"
     aws_region: "{{ aws.region | default(lookup('env','AWS_DEFAULT_REGION')) }}"
     ecr_hostname: "{{ aws.account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com"
+    resolved_task: "{{ resolved_task_name_to_config[item] }}"
+    resolved_ecs: "{{ aws.ecs | default({}) | combine(resolved_task.ecs | default({}), recursive=True) }}"
+    resolved_ecs_task: "{{ resolved_ecs.task | default({}) }}"
+    resolved_ecs_task_network: "{{ resolved_ecs_task.network | default({}) }}"
+    resolved_ecs_service: "{{ resolved_ecs.service | default({}) }}"
     task_definition_arn: "{{ (register_task_result.stdout | from_json).taskDefinition.taskDefinitionArn }}"
-
+    task_build_dir: "build/{{env}}/{{item}}"
   tasks:
   - debug: msg="Task version signature is {{ task_version_signature }}"
     tags:

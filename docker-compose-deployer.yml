@@ -33,6 +33,9 @@ x-deployer-base: &deployer-base
   environment:
     - DEPLOYMENT_ENVIRONMENT
     - CLOUDREACTOR_TASK_VERSION_SIGNATURE
+    - DOCKER_IMAGE_TAG=latest
+    - DOCKER_CONTEXT_DIR="$PWD/sample_docker_context"
+
     # Uncomment these to pass them from your host's environment to the deployer container.
     # They will take precedence over the values in .env files.
     # - AWS_ACCESS_KEY_ID

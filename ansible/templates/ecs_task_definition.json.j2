@@ -1,6 +1,6 @@
 {% macro default_formatter(v) -%}
   {% if v is boolean -%}
-  "{{ v | string | upper }}"
+  "{{ v | string | lower }}"
   {%- else -%}
   {{ v | string | to_json }}
   {%- endif %}
@@ -73,6 +73,18 @@
     {% endif %}
     "cpu": "{{cpu_units}}",
     "memory": "{{memory_mb}}",
+
+    {% if ecs.task.tags is defined %}
+    "tags": [
+      {% for name, value in ecs.task.tags.items() %}
+      {
+          "key" : {{ name | string | to_json }},
+          "value" : {{ value | string | to_json }}
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ],
+    {% endif %}
+
     "containerDefinitions": [
         {
             "name": {{ (project_name + '_' +  task_name + '_' + env) | to_json }},
