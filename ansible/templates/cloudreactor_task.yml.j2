@@ -185,7 +185,7 @@ execution_method_capability:
     deploy_minimum_healthy_percent: {{ project_task_ecs.service.deployment_configuration.minimum_healthy_percent | default(100) }}
     deploy_maximum_percent: {{ project_task_ecs.service.deployment_configuration.maximum_percent | default(200) }}
     deploy_enable_circuit_breaker: {{ project_task_ecs.service.deployment_configuration.enable_circuit_breaker | default(true) }}
-    deploy_rollback_on_failure: {{ project_task_ecs.service.deployment_configuration.rollback | default(true) }}
+    deploy_rollback_on_failure: {{ project_task_ecs.service.deployment_configuration.rollback_on_failure | default(true) }}
     {% endif %}
     {% if project_task_ecs.service.enable_ecs_managed_tags is defined %}
     enable_ecs_managed_tags: {{ project_task_ecs.service.enable_ecs_managed_tags }}
