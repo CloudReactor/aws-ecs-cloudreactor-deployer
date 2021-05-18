@@ -123,7 +123,7 @@
     delay: "{{ resolved_ecs_service.delay | default(30) }}"
     load_balancers:
       - targetGroupArn: "{{resolved_ecs_service.load_balancers[0].target_group_arn}}"
-        containerName:  "{{project_name}}_{{task_name}}_{{env}}"
+        containerName:  "{{project_name}}_{{item}}_{{env}}"
         containerPort: "{{resolved_ecs_service.load_balancers[0].container_port}}"
     health_check_grace_period_seconds: "{{ resolved_ecs_service.health_check_grace_period_seconds | default(30) }}"
   when: (not resolved_cloudreactor.enabled) and (resolved_ecs_service.load_balancers is defined) and (resolved_task.is_service | default(resolved_task.service_instance_count | default(0) | string != '0'))
