@@ -193,6 +193,10 @@ execution_method_capability:
     {% if project_task_ecs.service.propagate_tags is defined %}
     propagate_tags: {{ project_task_ecs.service.propagate_tags }}
     {% endif %}
+
+    {% if project_task_ecs.service.tags is defined %}
+    tags: {{ project_task_ecs.service.tags | to_yaml }}
+    {% endif %}
   {% endif %}
 
 log_query: "{{log_query}}"

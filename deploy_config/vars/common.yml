@@ -186,6 +186,10 @@ task_name_to_config:
 #           maximum_percent: 200
 #           enable_circuit_breaker: True
 #           rollback_on_failure: True
+#        enable_ecs_managed_tags: True
+#        propagate_tags: SERVICE # Or "TASK_EXECUTION"
+#        tags:
+#          IS_SERVICE: TRUE
 #      extra_main_container_properties:
 #        portMappings:
 #          - hostPort: 7070
