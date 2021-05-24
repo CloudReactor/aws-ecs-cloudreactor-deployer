@@ -1,6 +1,5 @@
-# Override this file with steps to perform after the Docker
-# image has been uploaded, but before the task has been created
-# in ECS or CloudReactor.
+# Override this file with steps to perform after the Docker image has been
+# uploaded, but before the Tasks have been created in ECS or CloudReactor.
 ---
 - debug:
     msg: "Post-build: nothing to do"

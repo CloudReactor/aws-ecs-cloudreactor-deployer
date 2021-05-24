@@ -27,10 +27,11 @@
     resolved_ecs_task: "{{ resolved_ecs.task | default({}) }}"
     resolved_ecs_task_network: "{{ resolved_ecs_task.network | default({}) }}"
     resolved_ecs_service: "{{ resolved_ecs.service | default({}) }}"
-    task_definition_arn: "{{ (register_task_result.stdout | from_json).taskDefinition.taskDefinitionArn }}"
+    task_definition_arn: "{{ (register_ecs_task_result.stdout | from_json).taskDefinition.taskDefinitionArn }}"
     task_build_dir: "build/{{env}}/{{item}}"
+    cloudreactor_task: "{{ create_cloudreactor_task_result.json }}"
   tasks:
-  - debug: msg="Task version signature is {{ task_version_signature }}"
+  - debug: msg="Task version signature = {{task_version_signature}}, resolved task names = {{resolved_task_names}}"
     tags:
       - version
       - build

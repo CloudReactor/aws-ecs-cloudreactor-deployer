@@ -20,7 +20,7 @@ dependencies on your host machine.
 ## Prerequisites
 
 If you haven't already, Dockerize your project.
-Assumming you want to use CloudReactor to monitor your Tasks, ensure that
+Assuming you want to use CloudReactor to monitor your Tasks, ensure that
 your Docker image contains the files necessary to run
 [proc_wrapper](https://github.com/CloudReactor/cloudreactor-procwrapper).
 This could either be a standalone executable, or having python 3.6+ installed
@@ -54,9 +54,16 @@ is based on `deploy_config/vars/example.yml` and add your settings there.
 
 ### Custom build steps
 
-You can run custom build steps by adding steps to
-`deploy_config/hooks/pre_build.yml` and
-`deploy_config/hooks/post_build.yml` as necessary.
+You can run custom build steps by adding steps to the following files in
+`deploy_config/hooks`:
+
+* `pre_build.yml`: run before the Docker image is built. Compilation and
+asset processing can be run here.
+* `post_build.yml`: run after the Docker image has been uploaded. Executions
+of "docker run" can be run here. For example, database migrations can be
+run from the local deployment machine.
+* `post_task_creation.yml`: run each time a Task is deployed to ECR and
+CloudReactor. Execution of Task that were just deployed can be run here.
 
 If you need to use libraries (e.g. compilers) not available in this image,
 your custom build steps can either:
@@ -105,8 +112,8 @@ files/directories with environment variables. The Ansible tasks also read
 environment variables which you can set in `deploy.env` or
 `deploy.<environment>.env`.
 
-You can configure some settings in `deploy.sh` with environment
-variables if you want to avoid modifying it:
+You can configure some settings in `deploy.sh` with environment variables if you
+want to avoid modifying it:
 
 | Environment variable name |       Default value      | Description                                                                                    |
 |---------------------------|:------------------------:|------------------------------------------------------------------------------------------------|
