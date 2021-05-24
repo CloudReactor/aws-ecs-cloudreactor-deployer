@@ -118,6 +118,7 @@ default_env_task_config:
 # schedule in common.yml.
 task_name_to_env_config:
   task_1:
+    # deployed: false # Set to false to skip deployment
     schedule: cron(9 0 * * ? *)
     # scheduled_instance_count: 1
 # # Uncomment to enable web server -- requires an IP target group and

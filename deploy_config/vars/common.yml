@@ -16,7 +16,7 @@ default_cloudreactor:
 # To clear a property name and value, using the default value in the Run Environment,
 # set the property value to null.
 default_task_config:
-  # enabled: true
+  # enabled: true # Set to false to disable schedule/service in CloudReactor
   # max_concurrency: 1 # null for no concurrency limit
   # max_age_seconds: 7200
   # max_manual_start_delay_seconds: 60
