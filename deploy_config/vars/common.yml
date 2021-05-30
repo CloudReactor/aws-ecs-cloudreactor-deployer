@@ -7,7 +7,7 @@ project_url: "https://github.com/CloudReactor/aws-ecs-cloudreactor-deployer"
 
 default_build_options:
   dockerfile_path: Dockerfile
-  docker_extra_build_args: ""
+  extra_docker_build_args: ""
 
 default_cloudreactor:
   api_base_url: https://api.cloudreactor.io

@@ -115,15 +115,15 @@
                 },
                   {% endif %}
                 {% endfor %}
-                {{ env_def(cloudreactor, 'api_base_url') }}
+                {{ env_def(resolved_cloudreactor, 'api_base_url') }}
                 {# Only puts PROC_WRAPPER_API_KEY in your environment if
-                   cloudreactor.task_api_key is defined. Leave it undefined if you
+                   resolved_cloudreactor.task_api_key is defined. Leave it undefined if you
                    plan on getting it from AWS Secrets Manager through the
                    ECS Task Execution role (where AWS injects the environment).
                    The API key can also be a AWS Secrets Manager ARN which the proc_wrapper
                    module will fetch at runtime.
                 #}
-                {{ env_def(cloudreactor, 'task_api_key', true, 'PROC_WRAPPER_API_KEY') }}
+                {{ env_def(resolved_cloudreactor, 'task_api_key', true, 'PROC_WRAPPER_API_KEY') }}
                 {
                     "name" : "PROC_WRAPPER_DEPLOYMENT",
                     "value" : {{ env | to_json }}
@@ -195,7 +195,7 @@
                 {{ env_def(wrapper, 'log_level') }}
                 {{ env_def(wrapper, 'log_secrets') }}
                 {# Only puts PROC_WRAPPER_ROLLBAR_ACCESS_TOKEN in your environment if
-                   cloudreactor.rollbar_access_token is defined. The value may be a
+                   wrapper.rollbar_access_token is defined. The value may be a
                    AWS Secrets Manager ARN which will be fetched by the
                    proc_wrapper module at runtime.
                 #}

@@ -8,20 +8,20 @@
 
 # - name: Run the Task immediately with CloudReactor
 #   uri:
-#     url: "{{ cloudreactor.api_base_url }}/api/v1/task_executions/"
+#     url: "{{ resolved_cloudreactor.api_base_url }}/api/v1/task_executions/"
 #     method: POST
 #     headers:
-#       Authorization: "Token {{cloudreactor.deploy_api_key}}"
+#       Authorization: "Token {{resolved_cloudreactor.deploy_api_key}}"
 #     return_content: yes
 #     body:
 #       task:
-#         name: uuid: "{{ cloudreactor_task.uuid }}"
+#         name: uuid: "{{ saved_cloudreactor_task.uuid }}"
 #       status: MANUALLY_STARTED
 #     body_format: json
 #     status_code:
 #       - 200
 #       - 201
 #   register: create_cloudreactor_task_execution_result
-#   when: cloudreactor.enabled
+#   when: resolved_cloudreactor.enabled
 #   tags:
 #     - always

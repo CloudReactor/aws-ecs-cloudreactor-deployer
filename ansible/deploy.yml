@@ -9,7 +9,7 @@
   vars:
     build_options: "{{ default_build_options | default({}) }}"
     dockerfile_path: "{{ lookup('env','DOCKERFILE_PATH') | default(build_options.dockerfile_path | default('Dockerfile')) }}"
-    extra_docker_build_args: "{{ lookup('env','EXTRA_DOCKER_BUILD_ARGS') | default(build_options.extra_docker_build_args | default('')) }}"
+    extra_docker_build_args: "{{ lookup('env','EXTRA_DOCKER_BUILD_ARGS') | default(build_options.extra_docker_build_args | default(''), true) }}"
     resolved_cloudreactor: "{{ default_cloudreactor | default({}) | combine(cloudreactor | default({})) }}"
     env_task_name_to_config: "{{ task_name_to_env_config | default({}) }}"
     resolved_task_name_to_config: "{{ task_name_to_config | combine(env_task_name_to_config, recursive=True) }}"
@@ -29,7 +29,7 @@
     resolved_ecs_service: "{{ resolved_ecs.service | default({}) }}"
     task_definition_arn: "{{ (register_ecs_task_result.stdout | from_json).taskDefinition.taskDefinitionArn }}"
     task_build_dir: "build/{{env}}/{{item}}"
-    cloudreactor_task: "{{ create_cloudreactor_task_result.json }}"
+    saved_cloudreactor_task: "{{ create_cloudreactor_task_result.json }}"
   tasks:
   - debug: msg="Task version signature = {{task_version_signature}}, resolved task names = {{resolved_task_names}}"
     tags:
@@ -61,10 +61,13 @@
       - upload
       - create_tasks
 
-  - debug:
+  - name: Output Runtime Environment
+    debug:
       msg: "Runtime Environment is {{ run_environment }}, UUID = {{ run_environment.uuid }}"
       verbosity: 1
     when: resolved_cloudreactor.enabled
+    tags:
+      - create_tasks
 
   - name: Set default AWS configuration from Run Environment
     set_fact:
@@ -85,9 +88,13 @@
       - upload
       - create_tasks
 
-  - debug:
+  - name: Output AWS settings
+    debug:
       msg: "Default AWS is {{ aws }}"
       verbosity: 1
+    tags:
+      - upload
+      - create_tasks
 
   - name: Compute ECR login password
     command: "aws ecr get-login-password --region {{aws.region}}"
@@ -109,6 +116,20 @@
 
   # Hook to perform steps before building the Docker image
   - include_tasks: deploy_config/hooks/pre_build.yml
+    tags:
+      - build
+
+  - name: Output Docker build options
+    debug:
+      msg: "Docker build options: {{build_options}}, build_options.extra_docker_build_args = {{build_options.extra_docker_build_args}}, extra_docker_build_args={{extra_docker_build_args}}"
+      verbosity: 1
+    tags:
+      - build
+
+  - name: Output Docker build command
+    debug:
+      msg: "Docker build command: 'docker --debug build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} .'"
+      verbosity: 1
     tags:
       - build
 
