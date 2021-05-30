@@ -7,13 +7,13 @@ set -e
 docker build -t aws-ecs-cloudreactor-deployer -t \
  cloudreactor/aws-ecs-cloudreactor-deployer .
 
-docker tag aws-ecs-cloudreactor-deployer cloudreactor/aws-ecs-cloudreactor-deployer:LATEST
-docker tag aws-ecs-cloudreactor-deployer cloudreactor/aws-ecs-cloudreactor-deployer:1.2.1
+docker tag aws-ecs-cloudreactor-deployer cloudreactor/aws-ecs-cloudreactor-deployer:latest
+docker tag aws-ecs-cloudreactor-deployer cloudreactor/aws-ecs-cloudreactor-deployer:1.2.2
 docker tag aws-ecs-cloudreactor-deployer cloudreactor/aws-ecs-cloudreactor-deployer:1.2
 docker tag aws-ecs-cloudreactor-deployer cloudreactor/aws-ecs-cloudreactor-deployer:1
 
 docker login
-docker push cloudreactor/aws-ecs-cloudreactor-deployer:LATEST
-docker push cloudreactor/aws-ecs-cloudreactor-deployer:1.2.1
+docker push cloudreactor/aws-ecs-cloudreactor-deployer:latest
+docker push cloudreactor/aws-ecs-cloudreactor-deployer:1.2.2
 docker push cloudreactor/aws-ecs-cloudreactor-deployer:1.2
 docker push cloudreactor/aws-ecs-cloudreactor-deployer:1
