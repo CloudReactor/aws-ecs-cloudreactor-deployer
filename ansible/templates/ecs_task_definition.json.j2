@@ -1,6 +1,6 @@
 {% macro default_formatter(v) -%}
   {% if v is boolean -%}
-  "{{ v | string | lower }}"
+  "{{ v | string | upper }}"
   {%- else -%}
   {{ v | string | to_json }}
   {%- endif %}
