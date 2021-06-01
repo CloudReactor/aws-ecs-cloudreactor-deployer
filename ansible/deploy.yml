@@ -143,8 +143,10 @@
   - name: Create ECR repository
     ecs_ecr:
       name: "{{project_name}}"
+      region: "{{aws_region}}"
     tags:
       - upload
+      - create_ecr_repo
 
   - name: Tag Docker image
     command: "docker tag {{docker_image_name}} {{ecr_hostname}}/{{docker_image_name}}"
