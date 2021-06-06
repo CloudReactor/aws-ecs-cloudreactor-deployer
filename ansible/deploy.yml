@@ -121,7 +121,7 @@
 
   - name: Output Docker build options
     debug:
-      msg: "Docker build options: {{build_options}}, build_options.extra_docker_build_args = {{build_options.extra_docker_build_args}}, extra_docker_build_args={{extra_docker_build_args}}"
+      msg: "Docker build options: {{build_options}}, extra_docker_build_args={{extra_docker_build_args}}"
       verbosity: 1
     tags:
       - build
