@@ -37,7 +37,7 @@ default_task_config:
     # # Required when deploying a scheduled task without CloudReactor
     # execution_role_arn: arn:aws:iam::123456789012:role/ecsEventsRole
 
-    # enable_ecs_managed_tags: True
+    # enable_ecs_managed_tags: true
 
     task:
       # network:
@@ -47,7 +47,7 @@ default_task_config:
       #   security_groups:
       #     - sg_1
       #     - sg_2
-      #   assign_public_ip: True
+      #   assign_public_ip: true
       tags:
         ManagedBy: CloudReactor
         Application: aws-ecs-cloudreactor-deploy test
@@ -92,14 +92,12 @@ default_task_config:
     # work_dir: .
     # # Enable/disable secret resolution (fetching from Secrets Manager and
     # # JSON path splitting)
-    resolve_secrets: True
-    process_timeout_seconds: 600
+    resolve_secrets: true
+    process_timeout_seconds: 600 # set to null for no timeout
     process_max_retries: 1
     # process_retry_delay_seconds: 120
-    # process_timeout_seconds: null
     # process_check_interval: 10
     # process_termination_grace_period: 30
-    # process_max_retries: 1
     # # This data is sent back from the wrapper to CloudReactor when it starts.
     # # It may be used to identify properties about instance of the task that is
     # # running.
@@ -108,9 +106,9 @@ default_task_config:
     #   embedded:
     #     c: 'd'
     #     f: 1
-    # send_pid: True
-    # send_hostname: True
-    # send_runtime_metadata: True
+    # send_pid: true
+    # send_hostname: true
+    # send_runtime_metadata: true
     # api_heartbeat_interval_seconds: 120
     # api_error_timeout_seconds: 300
     # api_retry_delay_seconds: 120
@@ -120,11 +118,11 @@ default_task_config:
     # api_task_execution_creation_conflict_retry_delay_seconds: 300
     # api_final_update_timeout_seconds: 300
     # api_request_timeout_seconds: 300
-    # enable_status_update_listener: True
+    # enable_status_update_listener: true
     # status_update_interval_seconds: 60
     # status_update_socket_port: 2373
     log_level: DEBUG
-    # log_secrets: False
+    # log_secrets: false
     # # Optional Rollbar token used by the wrapper script.
     # # Can point to AWS Secrets Manager, or be the access token itself.
     # rollbar_access_token: "arn:aws:secretsmanager:[aws_region]:[aws_account_id]:secret:CloudReactor/example/common/rollbar_access_token-xxx"
@@ -185,12 +183,12 @@ task_name_to_config:
 #          assign_public_ip: true
 #      service:
 #        deployment_configuration:
-#           force_new_deployment: False
+#           force_new_deployment: false
 #           minimum_healthy_percent: 100
 #           maximum_percent: 200
-#           enable_circuit_breaker: True
-#           rollback_on_failure: True
-#        enable_ecs_managed_tags: True
+#           enable_circuit_breaker: true
+#           rollback_on_failure: true
+#        enable_ecs_managed_tags: true
 #        propagate_tags: SERVICE # Or "TASK_EXECUTION"
 #        tags:
 #          IS_SERVICE: TRUE
