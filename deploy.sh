@@ -151,6 +151,27 @@ fi
 
 echo "Docker image tag = $DOCKER_IMAGE_TAG"
 
+if [ -z "$EXTRA_DOCKER_RUN_OPTIONS" ]
+  then
+    EXTRA_DOCKER_RUN_OPTIONS=""
+fi
+
+if [ ${USE_USER_AWS_CONFIG^^} == "TRUE" ]
+  EXTRA_DOCKER_RUN_OPTIONS="-v $HOME/.aws:/root/.aws $EXTRA_DOCKER_RUN_OPTIONS"
+  then
+    if [ -n "$AWS_PROFILE" ]
+      then
+        EXTRA_DOCKER_RUN_OPTIONS="-e AWS_PROFILE=$AWS_PROFILE $EXTRA_DOCKER_RUN_OPTIONS"
+    fi
+fi
+
+if [ -n "$AWS_DEFAULT_REGION" ]
+    then
+      EXTRA_DOCKER_RUN_OPTIONS="-e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION $EXTRA_DOCKER_RUN_OPTIONS"
+fi
+
+echo "Extra Docker run options = '$EXTRA_DOCKER_RUN_OPTIONS'"
+
 # Optional: use the latest git commit hash to set the version signature,
 # so that the git commit can be linked in the CloudReactor dashboard.
 # Otherwise, ansible will use the current date/time as the task version signature.
@@ -172,6 +193,11 @@ fi
 if [ -z "$DEPLOY_COMMAND" ]
   then
     DEPLOY_COMMAND="python deploy.py $DEPLOYMENT_ENVIRONMENT"
+
+    if [ -n "$EXTRA_ANSIBLE_OPTIONS" ]
+      then
+        DEPLOY_COMMAND="$DEPLOY_COMMAND --ansible-args $EXTRA_ANSIBLE_OPTIONS"
+    fi
 fi
 
 docker run -ti --rm \

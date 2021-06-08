@@ -13,7 +13,7 @@
   - always
 
 - name: Register ECS task definition {{item}}
-  command: "aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json"
+  command: "aws ecs register-task-definition --region={{aws_region | quote}} --cli-input-json file://ecs_task_definition.json"
   args:
     chdir: "{{task_build_dir}}"
   register: register_ecs_task_result
