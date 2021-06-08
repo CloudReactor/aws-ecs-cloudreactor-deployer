@@ -140,7 +140,7 @@ execution_method_capability:
   {% endif %}
 
   {% if project_task_ecs.task.tags is defined %}
-  tags: {{ project_task_ecs.task.tags | to_yaml }}
+  tags: {{ project_task_ecs.task.tags | to_yaml(width=2147483647) }}
   {% endif %}
 
   {% if project_task_ecs.task.network.assign_public_ip is defined %}
@@ -195,7 +195,7 @@ execution_method_capability:
     {% endif %}
 
     {% if project_task_ecs.service.tags is defined %}
-    tags: {{ project_task_ecs.service.tags | to_yaml }}
+    tags: {{ project_task_ecs.service.tags | to_yaml(width=2147483647) }}
     {% endif %}
   {% endif %}
 
