@@ -246,12 +246,18 @@ you can deploy sample Tasks with these steps:
 
 1. Clone this project
 2. Create a file `deploy_config/vars/<environment>.yml`, copied from
-`deploy_config/vars/example.yml` with properties filled in
-3. In a bash shell in the project root directory, run:
+`deploy_config/vars/example.yml` with properties filled in.
+3. If using an AWS access key to authenticate, copy `deploy.env.example` to
+`deploy.env.<environment>.yml` and fill in the properties.
+4. In a bash shell in the project root directory, run:
 
         ./deploy_sample.sh <environment>
 
-You should see these Tasks in the CloudReactor Dashboard and can
-execute and schedule them in the Dashboard.
+if you're using an AWS access key. If using your AWS configuration:
+
+        USE_USER_AWS_CONFIG=TRUE AWS_PROFILE=<profile name> ./deploy_sample.sh <environment>
+
+After deployment finishes, you should see these Tasks in the CloudReactor
+Dashboard and can execute and schedule them in the Dashboard.
 
 The Tasks are implemented as simple bash scripts.
