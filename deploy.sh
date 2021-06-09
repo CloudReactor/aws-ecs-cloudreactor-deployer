@@ -207,6 +207,7 @@ fi
 docker run -ti --rm \
   -e CLOUDREACTOR_TASK_VERSION_SIGNATURE=$CLOUDREACTOR_TASK_VERSION_SIGNATURE \
   -e DOCKERFILE_PATH=$DOCKERFILE_PATH \
+  -e HOST_PWD=$PWD \
   $ENV_FILE_OPTIONS \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v $PWD/deploy_config:/work/deploy_config \
