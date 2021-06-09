@@ -96,6 +96,13 @@ if [[ ! -f $VAR_FILENAME ]]
     exit 1
 fi
 
+ENV_FILE_OPTIONS=""
+
+if [[ -f "deploy.env" ]]
+  then
+    ENV_FILE_OPTIONS="--env-file deploy.env"
+fi
+
 # Environment-specific deployment settings are assumed to be in
 # deploy.[environment].env but you can override the location by setting
 # PER_ENV_SETTINGS_FILE.
@@ -104,13 +111,10 @@ if [ -z "$PER_ENV_SETTINGS_FILE" ]
     PER_ENV_SETTINGS_FILE="deploy.$DEPLOYMENT_ENVIRONMENT.env"
 fi
 
-if [[ ! -f deploy.env ]] && [[ ! -f $PER_ENV_SETTINGS_FILE ]]
-then
-  echo "WARNING: neither deploy.env nor $PER_ENV_SETTINGS_FILE we found, creating empty ones."
+if [[ -f $PER_ENV_SETTINGS_FILE ]]
+  then
+    ENV_FILE_OPTIONS="$ENV_FILE_OPTIONS --env-file $PER_ENV_SETTINGS_FILE"
 fi
-
-touch -a deploy.env
-touch -a $PER_ENV_SETTINGS_FILE
 
 # The default Docker context directory is the current directory.
 # Override by setting DOCKER_CONTEXT_DIR to an absolute path.
@@ -203,8 +207,7 @@ fi
 docker run -ti --rm \
   -e CLOUDREACTOR_TASK_VERSION_SIGNATURE=$CLOUDREACTOR_TASK_VERSION_SIGNATURE \
   -e DOCKERFILE_PATH=$DOCKERFILE_PATH \
-  --env-file deploy.env \
-  --env-file $PER_ENV_SETTINGS_FILE \
+  $ENV_FILE_OPTIONS \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v $PWD/deploy_config:/work/deploy_config \
   -v $DOCKER_CONTEXT_DIR:/work/docker_context \
