@@ -20,7 +20,7 @@
     run_environment: "{{ run_environment_result.json.results[0] }}"
     run_environment_exec_method: "{{ run_environment.execution_method_capabilities | selectattr('type', 'equalto', 'AWS ECS') | first }}"
     aws: "{{ run_environment_aws | default({}) | combine(project_aws | default({}), recursive=True) }}"
-    aws_region: "{{ aws.region | default(lookup('env','AWS_DEFAULT_REGION')) }}"
+    aws_region: "{{ aws.region | default(lookup('env', 'AWS_DEFAULT_REGION')) }}"
     ecr_hostname: "{{ aws.account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com"
     resolved_task: "{{ resolved_task_name_to_config[item] }}"
     resolved_ecs: "{{ aws.ecs | default({}) | combine(resolved_task.ecs | default({}), recursive=True) }}"
@@ -96,14 +96,8 @@
       - upload
       - create_tasks
 
-  - name: Compute ECR login password
-    command: "aws ecr get-login-password --region {{aws.region}}"
-    register: ecr_login_password_cmd_result
-    tags:
-      - upload
-
   - name: Login to ECR
-    command: "docker login --username AWS --password {{ecr_login_password_cmd_result.stdout}} {{ecr_hostname}}"
+    shell: "aws ecr get-login-password --region {{aws.region | quote}} | docker login --username AWS --password-stdin {{ecr_hostname}}"
     tags:
       - upload
 
