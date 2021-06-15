@@ -160,7 +160,7 @@ if [ -z "$EXTRA_DOCKER_RUN_OPTIONS" ]
     EXTRA_DOCKER_RUN_OPTIONS=""
 fi
 
-if [ ${USE_USER_AWS_CONFIG^^} == "TRUE" ]
+if [ "$USE_USER_AWS_CONFIG" == "TRUE" ]
   EXTRA_DOCKER_RUN_OPTIONS="-v $HOME/.aws:/root/.aws $EXTRA_DOCKER_RUN_OPTIONS"
   then
     if [ -n "$AWS_PROFILE" ]
