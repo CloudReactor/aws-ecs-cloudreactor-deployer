@@ -86,6 +86,17 @@ fi
 
 echo "DEPLOYMENT_ENVIRONMENT = $DEPLOYMENT_ENVIRONMENT"
 
+if [ -z "$1" ] || [[ "$1" =~ ^- ]]
+  then
+    if [ -z "$TASK_NAMES" ]
+      then
+        TASK_NAMES="ALL"
+    fi
+  else
+    export TASK_NAMES=$1
+    shift
+fi
+
 VAR_FILENAME="deploy_config/vars/$DEPLOYMENT_ENVIRONMENT.yml"
 
 echo "VAR_FILENAME = $VAR_FILENAME"
@@ -196,7 +207,7 @@ fi
 
 if [ -z "$DEPLOY_COMMAND" ]
   then
-    DEPLOY_COMMAND="python deploy.py $DEPLOYMENT_ENVIRONMENT"
+    DEPLOY_COMMAND="python deploy.py $DEPLOYMENT_ENVIRONMENT $TASK_NAMES"
 
     if [ -n "$EXTRA_ANSIBLE_OPTIONS" ]
       then
