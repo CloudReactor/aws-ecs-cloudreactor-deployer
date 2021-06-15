@@ -121,14 +121,14 @@ want to avoid modifying it:
 | DOCKERFILE_PATH           |        `Dockerfile`      | Path to the Dockerfile, relative to the Docker context                                                |
 | CLOUDREACTOR_TASK_VERSION |           Empty          | A version number to report to CloudReactor. If empty, the latest git commit hash will be used. |
 | PER_ENV_SETTINGS_FILE     |`deploy.<environment>.env`| Path to a dotenv file containing environment-specific settings                                 |
-| USE_USER_AWS_CONFIG       |           FALSE          | Set to TRUE to use your AWS configuration in `$HOME/.aws` |
-| AWS_PROFILE     |Empty| The name of the AWS profile to use, if USE_USER_AWS_CONFIG is TRUE. If not specified, the default profile will be used. |
+| USE_USER_AWS_CONFIG       |          `FALSE`         | Set to TRUE to use your AWS configuration in `$HOME/.aws` |
+| AWS_PROFILE     |Empty| The name of the AWS profile to use, if `USE_USER_AWS_CONFIG` is `TRUE`. If not specified, the default profile will be used. |
 | EXTRA_DOCKER_RUN_OPTIONS     |Empty| Additional [options](https://docs.docker.com/engine/reference/commandline/run/) to pass to `docker run`                                 |
-| DEPLOY_COMMAND            |    `python deploy.py`    | The command to use when running the image. Can be set to `bash` for debugging.                 |
+| DEPLOY_COMMAND            |    `python deploy.py`    | The command to use when running the image. Defaults to `bash` when `DEBUG_MODE` is `TRUE`.
 | EXTRA_ANSIBLE_OPTIONS     |           Empty          | If specified, the default `DEPLOY_COMMAND` will appended with `--ansible-args $EXTRA_ANSIBLE_OPTIONS`. These options will be passed to `ansible-playbook` inside the container. |
 | DOCKER_IMAGE              	|`cloudreactor/aws-ecs-cloudreactor-deployer`	| The Docker image to run. Can be set to another name in case you extend the image to add build tools. 	|
 | DOCKER_IMAGE_TAG           	|`1`	| The tag of the Docker image to run. Can also be set to pinned versions like `1.2.2`, compatible releases like `1.2`, or `latest`. |
-
+| DEBUG_MODE                  | `FALSE` | If set to `TRUE`, docker will be run in interactive mode (`-ti`) and a bash shell will be started inside the container. |
 The behavior of ansible-playbook can be modified with many command-line
 options. To pass options to ansible-playbook, either:
 

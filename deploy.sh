@@ -171,6 +171,11 @@ if [ -z "$EXTRA_DOCKER_RUN_OPTIONS" ]
     EXTRA_DOCKER_RUN_OPTIONS=""
 fi
 
+if [ "$DEBUG_MODE" == "TRUE" ]
+  then
+    EXTRA_DOCKER_RUN_OPTIONS="-ti $EXTRA_DOCKER_RUN_OPTIONS"
+fi
+
 if [ "$USE_USER_AWS_CONFIG" == "TRUE" ]
   EXTRA_DOCKER_RUN_OPTIONS="-v $HOME/.aws:/root/.aws $EXTRA_DOCKER_RUN_OPTIONS"
   then
@@ -207,15 +212,20 @@ fi
 
 if [ -z "$DEPLOY_COMMAND" ]
   then
-    DEPLOY_COMMAND="python deploy.py $DEPLOYMENT_ENVIRONMENT $TASK_NAMES"
-
-    if [ -n "$EXTRA_ANSIBLE_OPTIONS" ]
+    if [ "$DEBUG_MODE" == "TRUE" ]
       then
-        DEPLOY_COMMAND="$DEPLOY_COMMAND --ansible-args $EXTRA_ANSIBLE_OPTIONS"
+        DEPLOY_COMMAND="bash"
+      else
+        DEPLOY_COMMAND="python deploy.py $DEPLOYMENT_ENVIRONMENT $TASK_NAMES"
+
+        if [ -n "$EXTRA_ANSIBLE_OPTIONS" ]
+          then
+            DEPLOY_COMMAND="$DEPLOY_COMMAND --ansible-args $EXTRA_ANSIBLE_OPTIONS"
+        fi
     fi
 fi
 
-docker run -ti --rm \
+docker run --rm \
   -e CLOUDREACTOR_TASK_VERSION_SIGNATURE=$CLOUDREACTOR_TASK_VERSION_SIGNATURE \
   -e DOCKERFILE_PATH=$DOCKERFILE_PATH \
   -e HOST_PWD=$PWD \
