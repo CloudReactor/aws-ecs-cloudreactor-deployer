@@ -4,12 +4,12 @@
 
 set -e
 
-docker tag aws-ecs-cloudreactor-deployer cloudreactor/aws-ecs-cloudreactor-deployer:1.2.4
-docker tag aws-ecs-cloudreactor-deployer cloudreactor/aws-ecs-cloudreactor-deployer:1.2
+docker tag aws-ecs-cloudreactor-deployer cloudreactor/aws-ecs-cloudreactor-deployer:1.3.0
+docker tag aws-ecs-cloudreactor-deployer cloudreactor/aws-ecs-cloudreactor-deployer:1.3
 docker tag aws-ecs-cloudreactor-deployer cloudreactor/aws-ecs-cloudreactor-deployer:1
 
 docker login
 docker push cloudreactor/aws-ecs-cloudreactor-deployer:latest
-docker push cloudreactor/aws-ecs-cloudreactor-deployer:1.2.4
-docker push cloudreactor/aws-ecs-cloudreactor-deployer:1.2
+docker push cloudreactor/aws-ecs-cloudreactor-deployer:1.3.0
+docker push cloudreactor/aws-ecs-cloudreactor-deployer:1.3
 docker push cloudreactor/aws-ecs-cloudreactor-deployer:1
