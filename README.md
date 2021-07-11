@@ -65,6 +65,15 @@ run from the local deployment machine.
 * `post_task_creation.yml`: run each time a Task is deployed to ECR and
 CloudReactor. Execution of Task that were just deployed can be run here.
 
+In these build steps, you can use the
+[community.docker](https://docs.ansible.com/ansible/latest/collections/community/docker/docker_container_module.html) and [community.aws](https://docs.ansible.com/ansible/latest/collections/community/aws/index.html) Ansible Galaxy plugins which are included
+in the deployer image, to perform setup operations like:
+
+* Creating/updating secrets in Secrets Manager
+* Uploading files to S3
+* Creating roles and seting permissions
+* Sending messages via SNS
+
 If you need to use libraries (e.g. compilers) not available in this image,
 your custom build steps can either:
 

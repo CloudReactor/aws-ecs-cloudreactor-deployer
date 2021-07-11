@@ -50,6 +50,9 @@ RUN pip-compile --allow-unsafe --generate-hashes \
 # https://stackoverflow.com/questions/45594707/what-is-pips-no-cache-dir-good-for
 RUN pip install --no-input --no-cache-dir -r /tmp/deploy-requirements.txt
 
+RUN ansible-galaxy collection install community.docker:==1.7.0
+RUN ansible-galaxy collection install community.aws:==1.5.0
+
 COPY ansible/ .
 
 CMD [ "python", "deploy.py" ]
