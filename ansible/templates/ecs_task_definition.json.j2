@@ -108,12 +108,10 @@
             },
             "environment": [
                 {% for name, value in environment_variables.items() %}
-                  {% if value is defined and value | string | length %}
                 {
                     "name" : {{ name | string | to_json }},
                     "value" : {{ value | string | to_json }}
                 },
-                  {% endif %}
                 {% endfor %}
                 {{ env_def(resolved_cloudreactor, 'api_base_url') }}
                 {# Only puts PROC_WRAPPER_API_KEY in your environment if
