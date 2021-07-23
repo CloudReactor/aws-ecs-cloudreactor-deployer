@@ -13,13 +13,13 @@
     {%- set is_aws_sm_secret = maybe_secret and (v is string) and v.startswith('arn:aws:secretsmanager:') -%}
     {%- if env_name == '' -%}
       {%- if is_aws_sm_secret -%}
-        {%- set resolved_env_name = 'AWS_SM_PROC_WRAPPER_' + name.upper() + '_FOR_PROC_WRAPPER_TO_RESOLVE' %}
+        {%- set resolved_env_name = 'PROC_WRAPPER_' + name.upper() + '_FOR_PROC_WRAPPER_TO_RESOLVE' %}
       {%- else -%}
         {%- set resolved_env_name = 'PROC_WRAPPER_' + name.upper() %}
       {%- endif -%}
     {%- else -%}
       {%- if is_aws_sm_secret -%}
-        {%- set resolved_env_name =  'AWS_SM_' + env_name + '_FOR_PROC_WRAPPER_TO_RESOLVE' %}
+        {%- set resolved_env_name =  env_name + '_FOR_PROC_WRAPPER_TO_RESOLVE' %}
       {%- else -%}
         {%- set resolved_env_name = env_name %}
       {%- endif -%}

@@ -17,6 +17,11 @@ ENV PYTHONDONTWRITEBYTECODE 1
 # https://docs.python.org/3/library/faulthandler.html
 ENV PYTHONFAULTHANDLER 1
 
+ENV PIP_NO_INPUT 1
+# https://stackoverflow.com/questions/45594707/what-is-pips-no-cache-dir-good-for
+ENV PIP_NO_CACHE_DIR 1
+ENV PIP_DISABLE_PIP_VERSION_CHECK 1
+
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     binutils=2.31.1-16 \
@@ -39,7 +44,7 @@ RUN apt-get update && \
     docker-ce=5:20.10.5~3-0~debian-buster \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-input --no-cache-dir --upgrade pip==21.0.1 pip-tools==5.5.0 MarkupSafe==1.1.1 requests==2.24.0
+RUN pip install --upgrade pip==21.1.3 pip-tools==5.5.0 MarkupSafe==1.1.1 requests==2.24.0
 
 COPY deploy-requirements.in /tmp/deploy-requirements.in
 
@@ -47,8 +52,7 @@ RUN pip-compile --allow-unsafe --generate-hashes \
   /tmp/deploy-requirements.in --output-file /tmp/deploy-requirements.txt
 
 # Install dependencies
-# https://stackoverflow.com/questions/45594707/what-is-pips-no-cache-dir-good-for
-RUN pip install --no-input --no-cache-dir -r /tmp/deploy-requirements.txt
+RUN pip install -r /tmp/deploy-requirements.txt
 
 RUN ansible-galaxy collection install community.docker:==1.7.0
 RUN ansible-galaxy collection install community.aws:==1.5.0
