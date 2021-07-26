@@ -41,8 +41,8 @@ ENTRYPOINT python -m proc_wrapper $TASK_COMMAND
 
 ## Configuration
 
-To configure your project to use the deployer, copy `deploy.sh`
-(or `deploy.cmd` and `docker-compose-deploy.yml` if you are working on a
+To configure your project to use the deployer, copy `cr_deploy.sh`
+(or `cr_deploy.cmd` and `docker-compose-deploy.yml` if you are working on a
 Windows machine) to the root directory of your project.
 
 Then copy the `deploy_config` directory of this project into your own,
@@ -83,7 +83,7 @@ create containers, and finally, `docker cp` to copy files from containers
 back to the host. When docker runs in the container, it will use the
 host machine's docker service.
 
-2) Use build tools installed in the deployer image. In this case, you'll
+2) Use build tools installed in the custom deployer image. In this case, you'll
 want to create a new image based on `cloudreactor/aws-ecs-cloudreactor-deployer`:
 
     FROM cloudreactor/aws-ecs-cloudreactor-deployer
@@ -96,7 +96,7 @@ want to create a new image based on `cloudreactor/aws-ecs-cloudreactor-deployer`
 
 
     Then set the `DOCKER_IMAGE` environment variable to the name of your new
-    image, or change the deployment command in `deploy.sh` to use your
+    image, or change the deployment command in `cr_deploy.sh` to use your
     new image instead of `cloudreactor/aws-ecs-cloudreactor-deployer`. Your
     ansible tasks can now use `javac`. If you create a Docker image for a
     specific language, we'd love to hear from you!
@@ -107,22 +107,11 @@ as a way to build dependencies in the same Dockerfile that creates the final
 container. This may complicate the use of the same Dockerfile during
 development, however.
 
-### deploy.sh configuration
+### cr_deploy.sh configuration
 
-`deploy.sh` is what you'll call on your host machine, which will
-run the Docker image for the deployer. The deployer Docker image has an
-entrypoint that executes the python script deploy.py, which in turn,
-executes ansible-playbook.
-
-The Ansible tasks in `ansible/deploy.yml` reference files that you
-can make available with Docker volume mounts. You can either modify
-`deploy.sh` to add or modify existing mounts, or configure the
-files/directories with environment variables. The Ansible tasks also read
-environment variables which you can set in `deploy.env` or
-`deploy.<environment>.env`.
-
-You can configure some settings in `deploy.sh` with environment variables if you
-want to avoid modifying it:
+`cr_deploy.sh` is what you'll call on your host machine, which will
+run the Docker image for the deployer. It can be configured with the
+following environment variables:
 
 | Environment variable name |       Default value      | Description                                                                                    |
 |---------------------------|:------------------------:|------------------------------------------------------------------------------------------------|
@@ -135,23 +124,40 @@ want to avoid modifying it:
 | EXTRA_DOCKER_RUN_OPTIONS     |Empty| Additional [options](https://docs.docker.com/engine/reference/commandline/run/) to pass to `docker run`                                 |
 | DEPLOY_COMMAND            |    `python deploy.py`    | The command to use when running the image. Defaults to `bash` when `DEBUG_MODE` is `TRUE`.
 | EXTRA_ANSIBLE_OPTIONS     |           Empty          | If specified, the default `DEPLOY_COMMAND` will appended with `--ansible-args $EXTRA_ANSIBLE_OPTIONS`. These options will be passed to `ansible-playbook` inside the container. |
-| DOCKER_IMAGE              	|`cloudreactor/aws-ecs-cloudreactor-deployer`	| The Docker image to run. Can be set to another name in case you extend the image to add build tools. 	|
+| DOCKER_IMAGE              	|`cloudreactor/aws-ecs-cloudreactor-deployer`	| The Docker image to run. Can be set to another name in case you extend the image to add build or deployment tools. 	|
 | DOCKER_IMAGE_TAG           	|`1`	| The tag of the Docker image to run. Can also be set to pinned versions like `1.2.2`, compatible releases like `1.2`, or `latest`. |
 | DEBUG_MODE                  | `FALSE` | If set to `TRUE`, docker will be run in interactive mode (`-ti`) and a bash shell will be started inside the container. |
+
+
+If you want to avoid modifying `cr_deploy.sh`, you can create a script that
+configures some settings with environment variables, then calls `cr_deploy.sh`.
+See `deploy_sample.sh` for an example.
+
+The deployer Docker image has an
+entrypoint that executes the python script `deploy.py`, which in turn,
+executes ansible-playbook.
+
+The Ansible tasks in `ansible/deploy.yml` reference files that you
+can make available with Docker volume mounts. You can either modify
+`cr_deploy.sh` to add or modify existing mounts, or configure the
+files/directories with environment variables. The Ansible tasks also read
+environment variables which you can set in `deploy.env` or
+`cr_deploy.<environment>.env`.
+
 The behavior of ansible-playbook can be modified with many command-line
 options. To pass options to ansible-playbook, either:
 
 1. Specify `EXTRA_ANSIBLE_OPTIONS`; or,
-2. Add `--ansible-args` to the end of the command-line for `deploy.sh`,
+2. Add `--ansible-args` to the end of the command-line for `cr_deploy.sh`,
 followed by all the options you want to pass to ansible-playbook. For example,
 to use secrets encrypted with ansible-vault and get the encryption password from
 the command-line during deployment:
 
-    ./deploy.sh staging --ansible-args --ask-vault-pass
+    ./cr_deploy.sh staging --ansible-args --ask-vault-pass
 
 Alternatively, you can use a password file:
 
-    ./deploy.sh staging --ansible-args --vault-password-file pw.txt
+    ./cr_deploy.sh staging --ansible-args --vault-password-file pw.txt
 
 The password file could be a plaintext file, or a script like this:
 
@@ -166,7 +172,7 @@ directory or add an additional mount option to the docker command-line.
 
 You can customize the build even more by overriding any of the files in the `ansible` directory with you own version. For example, to override
 `ansible.cfg` and `deploy.yml`, pass these to the Docker command line
-in `deploy.sh`:
+in `cr_deploy.sh`:
 
     -v $PWD/ansible_overrides/ansible.cfg:/work/ansible.cfg
     -v $PWD/ansible_overrides/deploy.yml:/work/deploy.yml
@@ -186,11 +192,11 @@ modify the templates, you can override the default templates similarly:
 
 Once you are done with configuration, you can deploy:
 
-    ./deploy.sh <environment> [TASK_NAMES]
+    ./cr_deploy.sh <environment> [TASK_NAMES]
 
 or in Windows:
 
-    .\deploy.cmd <environment> [TASK_NAMES]
+    .\cr_deploy.cmd <environment> [TASK_NAMES]
 
 where `TASK_NAMES` is an optional, comma-separated list of Tasks to deploy.
 If `TASK_NAMES` is omitted, or set to `ALL`, all Tasks will be deployed.
@@ -202,7 +208,7 @@ container:
 
 In bash environments:
 
-    DEPLOY_COMMAND=bash ./deploy.sh <environment>
+    DEPLOY_COMMAND=bash ./cr_deploy.sh <environment>
 
 In a bash environment with docker-compose installed:
 

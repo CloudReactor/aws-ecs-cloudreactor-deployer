@@ -9,4 +9,4 @@ if [ -z "$1" ]
     exit 1
 fi
 
-DOCKER_IMAGE_TAG=latest DOCKER_CONTEXT_DIR="$PWD/sample_docker_context" ./deploy.sh "$@"
+DOCKER_IMAGE_TAG=latest DOCKER_CONTEXT_DIR="$PWD/sample_docker_context" ./cr_deploy.sh "$@"
