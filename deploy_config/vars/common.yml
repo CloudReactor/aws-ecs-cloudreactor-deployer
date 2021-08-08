@@ -165,9 +165,10 @@ default_task_config:
     # # set the configuration dictionary in the environment.
     # env_var_name_for_config: null
 
-    process_timeout_seconds: 600 # set to null for no timeout
+
     process_max_retries: 1
     # process_retry_delay_seconds: 120
+    # process_timeout_seconds: null
     # process_check_interval: 10
     # process_termination_grace_period: 30
     # # This data is sent back from the wrapper to CloudReactor when it starts.
@@ -194,7 +195,7 @@ default_task_config:
     # status_update_interval_seconds: 60
     # status_update_socket_port: 2373
     log_level: DEBUG
-    log_secrets: true
+    # log_secrets: true
     # # Optional Rollbar token used by the wrapper script.
     # # Can point to AWS Secrets Manager, or be the access token itself.
     # rollbar_access_token: "arn:aws:secretsmanager:[aws_region]:[aws_account_id]:secret:CloudReactor/example/common/rollbar_access_token-xxx"
@@ -204,7 +205,6 @@ default_task_config:
 
   env: &default_task_env
     DEPLOYMENT: "{{env}}"
-    EMPTY_VAR: ""
 
   # alert_methods:
   #   - Alert Method 1
