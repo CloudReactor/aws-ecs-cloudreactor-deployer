@@ -1,34 +1,50 @@
+{% set proc_wrapper_property_names = [
+  'config_merge_strategy',
+  'overwrite_env_with_secrets',
+  'config_ttl_seconds',
+  'resolve_secrets',
+  'max_config_resolution_depth',
+  'max_config_resolution_iterations',
+  'fail_fast_config_resolution',
+  'resolvable_env_var_prefix',
+  'resolvable_env_var_suffix',
+  'resolvable_config_property_name_prefix',
+  'resolvable_config_property_name_suffix',
+  'env_var_name_for_config',
+  'process_max_retries',
+  'process_retry_delay_seconds',
+  'process_check_interval',
+  'process_termination_grace_period_seconds',
+  'offline_mode',
+  'prevent_offline_execution',
+  'send_pid',
+  'send_hostname',
+  'send_runtime_metadata',
+  'api_heartbeat_interval_seconds',
+  'api_error_timeout_seconds',
+  'api_retry_delay_seconds',
+  'api_resume_delay_seconds',
+  'api_task_execution_creation_error_timeout_seconds',
+  'api_task_execution_creation_conflict_timeout_seconds',
+  'api_task_execution_creation_conflict_retry_delay_seconds',
+  'api_final_update_timeout_seconds',
+  'api_request_timeout_seconds',
+  'enable_status_update_listener',
+  'status_update_interval_seconds',
+  'status_update_socket_port',
+  'log_level',
+  'log_secrets',
+  'rollbar_retries',
+  'rollbar_retry_delay_seconds',
+  'rollbar_timeout_seconds'
+] %}
+
 {% macro default_formatter(v) -%}
   {% if v is boolean -%}
   "{{ v | string | upper }}"
   {%- else -%}
   {{ v | string | to_json }}
   {%- endif %}
-{%- endmacro %}
-
-{% macro env_def(obj, name, maybe_secret=false, env_name='',
-  formatter=default_formatter) -%}
-  {%- if (obj[name] is defined) and (obj[name] != 'null') -%}
-    {%- set v = obj[name] -%}
-    {%- set is_aws_sm_secret = maybe_secret and (v is string) and v.startswith('arn:aws:secretsmanager:') -%}
-    {%- if env_name == '' -%}
-      {%- if is_aws_sm_secret -%}
-        {%- set resolved_env_name = 'PROC_WRAPPER_' + name.upper() + '_FOR_PROC_WRAPPER_TO_RESOLVE' %}
-      {%- else -%}
-        {%- set resolved_env_name = 'PROC_WRAPPER_' + name.upper() %}
-      {%- endif -%}
-    {%- else -%}
-      {%- if is_aws_sm_secret -%}
-        {%- set resolved_env_name =  env_name + '_FOR_PROC_WRAPPER_TO_RESOLVE' %}
-      {%- else -%}
-        {%- set resolved_env_name = env_name %}
-      {%- endif -%}
-    {%- endif -%}
-    {
-      "name": "{{ resolved_env_name }}",
-      "value" : {%+ if formatter == 'caller' %}{{ caller(v) }}{%+ else %}{{ formatter(v) }}{% endif %}
-    },
-  {%- endif -%}
 {%- endmacro %}
 
 {% set task_name=item %}{# from 'with_items' in the calling task #}
@@ -61,6 +77,34 @@
 {% set extra_container_cpu_units=ecs.extra_container_cpu_units | default(0) %}
 {% set extra_container_memory_mb=ecs.extra_container_memory_mb | default(0) %}
 {% set environment_variables=task_config.env | default({}) %}
+
+{% set resolvable_env_var_name_prefix = wrapper.resolvable_env_var_name_prefix | default('') %}
+{% set resolvable_env_var_name_suffix = wrapper.resolvable_env_var_name_suffix | default('_FOR_PROC_WRAPPER_TO_RESOLVE') %}
+
+{% macro env_def(obj, name, maybe_secret=false, env_name='',
+  formatter=default_formatter) -%}
+  {%- if (obj[name] is defined) and (obj[name] != 'null') -%}
+    {%- set v = obj[name] -%}
+    {%- set is_secret = maybe_secret and (v is string) and
+        (v.startswith('arn:aws:secretsmanager:') or
+         v.startswith('arn:aws:s3:::') or
+         v.startswith('file://') or v.startswith('ENV:') or
+         v.startswith('CONFIG:') or v.startswith('PLAIN:')) -%}
+    {%- if env_name == '' -%}
+      {%- set env_name = 'PROC_WRAPPER_' + name.upper() %}
+    {%- endif -%}
+    {%- if is_secret -%}
+      {%- set resolved_env_name = resolvable_env_var_name_prefix + env_name + resolvable_env_var_name_suffix %}
+    {%- else -%}
+      {%- set resolved_env_name = env_name %}
+    {%- endif -%}
+    {
+      "name": "{{ resolved_env_name }}",
+      "value" : {%+ if formatter == 'caller' %}{{ caller(v) }}{%+ else %}{{ formatter(v) }}{% endif %}
+    },
+  {%- endif -%}
+{%- endmacro %}
+
 {
     "requiresCompatibilities": [
         "FARGATE"
@@ -138,13 +182,19 @@
                     "name" : "PROC_WRAPPER_TASK_MAX_CONCURRENCY",
                     "value" : "{% if max_concurrency is number %}{{ max_concurrency }}{% else %}-1{% endif %}"
                 },
-                {{ env_def(wrapper, 'offline_mode') }}
-                {{ env_def(wrapper, 'prevent_offline_execution') }}
-                {{ env_def(wrapper, 'resolve_secrets') }}
-                {{ env_def(wrapper, 'process_max_retries') }}
-                {{ env_def(wrapper, 'process_retry_delay_seconds') }}
-                {{ env_def(wrapper, 'process_check_interval') }}
-                {{ env_def(wrapper, 'process_termination_grace_period_seconds') }}
+                {% if wrapper.env_locations is defined %}
+                {
+                    "name": "PROC_WRAPPER_ENV_LOCATIONS",
+                    "value": {% filter to_json %}{% for loc in wrapper.env_locations %}{{ loc }}{{ '' if loop.last else ',' }}{% endfor %}{% endfilter %}
+                },
+                {% endif %}
+                {% if wrapper.config_locations is defined %}
+                {
+                    "name": "PROC_WRAPPER_CONFIG_LOCATIONS",
+                    "value": {% filter to_json %}{% for loc in wrapper.config_locations %}{{ loc }}{{ '' if loop.last else ',' }}{% endfor %}{% endfilter %}
+                },
+                {% endif %}
+                {{ env_def(task_config, 'work_dir') }}
                 {% if service_instance_count == 'null' %}
                 {
                     "name" : "PROC_WRAPPER_PROCESS_TIMEOUT_SECONDS",
@@ -175,40 +225,21 @@
                     "value" : {{ wrapper.other_instance_metadata | to_json | to_json }}
                 },
                 {% endif %}
-                {{ env_def(wrapper, 'send_pid') }}
-                {{ env_def(wrapper, 'send_hostname') }}
-                {{ env_def(wrapper, 'send_runtime_metadata') }}
-                {{ env_def(wrapper, 'api_heartbeat_interval_seconds') }}
-                {{ env_def(wrapper, 'api_error_timeout_seconds') }}
-                {{ env_def(wrapper, 'api_retry_delay_seconds') }}
-                {{ env_def(wrapper, 'api_resume_delay_seconds') }}
-                {{ env_def(wrapper, 'api_task_execution_creation_error_timeout_seconds') }}
-                {{ env_def(wrapper, 'api_task_execution_creation_conflict_timeout_seconds') }}
-                {{ env_def(wrapper, 'api_task_execution_creation_conflict_retry_delay_seconds') }}
-                {{ env_def(wrapper, 'api_final_update_timeout_seconds') }}
-                {{ env_def(wrapper, 'api_request_timeout_seconds') }}
-                {{ env_def(wrapper, 'enable_status_update_listener') }}
-                {{ env_def(wrapper, 'status_update_interval_seconds') }}
-                {{ env_def(wrapper, 'status_update_socket_port') }}
-                {{ env_def(wrapper, 'log_level') }}
-                {{ env_def(wrapper, 'log_secrets') }}
+                {% for prop_name in proc_wrapper_property_names %}
+                {{ env_def(wrapper, prop_name) }}
+                {% endfor %}
                 {# Only puts PROC_WRAPPER_ROLLBAR_ACCESS_TOKEN in your environment if
                    wrapper.rollbar_access_token is defined. The value may be a
                    AWS Secrets Manager ARN which will be fetched by the
                    proc_wrapper module at runtime.
                 #}
                 {{ env_def(wrapper, 'rollbar_access_token', true) }}
-                {{ env_def(wrapper, 'rollbar_retries') }}
-                {{ env_def(wrapper, 'rollbar_retry_delay_seconds') }}
-                {{ env_def(wrapper, 'rollbar_timeout_seconds') }}
-                {{ env_def(task_config, 'work_dir') }}
                 {# This is last because it is required so it definitely does not end with a comma #}
                 {
                     "name" : "TASK_COMMAND",
                     "value" : {{ task_config.command | to_json }}
                 }
             ]
-
             {% if ecs.extra_main_container_properties is defined %}
             ,
             {% for name, value in ecs.extra_main_container_properties.items() %}

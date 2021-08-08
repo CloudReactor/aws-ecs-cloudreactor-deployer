@@ -90,9 +90,81 @@ default_task_config:
   wrapper: &default_task_wrapper
     # # Working directory to execute command in
     # work_dir: .
-    # # Enable/disable secret resolution (fetching from Secrets Manager and
-    # # JSON path splitting)
+
+    # # Top-level .env secret locations. The values in later locations take
+    # # precedence over those in earlier locations.
+    # env_locations:
+    #   - arn:aws:secretsmanager:us-west-2:123456789012:secret:app/{{env}}/env
+    #   - arn:aws:s3:::examplebucket/{{env}}/app/config.json
+    #   - file:///home/appuser/.env
+
+    # # proc_wrapper can also load a configuration dictionary, merged from
+    # # the sources below.
+    # config_locations:
+    #   - arn:aws:secretsmanager:us-east-2:1234567890:secret:myapp/{{env}}/env
+    #   - arn:aws:s3:::examplebucket/{{env}}/app1/config.json
+
+    # # Merge stategy for configuration / environment. Can be one of these:
+    # # SHALLOW, REPLACE, ADDITIVE, TYPESAFE_REPLACE, TYPESAFE_ADDITIVE
+    # # Strategies other than SHALLOW require merge_deep to be installed.
+    # # config_merge_strategy: SHALLOW
+
+    # # Normally secrets fetched externally do not overwrite environment
+    # # variables that are already set, since they could be set when manually
+    # # starting a Task. Change this to false to allow overwriting.
+    # overwrite_env_with_secrets: false
+
+    # # Time-To-Live for cached secret values, in seconds. If the process
+    # # fails, before it restarts, if the TTL has been exceeded, the secrets
+    # # will be re-fetched. The default value is -1 which means values are
+    # # cached indefinitely.
+    # config_ttl_seconds: -1
+
+    # # Enable/disable secret resolution
     resolve_secrets: true
+
+    # # Secret values may be dictionaries that contain embedded values that
+    # # need to be resolved. proc_wrapper resolves embedded secret values
+    # # up to a maximum depth, which is 5 by default.
+    # max_config_resolution_depth: 5
+
+    # # When a secret value is fetched, it may contain a dictionary that also
+    # # has values that need to be resolved. Therefore proc_wrapper makes
+    # # multiple passes to try to resolve all secrets. The default maximum
+    # # number of passes is 3.
+    # max_config_resolution_iterations: 3
+
+    # # Set to true to immediately stop execution if any error happens during
+    # # secrets resolution. This is the default behavior. You may set this to
+    # # false to debug configuration issues, in which case secret fetching
+    # # and resolution won't fail until all possible fetching and resolution
+    # # is attempted.
+    # fail_fast_config_resolution: true
+
+    # # proc_wrapper looks for environment variable names that begin with a
+    # # specific prefix and a specific suffix. Those variables with have
+    # # values used to fetch a secret. The secret is given the environment
+    # # variable name with the prefix and suffix removed. By default, no
+    # # name prefix is necessary, but the name suffix is
+    # # "_FOR_PROC_WRAPPER_TO_RESOLVE".
+    # resolvable_env_var_name_prefix: ""
+    # resolvable_env_var_name_suffix: "_FOR_PROC_WRAPPER_TO_RESOLVE"
+
+    # # proc_wrapper looks for configuration property names that begin with a
+    # # specific prefix and a specific suffix. Those variables with have
+    # # values used to fetch a secret. The secret is given the property
+    # # name with the prefix and suffix removed. By default, no name prefix is
+    # # necessary, but the name suffix is "__to_resolve" (with 2 leading
+    # # underscores).
+    # resolvable_config_property_name_prefix: ""
+    # resolvable_config_property_name_suffix: "__to_resolve"
+
+    # # After the configuration dictionary is resolved, proc_wrapper can set
+    # # an environment variable to the JSON-encoded configuration dictionary,
+    # # if you give the variable a name below. By default, proc_wrapper does not
+    # # set the configuration dictionary in the environment.
+    # env_var_name_for_config: null
+
     process_timeout_seconds: 600 # set to null for no timeout
     process_max_retries: 1
     # process_retry_delay_seconds: 120
@@ -122,7 +194,7 @@ default_task_config:
     # status_update_interval_seconds: 60
     # status_update_socket_port: 2373
     log_level: DEBUG
-    # log_secrets: false
+    log_secrets: true
     # # Optional Rollbar token used by the wrapper script.
     # # Can point to AWS Secrets Manager, or be the access token itself.
     # rollbar_access_token: "arn:aws:secretsmanager:[aws_region]:[aws_account_id]:secret:CloudReactor/example/common/rollbar_access_token-xxx"
@@ -132,6 +204,7 @@ default_task_config:
 
   env: &default_task_env
     DEPLOYMENT: "{{env}}"
+    EMPTY_VAR: ""
 
   # alert_methods:
   #   - Alert Method 1
@@ -177,6 +250,8 @@ task_name_to_config:
       <<: *default_task_env
       TEMP_FILE_DIR: "/home/appuser/scratch"
 #  web_server:
+#    description: Template for a web server
+#    command: python3 -m http.server
 #    ecs:
 #      task:
 #        network:
