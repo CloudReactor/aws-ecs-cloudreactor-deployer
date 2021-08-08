@@ -142,7 +142,7 @@ can make available with Docker volume mounts. You can either modify
 `cr_deploy.sh` to add or modify existing mounts, or configure the
 files/directories with environment variables. The Ansible tasks also read
 environment variables which you can set in `deploy.env` or
-`cr_deploy.<environment>.env`.
+`deploy.<environment>.env`.
 
 The behavior of ansible-playbook can be modified with many command-line
 options. To pass options to ansible-playbook, either:
