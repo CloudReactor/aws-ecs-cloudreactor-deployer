@@ -177,6 +177,15 @@ in `cr_deploy.sh`:
     -v $PWD/ansible_overrides/ansible.cfg:/work/ansible.cfg
     -v $PWD/ansible_overrides/deploy.yml:/work/deploy.yml
 
+To pass these arguments, you can set the environment variable
+`EXTRA_DOCKER_RUN_OPTIONS` to the extra arguments desired:
+
+    #!/bin/bash
+
+    export EXTRA_DOCKER_RUN_OPTIONS="-v $PWD/ansible_overrides/ansible.cfg:/work/ansible.cfg -v $PWD/ansible_overrides/deploy.yml:/work/deploy.yml"
+
+    ./cr_deploy.sh "$@"
+
 * The ECS task definition is created with the Jinja2 template
 `ansible/templates/ecs_task_definition.json.j2`.
 * The CloudReactor Task is created with the Jinja2 template
