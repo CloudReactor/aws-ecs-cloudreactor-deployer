@@ -131,7 +131,8 @@ following environment variables:
 
 If you want to avoid modifying `cr_deploy.sh`, you can create a script that
 configures some settings with environment variables, then calls `cr_deploy.sh`.
-See `deploy_sample.sh` for an example.
+See [`deploy_sample.sh`](https://github.com/CloudReactor/aws-ecs-cloudreactor-deployer/blob/main/deploy_sample.sh)
+for an example.
 
 The deployer Docker image has an
 entrypoint that executes the python script `deploy.py`, which in turn,
@@ -147,44 +148,42 @@ environment variables which you can set in `deploy.env` or
 The behavior of ansible-playbook can be modified with many command-line
 options. To pass options to ansible-playbook, either:
 
-1. Specify `EXTRA_ANSIBLE_OPTIONS`; or,
-2. Add `--ansible-args` to the end of the command-line for `cr_deploy.sh`,
+1. Add `--ansible-args` to the end of the command-line for `cr_deploy.sh`,
 followed by all the options you want to pass to ansible-playbook. For example,
 to use secrets encrypted with ansible-vault and get the encryption password from
 the command-line during deployment:
 
-    ./cr_deploy.sh staging --ansible-args --ask-vault-pass
 
-Alternatively, you can use a password file:
+        ./cr_deploy.sh staging --ansible-args --ask-vault-pass
 
-    ./cr_deploy.sh staging --ansible-args --vault-password-file pw.txt
+    Alternatively, you can use a password file:
 
-The password file could be a plaintext file, or a script like this:
+        ./cr_deploy.sh staging --ansible-args --vault-password-file pw.txt
 
-    #!/bin/bash
-    echo `aws s3 cp s3://widgets-co/vault_pass.$DEPLOYMENT_ENVIRONMENT.txt -`
+    The password file could be a plaintext file, or a script like this:
+
+        #!/bin/bash
+        echo `aws s3 cp s3://widgets-co/vault_pass.$DEPLOYMENT_ENVIRONMENT.txt -`
 
 If you use a password file, make sure it is available in the Docker
 context of the container. You can either put it in your Docker context
 directory or add an additional mount option to the docker command-line.
 
+2. Or, specify `EXTRA_ANSIBLE_OPTIONS`. For example, to specify the password
+file:
+
+        EXTRA_ANSIBLE_OPTIONS="--vault-password-file pw.txt"
+
 ### More customization
 
-You can customize the build even more by overriding any of the files in the `ansible` directory with you own version. For example, to override
-`ansible.cfg` and `deploy.yml`, pass these to the Docker command line
-in `cr_deploy.sh`:
-
-    -v $PWD/ansible_overrides/ansible.cfg:/work/ansible.cfg
-    -v $PWD/ansible_overrides/deploy.yml:/work/deploy.yml
-
-To pass these arguments, you can set the environment variable
-`EXTRA_DOCKER_RUN_OPTIONS` to the extra arguments desired:
-
-    #!/bin/bash
+You can customize the build even more by overriding any of the files in
+the `ansible` directory of aws-ecs-cloudreactor-deployer
+with you own version, by passing
+a volume mount option to the Docker command line. For example, to override
+`ansible.cfg` and `deploy.yml`, set the `EXTRA_DOCKER_RUN_OPTIONS` environment
+variable before calling `cr_deploy.sh`:
 
     export EXTRA_DOCKER_RUN_OPTIONS="-v $PWD/ansible_overrides/ansible.cfg:/work/ansible.cfg -v $PWD/ansible_overrides/deploy.yml:/work/deploy.yml"
-
-    ./cr_deploy.sh "$@"
 
 * The ECS task definition is created with the Jinja2 template
 `ansible/templates/ecs_task_definition.json.j2`.
@@ -195,7 +194,7 @@ file that is converted to JSON before sending it CloudReactor.
 These templates use settings from the files described above. If you need to
 modify the templates, you can override the default templates similarly:
 
-    -v $PWD/ansible_overrides/templates/ecs_task_definition.json.j2:/work/templates/ecs_task_definition.json.j2
+    export EXTRA_DOCKER_RUN_OPTIONS="-v $PWD/ansible_overrides/templates/ecs_task_definition.json.j2:/work/templates/ecs_task_definition.json.j2"
 
 ## Deploying
 
