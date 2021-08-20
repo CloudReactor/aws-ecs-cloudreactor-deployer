@@ -35,7 +35,7 @@
   include_vars:
     file: "{{task_build_dir}}/cloudreactor_task.yml"
     name: cloudreactor_task
-  when: resolved_cloudreactor.enabled
+  when: cloudreactor_enabled
   tags:
   - always
 
@@ -43,13 +43,13 @@
   debug:
     msg: "{{ cloudreactor_task | to_json }}"
     verbosity: 2
-  when: resolved_cloudreactor.enabled
+  when: cloudreactor_enabled
   tags:
   - always
 
 - name: Create/update task in CloudReactor
   uri:
-    url: "{{ resolved_cloudreactor.api_base_url }}/api/v1/tasks/"
+    url: "{{ cloudreactor_api_base_url }}/api/v1/tasks/"
     method: POST
     headers:
       Authorization: "Token {{resolved_cloudreactor.deploy_api_key}}"
@@ -60,24 +60,24 @@
       - 200
       - 201
   register: create_cloudreactor_task_result
-  when: resolved_cloudreactor.enabled
+  when: cloudreactor_enabled
   tags:
   - always
 
 - name: Create ECS scheduled event definition {{item}}
   template: src=templates/ecs_scheduled_event_definition.json.j2
             dest="{{ task_build_dir }}/ecs_scheduled_event_definition.json"
-  when: (not resolved_cloudreactor.enabled) and (resolved_task.schedule is defined)
+  when: (not cloudreactor_enabled) and (resolved_task.schedule is defined)
   tags: upload
 
 - name: Create AWS events rule {{item}}
   command: "aws events put-rule --schedule-expression \"{{ resolved_task.schedule }})\" --name {{project_name}}-{{item}}-{{env}}"
-  when: (not resolved_cloudreactor.enabled) and (resolved_task.schedule is defined)
+  when: (not cloudreactor_enabled) and (resolved_task.schedule is defined)
   tags: upload
 
 - name: Put AWS event target {{item}}
   command: "aws events put-targets --cli-input-json file://ecs_scheduled_event_definition.json"
-  when: (not resolved_cloudreactor.enabled) and (resolved_task.schedule is defined)
+  when: (not cloudreactor_enabled) and (resolved_task.schedule is defined)
   args:
     chdir: "{{ task_build_dir }}"
   tags: upload
@@ -100,7 +100,7 @@
       minimum_healthy_percent: "{{ (resolved_ecs_service.deployment_configuration | default({})).minimum_healthy_percent | default(0) }}"
       maximum_percent: "{{ (resolved_ecs_service.deployment_configuration | default({})).maximum_percent | default(100) }}"
     delay: "{{ resolved_ecs_service.delay | default(10) }}"
-  when: (not resolved_cloudreactor.enabled) and (resolved_ecs_service.load_balancers is not defined) and (resolved_task.is_service | default(resolved_task.service_instance_count | default(0) | string != '0'))
+  when: (not cloudreactor_enabled) and (resolved_ecs_service.load_balancers is not defined) and (resolved_task.is_service | default(resolved_task.service_instance_count | default(0) | string != '0'))
   tags:
     - always
 
@@ -130,7 +130,7 @@
         containerName:  "{{project_name}}_{{item}}_{{env}}"
         containerPort: "{{resolved_ecs_service.load_balancers[0].container_port}}"
     health_check_grace_period_seconds: "{{ resolved_ecs_service.health_check_grace_period_seconds | default(30) }}"
-  when: (not resolved_cloudreactor.enabled) and (resolved_ecs_service.load_balancers is defined) and (resolved_task.is_service | default(resolved_task.service_instance_count | default(0) | string != '0'))
+  when: (not cloudreactor_enabled) and (resolved_ecs_service.load_balancers is defined) and (resolved_task.is_service | default(resolved_task.service_instance_count | default(0) | string != '0'))
   tags:
     - always
 

@@ -10,7 +10,7 @@ default_build_options:
   extra_docker_build_args: ""
 
 default_cloudreactor:
-  api_base_url: https://api.cloudreactor.io
+  # api_base_url: https://api.cloudreactor.io
   # Set to false to disable monitoring and management in CloudReactor
   enabled: true
 
@@ -94,7 +94,7 @@ default_task_config:
     # # Top-level .env secret locations. The values in later locations take
     # # precedence over those in earlier locations.
     # env_locations:
-    #   - arn:aws:secretsmanager:us-west-2:123456789012:secret:app/{{env}}/env
+    #   - arn:aws:secretsmanager:{{aws_region}}:{{aws.account_id}}:secret:app/{{env}}/env
     #   - arn:aws:s3:::examplebucket/{{env}}/app/config.json
     #   - file:///home/appuser/.env
 
@@ -164,7 +164,6 @@ default_task_config:
     # # if you give the variable a name below. By default, proc_wrapper does not
     # # set the configuration dictionary in the environment.
     # env_var_name_for_config: null
-
 
     process_max_retries: 1
     # process_retry_delay_seconds: 120

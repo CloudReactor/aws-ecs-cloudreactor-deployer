@@ -8,7 +8,7 @@
 
 # - name: Run the Task immediately with CloudReactor
 #   uri:
-#     url: "{{ resolved_cloudreactor.api_base_url }}/api/v1/task_executions/"
+#     url: "{{ cloudreactor_api_base_url }}/api/v1/task_executions/"
 #     method: POST
 #     headers:
 #       Authorization: "Token {{resolved_cloudreactor.deploy_api_key}}"
@@ -22,6 +22,6 @@
 #       - 200
 #       - 201
 #   register: create_cloudreactor_task_execution_result
-#   when: resolved_cloudreactor.enabled
+#   when: cloudreactor_enabled
 #   tags:
 #     - always

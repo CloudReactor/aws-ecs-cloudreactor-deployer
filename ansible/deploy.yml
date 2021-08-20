@@ -11,6 +11,8 @@
     dockerfile_path: "{{ lookup('env','DOCKERFILE_PATH') | default(build_options.dockerfile_path | default('Dockerfile')) }}"
     extra_docker_build_args: "{{ lookup('env','EXTRA_DOCKER_BUILD_ARGS') | default(build_options.extra_docker_build_args | default(''), true) }}"
     resolved_cloudreactor: "{{ default_cloudreactor | default({}) | combine(cloudreactor | default({})) }}"
+    cloudreactor_enabled: "{{ resolved_cloudreactor.enabled | default(true) }}"
+    cloudreactor_api_base_url: "{{resolved_cloudreactor.api_base_url | default('https://api.cloudreactor.io', true)}}"
     env_task_name_to_config: "{{ task_name_to_env_config | default({}) }}"
     resolved_task_name_to_config: "{{ task_name_to_config | combine(env_task_name_to_config, recursive=True) }}"
     resolved_task_names: "{{ (resolved_task_name_to_config | dict2items | json_query('[?(value.deployed==undefined) || (value.deployed==true)].key')) if (task_names | upper) == 'ALL' else task_names.split(',') }}"
@@ -40,13 +42,13 @@
 
   - name: Get configuration from CloudReactor Run Environment
     uri:
-      url: "{{ resolved_cloudreactor.api_base_url }}/api/v1/run_environments/?name={{ run_environment_name | urlencode }}"
+      url: "{{ cloudreactor_api_base_url }}/api/v1/run_environments/?name={{ run_environment_name | urlencode }}"
       headers:
         Accept: "application/json"
         Authorization: "Token {{resolved_cloudreactor.deploy_api_key}}"
       return_content: yes
     register: run_environment_result
-    when: resolved_cloudreactor.enabled
+    when: cloudreactor_enabled
     tags:
       - upload
       - create_tasks
@@ -56,7 +58,7 @@
       that:
         - run_environment_result.json.count == 1
       fail_msg: "Run Environment '{{ run_environment_name }}' not found in CloudReactor, please create it."
-    when: resolved_cloudreactor.enabled
+    when: cloudreactor_enabled
     tags:
       - upload
       - create_tasks
@@ -65,7 +67,7 @@
     debug:
       msg: "Runtime Environment is {{ run_environment }}, UUID = {{ run_environment.uuid }}"
       verbosity: 1
-    when: resolved_cloudreactor.enabled
+    when: cloudreactor_enabled
     tags:
       - create_tasks
 
@@ -83,7 +85,7 @@
               subnets: "{{ run_environment_exec_method.default_subnets }}"
               assign_public_ip: "{{ run_environment_exec_method.default_assign_public_ip }}"
             role_arn: "{{ run_environment_exec_method.task_execution_role | default(run_environment_exec_method.default_execution_role) }}"
-    when: resolved_cloudreactor.enabled
+    when: cloudreactor_enabled
     tags:
       - upload
       - create_tasks
