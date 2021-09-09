@@ -1,6 +1,4 @@
-FROM python:3.9.5
-
-WORKDIR /work
+FROM python:3.9.7-buster
 
 # See https://github.com/hadolint/hadolint/wiki/DL4006
 # Needed since we use pipes in the curl command
@@ -56,6 +54,8 @@ RUN pip install -r /tmp/deploy-requirements.txt
 
 RUN ansible-galaxy collection install community.docker:==1.7.0
 RUN ansible-galaxy collection install community.aws:==1.5.0
+
+WORKDIR /work
 
 COPY ansible/ .
 
