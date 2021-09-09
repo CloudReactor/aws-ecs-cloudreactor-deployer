@@ -59,4 +59,4 @@ WORKDIR /work
 
 COPY ansible/ .
 
-CMD [ "python", "deploy.py" ]
+ENTRYPOINT [ "python", "deploy.py" ]
