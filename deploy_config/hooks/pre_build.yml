@@ -3,6 +3,8 @@
 # for example:
 # name: Package code using maven
 # command: "mvn package"
+# args:
+#   chdir: "{{ work_dir }}"
 # tags:
 #  - build
 #
@@ -20,7 +22,7 @@
 #     name: 'myorg/{{project_name}}/secrets/{{env}}/env'
 #     state: present
 #     secret_type: 'string'
-#     secret: "{{ lookup('file', '/work/deploy_config/files/.env.' + env)  }}"
+#     secret: "{{ lookup('file', work_dir + '/deploy_config/files/.env.' + env)  }}"
 #   register: create_dotenv_secret_result
 
 # - debug:

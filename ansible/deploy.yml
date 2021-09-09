@@ -7,8 +7,10 @@
     - deploy_config/vars/common.yml
     - deploy_config/vars/{{env}}.yml
   vars:
+    work_dir: "{{ lookup('env', 'WORK_DIR') | default('.', true) }}"
+    docker_context_dir: "{{ lookup('env', 'CONTAINER_DOCKER_CONTEXT_DIR') | default(work_dir + '/docker_context', true) }}"
     build_options: "{{ default_build_options | default({}) }}"
-    dockerfile_path: "{{ lookup('env','DOCKERFILE_PATH') | default(build_options.dockerfile_path | default('Dockerfile')) }}"
+    dockerfile_path: "{{ lookup('env','DOCKERFILE_PATH') | default(build_options.dockerfile_path | default(work_dir + '/Dockerfile')) }}"
     extra_docker_build_args: "{{ lookup('env','EXTRA_DOCKER_BUILD_ARGS') | default(build_options.extra_docker_build_args | default(''), true) }}"
     resolved_cloudreactor: "{{ default_cloudreactor | default({}) | combine(cloudreactor | default({})) }}"
     cloudreactor_enabled: "{{ resolved_cloudreactor.enabled | default(true) }}"
@@ -111,7 +113,7 @@
       - build
 
   # Hook to perform steps before building the Docker image
-  - include_tasks: deploy_config/hooks/pre_build.yml
+  - include_tasks: "{{work_dir}}/deploy_config/hooks/pre_build.yml"
     tags:
       - build
 
@@ -132,7 +134,7 @@
   - name: Build Docker image
     command: "docker --debug build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} ."
     args:
-      chdir: docker_context
+      chdir: "{{ docker_context_dir }}"
     tags:
       - build
 
@@ -156,7 +158,7 @@
 
     # Hook to perform steps before after building the Docker image,
     # but before creating the Task in ECS and CloudReactor
-  - include_tasks: deploy_config/hooks/post_build.yml
+  - include_tasks: "{{work_dir}}/deploy_config/hooks/post_build.yml"
     tags:
       - build
 
