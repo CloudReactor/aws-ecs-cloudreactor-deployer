@@ -7,12 +7,14 @@
     - deploy_config/vars/common.yml
     - deploy_config/vars/{{env}}.yml
   vars:
+    docker_context_dir: "{{ lookup('env', 'CONTAINER_DOCKER_CONTEXT_DIR') | default('./docker_context', true) }}"
     build_options: "{{ default_build_options | default({}) }}"
-    dockerfile_path: "{{ lookup('env','DOCKERFILE_PATH') | default(build_options.dockerfile_path | default('Dockerfile')) }}"
+    dockerfile_path: "{{ lookup('env','DOCKERFILE_PATH') | default(build_options.dockerfile_path | default(docker_context_dir + '/Dockerfile')) }}"
     extra_docker_build_args: "{{ lookup('env','EXTRA_DOCKER_BUILD_ARGS') | default(build_options.extra_docker_build_args | default(''), true) }}"
     resolved_cloudreactor: "{{ default_cloudreactor | default({}) | combine(cloudreactor | default({})) }}"
     cloudreactor_enabled: "{{ resolved_cloudreactor.enabled | default(true) }}"
-    cloudreactor_api_base_url: "{{resolved_cloudreactor.api_base_url | default('https://api.cloudreactor.io', true)}}"
+    cloudreactor_api_base_url: "{{ lookup('env', 'CLOUDREACTOR_API_BASE_URL') | default(resolved_cloudreactor.api_base_url | default('https://api.cloudreactor.io', true), true) }}"
+    cloudreactor_deploy_api_key: "{{ lookup('env', 'CLOUDREACTOR_DEPLOY_API_KEY') | default(resolved_cloudreactor.deploy_api_key, true) }}"
     env_task_name_to_config: "{{ task_name_to_env_config | default({}) }}"
     resolved_task_name_to_config: "{{ task_name_to_config | combine(env_task_name_to_config, recursive=True) }}"
     resolved_task_names: "{{ (resolved_task_name_to_config | dict2items | json_query('[?(value.deployed==undefined) || (value.deployed==true)].key')) if (task_names | upper) == 'ALL' else task_names.split(',') }}"
@@ -45,7 +47,7 @@
       url: "{{ cloudreactor_api_base_url }}/api/v1/run_environments/?name={{ run_environment_name | urlencode }}"
       headers:
         Accept: "application/json"
-        Authorization: "Token {{resolved_cloudreactor.deploy_api_key}}"
+        Authorization: "Token {{cloudreactor_deploy_api_key}}"
       return_content: yes
     register: run_environment_result
     when: cloudreactor_enabled
@@ -111,7 +113,7 @@
       - build
 
   # Hook to perform steps before building the Docker image
-  - include_tasks: deploy_config/hooks/pre_build.yml
+  - include_tasks: "deploy_config/hooks/pre_build.yml"
     tags:
       - build
 
@@ -132,7 +134,7 @@
   - name: Build Docker image
     command: "docker --debug build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} ."
     args:
-      chdir: docker_context
+      chdir: "{{ docker_context_dir }}"
     tags:
       - build
 
@@ -156,7 +158,7 @@
 
     # Hook to perform steps before after building the Docker image,
     # but before creating the Task in ECS and CloudReactor
-  - include_tasks: deploy_config/hooks/post_build.yml
+  - include_tasks: "deploy_config/hooks/post_build.yml"
     tags:
       - build
 

@@ -6,7 +6,7 @@
   - always
 
 - name: Create ECS task definition file {{item}}
-  template: src=templates/ecs_task_definition.json.j2
+  template: src=/work/templates/ecs_task_definition.json.j2
             dest={{task_build_dir}}/ecs_task_definition.json
             lstrip_blocks=yes
   tags:
@@ -25,7 +25,7 @@
     msg: "Task Definition ARN={{task_definition_arn}}"
 
 - name: Create CloudReactor Task definition {{item}}
-  template: src=templates/cloudreactor_task.yml.j2
+  template: src=/work/templates/cloudreactor_task.yml.j2
             dest="{{task_build_dir}}/cloudreactor_task.yml"
             lstrip_blocks=yes
   tags:
@@ -52,7 +52,7 @@
     url: "{{ cloudreactor_api_base_url }}/api/v1/tasks/"
     method: POST
     headers:
-      Authorization: "Token {{resolved_cloudreactor.deploy_api_key}}"
+      Authorization: "Token {{cloudreactor_deploy_api_key}}"
     return_content: yes
     body: "{{ cloudreactor_task | to_json }}"
     body_format: json
@@ -65,7 +65,7 @@
   - always
 
 - name: Create ECS scheduled event definition {{item}}
-  template: src=templates/ecs_scheduled_event_definition.json.j2
+  template: src=/work/templates/ecs_scheduled_event_definition.json.j2
             dest="{{ task_build_dir }}/ecs_scheduled_event_definition.json"
   when: (not cloudreactor_enabled) and (resolved_task.schedule is defined)
   tags: upload

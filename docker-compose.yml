@@ -7,7 +7,7 @@ x-sample-base: &sample-base
   build:
     context: ./sample_docker_context/
   volumes:
-    - ./sample_docker_context/src/:/home/appuser/src/
+    - ./sample_docker_context/src:/home/appuser/src
     - ./deploy_config/files/.env.dev:/home/appuser/.env
   environment: &sample-env-base
     PROC_WRAPPER_OFFLINE_MODE: "TRUE"
@@ -29,6 +29,7 @@ services:
   dev-shell:
     <<: *sample-base
     entrypoint: bash
+    profiles: ["tools"]
 
   # Check your Dockerfile against best-practices:
   # See https://github.com/hadolint/hadolint
@@ -38,3 +39,4 @@ services:
       - ./sample_docker_context/Dockerfile:/mnt/Dockerfile
       - ./sample_docker_context/hadolint.yaml:/mnt/hadolint.yaml
     entrypoint: /bin/hadolint --config /mnt/hadolint.yaml /mnt/Dockerfile
+    profiles: ["tools"]

@@ -1,0 +1,65 @@
+name: CloudReactor AWS ECS Deployer
+description: An action to deploy the tasks of a project to AWS ECS and CloudReactor
+author: "Machine Intelligence Services, Inc."
+branding:
+  icon: package
+  color: green
+inputs:
+  branch:
+    description: The branch which is deployed
+    default: master
+  aws-access-key-id:
+    description: AWS Access Key ID for a user that has deployment privileges
+    required: true
+  aws-secret-access-key:
+    description: AWS Secret Access Key corresponding to the AWS Access Key ID
+    required: true
+  aws-region:
+    description: AWS Region
+    required: true
+  cloudreactor-api-base-url:
+    description: Base URL for CloudReactor API Service
+    required: false
+    default: "https://api.cloudreactor.io"
+  cloudreactor-deploy-api-key:
+    description: CloudReactor API Key that has Developer access for the Runtime Environment
+    required: false
+    default: ""
+  ansible-vault-password:
+    description: Password to decrypt files encrypted with Ansible Vault
+    required: false
+    default: ""
+  extra-ansible-options:
+    description: Space-separate list of extra options for Ansible Playbook
+    required: false
+    default: ""
+  deployment-environment:
+    description: The name of the deployment environment
+    required: true
+  version-signature:
+    description: "The version signature of the Task. Normally this should be set to 'env.GITHUB_SHA'."
+    required: false
+    default: ""
+  task-names:
+    description: "A comma-separated list of names of Tasks to deploy, or 'ALL' for all Tasks"
+    required: false
+    default: ALL
+  log-level:
+    description: "Log level for deployer"
+    required: false
+    default: INFO
+runs:
+  using: docker
+    image: Dockerfile
+    env:
+      AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+      AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+      DEFAULT_AWS_REGION: ${{ inputs.aws-region }}
+      DEPLOYMENT_ENVIRONMENT: ${{ inputs.deployment-environment }}
+      CLOUDREACTOR_TASK_VERSION_SIGNATURE: ${{ inputs.version-signature }}
+      CLOUDREACTOR_API_BASE_URL: ${{ inputs.cloudreactor-api-base-url }}
+      CLOUDREACTOR_DEPLOY_API_KEY: ${{ inputs.cloudreactor-deploy-api-key }}
+      TASK_NAMES: ${{ inputs.task-names }}
+      ANSIBLE_VAULT_PASSWORD: ${{ inputs.ansible-vault-password }}
+      EXTRA_ANSIBLE_OPTIONS: ${{ inputs.extra-ansible-options }}
+      CLOUDREACTOR_DEPLOYER_LOG_LEVEL: ${{ inputs.log-level }}
