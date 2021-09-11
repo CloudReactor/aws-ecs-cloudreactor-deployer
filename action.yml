@@ -5,9 +5,6 @@ branding:
   icon: package
   color: green
 inputs:
-  branch:
-    description: The branch which is deployed
-    default: master
   aws-access-key-id:
     description: AWS Access Key ID for a user that has deployment privileges
     required: true
@@ -63,3 +60,4 @@ runs:
     ANSIBLE_VAULT_PASSWORD: ${{ inputs.ansible-vault-password }}
     EXTRA_ANSIBLE_OPTIONS: ${{ inputs.extra-ansible-options }}
     CLOUDREACTOR_DEPLOYER_LOG_LEVEL: ${{ inputs.log-level }}
+    CONTAINER_DOCKER_CONTEXT_DIR: "."
