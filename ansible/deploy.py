@@ -3,6 +3,7 @@
 import argparse
 import logging
 import os
+import shlex
 import subprocess
 import sys
 
@@ -17,6 +18,12 @@ Deploys a project to AWS ECS and CloudReactor using Ansible.
 
     deployment = os.environ.get('DEPLOYMENT_ENVIRONMENT')
     tasks_str = os.environ.get('TASK_NAMES')
+    ansible_args_str = os.environ.get('EXTRA_ANSIBLE_OPTIONS')
+
+    default_ansible_args = []
+
+    if ansible_args_str:
+        default_ansible_args = shlex.split(ansible_args_str)
 
     parser.add_argument('deployment',
             nargs=('?' if deployment else None), default=deployment,
@@ -32,7 +39,7 @@ Deploys a project to AWS ECS and CloudReactor using Ansible.
             help=f"Log level. Defaults to {_DEFAULT_LOG_LEVEL}.")
 
     parser.add_argument('--ansible-args',
-            nargs=argparse.REMAINDER, default=[],
+            nargs=argparse.REMAINDER, default=default_ansible_args,
             help='Additional options passed to ansible-playbook')
 
     args = parser.parse_args()
@@ -70,7 +77,14 @@ Deploys a project to AWS ECS and CloudReactor using Ansible.
     extra_vars = f'env="{deployment}" task_names="{tasks_str}"'
     command_line.append(extra_vars)
     command_line += args.ansible_args
-    command_line.append('deploy.yml')
+
+    ansible_vault_password = os.environ.get('ANSIBLE_VAULT_PASSWORD')
+
+    if ansible_vault_password:
+        command_line.append('--vault-password-file')
+        command_line.append('/work/vault_pass_from_env.sh')
+
+    command_line.append('/work/deploy.yml')
 
     logging.debug(f"Ansible command line = {command_line}")
 

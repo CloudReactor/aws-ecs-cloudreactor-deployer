@@ -55,8 +55,8 @@ RUN pip install -r /tmp/deploy-requirements.txt
 RUN ansible-galaxy collection install community.docker:==1.7.0
 RUN ansible-galaxy collection install community.aws:==1.5.0
 
-WORKDIR /work
+RUN mkdir /work
 
-COPY ansible/ .
+COPY ansible/ /work
 
-ENTRYPOINT [ "python", "deploy.py" ]
+ENTRYPOINT [ "python", "/work/deploy.py" ]
