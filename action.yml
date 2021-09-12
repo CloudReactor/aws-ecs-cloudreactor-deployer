@@ -34,9 +34,9 @@ inputs:
     description: The name of the deployment environment
     required: true
   version-signature:
-    description: "The version signature of the Task. Normally this should be set to 'env.GITHUB_SHA'."
+    description: "The version signature of the Task. Defaults to the commit hash (github.sha)."
     required: false
-    default: ""
+    default: ${{ github.sha }}
   task-names:
     description: "A comma-separated list of names of Tasks to deploy, or 'ALL' for all Tasks"
     required: false
@@ -60,4 +60,3 @@ runs:
     ANSIBLE_VAULT_PASSWORD: ${{ inputs.ansible-vault-password }}
     EXTRA_ANSIBLE_OPTIONS: ${{ inputs.extra-ansible-options }}
     CLOUDREACTOR_DEPLOYER_LOG_LEVEL: ${{ inputs.log-level }}
-    
