@@ -60,4 +60,4 @@ runs:
     ANSIBLE_VAULT_PASSWORD: ${{ inputs.ansible-vault-password }}
     EXTRA_ANSIBLE_OPTIONS: ${{ inputs.extra-ansible-options }}
     CLOUDREACTOR_DEPLOYER_LOG_LEVEL: ${{ inputs.log-level }}
-    CONTAINER_DOCKER_CONTEXT_DIR: "."
+    
