@@ -8,7 +8,7 @@
     - "{{deploy_config_dir}}/vars/{{env}}.yml"
   vars:
     work_dir: "{{ lookup('env', 'WORK_DIR') | default('.', true) }}"
-    docker_context_dir: "{{ lookup('env', 'CONTAINER_DOCKER_CONTEXT_DIR') | default(work_dir + '/docker_context', true) }}"
+    docker_context_dir: "{{ lookup('env', 'CONTAINER_DOCKER_CONTEXT_DIR') | default(work_dir, true) }}"
     deploy_config_dir: "{{ work_dir }}/deploy_config"
     build_options: "{{ default_build_options | default({}) }}"
     dockerfile_path: "{{ lookup('env','DOCKERFILE_PATH') | default(build_options.dockerfile_path | default(docker_context_dir + '/Dockerfile', true), true) }}"
