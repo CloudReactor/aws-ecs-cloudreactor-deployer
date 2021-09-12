@@ -11,7 +11,7 @@
     docker_context_dir: "{{ lookup('env', 'CONTAINER_DOCKER_CONTEXT_DIR') | default(work_dir + '/docker_context', true) }}"
     deploy_config_dir: "{{ work_dir }}/deploy_config"
     build_options: "{{ default_build_options | default({}) }}"
-    dockerfile_path: "{{ lookup('env','DOCKERFILE_PATH') | default(build_options.dockerfile_path | default(docker_context_dir + '/Dockerfile')) }}"
+    dockerfile_path: "{{ lookup('env','DOCKERFILE_PATH') | default(build_options.dockerfile_path | default(docker_context_dir + '/Dockerfile', true), true) }}"
     extra_docker_build_args: "{{ lookup('env','EXTRA_DOCKER_BUILD_ARGS') | default(build_options.extra_docker_build_args | default(''), true) }}"
     resolved_cloudreactor: "{{ default_cloudreactor | default({}) | combine(cloudreactor | default({})) }}"
     cloudreactor_enabled: "{{ resolved_cloudreactor.enabled | default(true) }}"
@@ -128,13 +128,13 @@
 
   - name: Output Docker build command
     debug:
-      msg: "Docker build command: 'docker --debug build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} .'"
+      msg: "Docker build command: 'docker --debug build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} {{work_dir}}'"
       verbosity: 1
     tags:
       - build
 
   - name: Build Docker image
-    command: "docker --debug build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} ."
+    command: "docker --debug build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}}  {{work_dir}}"
     args:
       chdir: "{{ docker_context_dir }}"
     tags:
