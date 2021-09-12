@@ -136,6 +136,6 @@
 
   # Hook to perform steps before after building the Docker image,
   # but before creating the Task in ECS and CloudReactor
-- include_tasks: deploy_config/hooks/post_task_creation.yml
+- include_tasks: "{{deploy_config_dir}}/hooks/post_task_creation.yml"
   tags:
     - always

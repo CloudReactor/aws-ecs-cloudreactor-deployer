@@ -71,6 +71,12 @@ Deploys a project to AWS ECS and CloudReactor using Ansible.
     # So that merged configuration hashes in YAML don't cause warnings
     process_env['ANSIBLE_DUPLICATE_YAML_DICT_KEY'] = 'ignore'
 
+    work_dir = os.environ.get('GITHUB_WORKSPACE')
+
+    if work_dir and not os.environ.get('WORK_DIR'):
+        logging.debug(f"Found GitHub workspace dir = {work_dir}")
+        process_env['WORK_DIR'] = work_dir
+
     command_line = ['ansible-playbook', '--extra-vars']
 
     # TODO: sanitize

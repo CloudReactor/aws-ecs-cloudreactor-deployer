@@ -27,7 +27,7 @@ inputs:
     required: false
     default: ""
   extra-ansible-options:
-    description: Space-separate list of extra options for Ansible Playbook
+    description: Space-separated list of extra options for Ansible Playbook
     required: false
     default: ""
   deployment-environment:

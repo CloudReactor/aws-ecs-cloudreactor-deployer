@@ -22,7 +22,7 @@
 #     name: 'myorg/{{project_name}}/secrets/{{env}}/env'
 #     state: present
 #     secret_type: 'string'
-#     secret: "{{ lookup('file', 'deploy_config/files/.env.' + env)  }}"
+#     secret: "{{ lookup('file', "{{deploy_config_dir}}/files/.env." + env)  }}"
 #   register: create_dotenv_secret_result
 
 # - debug:
