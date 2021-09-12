@@ -20,6 +20,8 @@ ENV PIP_NO_INPUT 1
 ENV PIP_NO_CACHE_DIR 1
 ENV PIP_DISABLE_PIP_VERSION_CHECK 1
 
+ENV ANSIBLE_CONFIG /work/ansible.cfg
+
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     binutils=2.31.1-16 \
@@ -56,7 +58,6 @@ RUN ansible-galaxy collection install community.docker:==1.7.0
 RUN ansible-galaxy collection install community.aws:==1.5.0
 
 RUN mkdir /work
-
 COPY ansible/ /work
 
 ENTRYPOINT [ "python", "/work/deploy.py" ]
