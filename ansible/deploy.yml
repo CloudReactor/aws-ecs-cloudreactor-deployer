@@ -37,13 +37,6 @@
     task_build_dir: "build/{{env}}/{{item}}"
     saved_cloudreactor_task: "{{ create_cloudreactor_task_result.json }}"
   tasks:
-  - debug: msg="Task version signature = {{task_version_signature}}, resolved task names = {{resolved_task_names}}"
-    tags:
-      - version
-      - build
-      - upload
-      - create_tasks
-
   - name: Get configuration from CloudReactor Run Environment
     uri:
       url: "{{ cloudreactor_api_base_url }}/api/v1/run_environments/?name={{ run_environment_name | urlencode }}"
@@ -54,6 +47,13 @@
     register: run_environment_result
     when: cloudreactor_enabled
     tags:
+      - upload
+      - create_tasks
+
+  - debug: msg="Task version signature = {{task_version_signature}}, resolved task names = {{resolved_task_names}}"
+    tags:
+      - version
+      - build
       - upload
       - create_tasks
 
