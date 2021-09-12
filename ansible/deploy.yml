@@ -50,13 +50,6 @@
       - upload
       - create_tasks
 
-  - debug: msg="Task version signature = {{task_version_signature}}, resolved task names = {{resolved_task_names}}"
-    tags:
-      - version
-      - build
-      - upload
-      - create_tasks
-
   - name: Ensure Runtime Environment is found
     assert:
       that:
@@ -99,6 +92,13 @@
       msg: "Default AWS is {{ aws }}"
       verbosity: 1
     tags:
+      - upload
+      - create_tasks
+
+  - debug: msg="Task version signature = {{task_version_signature}}, resolved task names = {{resolved_task_names}}"
+    tags:
+      - version
+      - build
       - upload
       - create_tasks
 
