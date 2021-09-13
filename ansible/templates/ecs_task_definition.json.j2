@@ -157,7 +157,10 @@
                     "value" : {{ value | string | to_json }}
                 },
                 {% endfor %}
-                {{ env_def(resolved_cloudreactor, 'api_base_url') }}
+                {
+                    "name" : "PROC_WRAPPER_API_BASE_URL",
+                    "value" : {{ cloudreactor_api_base_url | to_json }}
+                },
                 {# Only puts PROC_WRAPPER_API_KEY in your environment if
                    resolved_cloudreactor.task_api_key is defined. Leave it undefined if you
                    plan on getting it from AWS Secrets Manager through the
