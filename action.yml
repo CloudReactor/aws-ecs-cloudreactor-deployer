@@ -15,13 +15,13 @@ inputs:
     description: AWS Region
     required: true
   cloudreactor-api-base-url:
-    description: "Base URL for CloudReactor API Service. Defaults to 'https://api.cloudreactor.io'" if not defined in your configuration."
+    description: "Base URL for CloudReactor API Service. Defaults to 'https://api.cloudreactor.io' if not defined in your configuration."
     required: false
     default: ""
   cloudreactor-deploy-api-key:
     description: CloudReactor API Key that has Developer access for the Runtime Environment
     required: false
-    default: ""
+    default: ""git p
   ansible-vault-password:
     description: Password to decrypt files encrypted with Ansible Vault
     required: false
