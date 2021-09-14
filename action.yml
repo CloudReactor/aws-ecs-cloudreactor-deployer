@@ -21,7 +21,7 @@ inputs:
   cloudreactor-deploy-api-key:
     description: CloudReactor API Key that has Developer access for the Runtime Environment
     required: false
-    default: ""git p
+    default: ""
   ansible-vault-password:
     description: Password to decrypt files encrypted with Ansible Vault
     required: false
