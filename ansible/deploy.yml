@@ -128,13 +128,13 @@
 
   - name: Output Docker build command
     debug:
-      msg: "Docker build command: 'docker --debug build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} {{work_dir}}'"
+      msg: "Docker build command: 'docker --debug build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} .'"
       verbosity: 1
     tags:
       - build
 
   - name: Build Docker image
-    command: "docker --debug build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}}  {{work_dir}}"
+    command: "docker --debug build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} ."
     args:
       chdir: "{{ docker_context_dir }}"
     tags:
