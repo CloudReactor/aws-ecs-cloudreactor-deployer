@@ -21,7 +21,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-  openssl=1.1.1d-0+deb10u5 libexpat1=2.2.6-2+deb10u1 \
+  openssl=1.1.1d-0+deb10u7 libexpat1=2.2.6-2+deb10u1 \
   ca-certificates=20200601~deb10u2 \
   wget=1.20.1-1.1 \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -35,6 +35,7 @@ WORKDIR /home/appuser
 # when ECS mounts a volume, otherwise it will be owned by root.
 RUN mkdir scratch
 
+# Use standalone executable for x64/AMD64 Linux
 RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/v3.0.1/pyinstaller_build/platforms/linux-amd64/proc_wrapper
 RUN chmod +x proc_wrapper
 
