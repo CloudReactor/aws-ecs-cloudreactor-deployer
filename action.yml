@@ -51,7 +51,7 @@ runs:
   env:
     AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
     AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
-    DEFAULT_AWS_REGION: ${{ inputs.aws-region }}
+    AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
     DEPLOYMENT_ENVIRONMENT: ${{ inputs.deployment-environment }}
     CLOUDREACTOR_TASK_VERSION_SIGNATURE: ${{ inputs.version-signature }}
     CLOUDREACTOR_API_BASE_URL: ${{ inputs.cloudreactor-api-base-url }}
