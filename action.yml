@@ -41,6 +41,14 @@ inputs:
     description: "A comma-separated list of names of Tasks to deploy, or 'ALL' for all Tasks"
     required: false
     default: ALL
+  docker-context-dir:
+    description: "Path of Docker context directory, relative to the root project directory, without leading or trailing slashes. Defaults to the project root directory."
+    required: False
+    default: "."
+  dockerfile-path:
+    description: "Path of the Dockerfile, relative to the root project directory. Defaults to 'Dockerfile' in the Docker context directory."
+    required: False
+    default: ""
   log-level:
     description: "Log level for deployer"
     required: false
@@ -59,4 +67,6 @@ runs:
     TASK_NAMES: ${{ inputs.task-names }}
     ANSIBLE_VAULT_PASSWORD: ${{ inputs.ansible-vault-password }}
     EXTRA_ANSIBLE_OPTIONS: ${{ inputs.extra-ansible-options }}
+    RELATIVE_CONTAINER_DOCKER_CONTEXT_DIR: ${{ inputs.docker-context-dir }}
+    RELATIVE_DOCKERFILE_PATH: ${{ inputs.dockerfile-path }}
     CLOUDREACTOR_DEPLOYER_LOG_LEVEL: ${{ inputs.log-level }}

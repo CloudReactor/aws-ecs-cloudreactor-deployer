@@ -77,6 +77,19 @@ Deploys a project to AWS ECS and CloudReactor using Ansible.
         logging.debug(f"Found GitHub workspace dir = {work_dir}")
         process_env['WORK_DIR'] = work_dir
 
+    resolved_work_dir = work_dir or os.environ.get('WORK_DIR') or '/work'
+
+    relative_docker_context_dir = os.environ.get('RELATIVE_DOCKER_CONTEXT_DIR')
+
+    if relative_docker_context_dir:
+        process_env['CONTAINER_DOCKER_CONTEXT_DIR'] = resolved_work_dir + '/' \
+                + relative_docker_context_dir
+
+    relative_dockerfile_path = os.environ.get('RELATIVE_DOCKERFILE_PATH')
+    if relative_dockerfile_path:
+        process_env['DOCKERFILE_PATH'] = resolved_work_dir + '/' \
+                + relative_dockerfile_path
+
     command_line = ['ansible-playbook', '--extra-vars']
 
     # TODO: sanitize
