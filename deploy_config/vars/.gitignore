@@ -1,3 +1,7 @@
-*
+# Remove this .gitignore file if you are committing encrypted secret
+# files to source control, with either ansible-vault or git-encrypt.
+# This repository uses ansible-vault so the line below is commented so that
+# all files in this directory to be committed.
+# *
 !common.yml
 !example.yml
