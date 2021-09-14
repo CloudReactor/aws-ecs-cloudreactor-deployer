@@ -67,6 +67,6 @@ runs:
     TASK_NAMES: ${{ inputs.task-names }}
     ANSIBLE_VAULT_PASSWORD: ${{ inputs.ansible-vault-password }}
     EXTRA_ANSIBLE_OPTIONS: ${{ inputs.extra-ansible-options }}
-    RELATIVE_CONTAINER_DOCKER_CONTEXT_DIR: ${{ inputs.docker-context-dir }}
+    RELATIVE_DOCKER_CONTEXT_DIR: ${{ inputs.docker-context-dir }}
     RELATIVE_DOCKERFILE_PATH: ${{ inputs.dockerfile-path }}
     CLOUDREACTOR_DEPLOYER_LOG_LEVEL: ${{ inputs.log-level }}
