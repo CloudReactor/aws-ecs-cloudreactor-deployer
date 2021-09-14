@@ -15,9 +15,9 @@ inputs:
     description: AWS Region
     required: true
   cloudreactor-api-base-url:
-    description: Base URL for CloudReactor API Service
+    description: "Base URL for CloudReactor API Service. Defaults to 'https://api.cloudreactor.io'" if not defined in your configuration."
     required: false
-    default: "https://api.cloudreactor.io"
+    default: ""
   cloudreactor-deploy-api-key:
     description: CloudReactor API Key that has Developer access for the Runtime Environment
     required: false
