@@ -5,3 +5,6 @@
 # *
 !common.yml
 !example.yml
+
+# Contains custom settings for personal development
+*-dev.yml
