@@ -107,7 +107,7 @@ if [[ ! -f $VAR_FILENAME ]]
     exit 1
 fi
 
-ENV_FILE_OPTIONS=""
+ENV_FILE_OPTIONS="-e WORK_DIR=/work"
 
 if [[ -f "deploy.env" ]]
   then
@@ -127,7 +127,12 @@ if [[ -f $PER_ENV_SETTINGS_FILE ]]
     ENV_FILE_OPTIONS="$ENV_FILE_OPTIONS --env-file $PER_ENV_SETTINGS_FILE"
 fi
 
-# The default Docker context directory is the current directory.
+if [ -z "$EXTRA_DOCKER_RUN_OPTIONS" ]
+  then
+    EXTRA_DOCKER_RUN_OPTIONS=""
+fi
+
+# The default Docker context directory on the host is the current directory.
 # Override by setting DOCKER_CONTEXT_DIR to an absolute path.
 if [ -z "$DOCKER_CONTEXT_DIR" ]
   then
@@ -136,16 +141,14 @@ fi
 
 echo "Docker context dir = $DOCKER_CONTEXT_DIR"
 
-# The default Dockerfile location is /work/docker_context/Dockerfile
+# The default Dockerfile location is /work/Dockerfile
 # (in the container's filesystem).
 # Override by setting DOCKERFILE_PATH to an absolute path in the
 # container's filesystem, or a path relative to the Docker context directory.
 if [ -z "$DOCKERFILE_PATH" ]
   then
-    DOCKERFILE_PATH="Dockerfile"
+    EXTRA_DOCKER_RUN_OPTIONS="$EXTRA_DOCKER_RUN_OPTIONS -e DOCKERFILE_PATH=$DOCKERFILE_PATH"
 fi
-
-echo "Dockerfile path = $DOCKERFILE_PATH"
 
 if [ -z "$DOCKER_IMAGE_NAME" ]
   then
@@ -165,11 +168,6 @@ if [ -z "$DOCKER_IMAGE_TAG" ]
 fi
 
 echo "Docker image tag = $DOCKER_IMAGE_TAG"
-
-if [ -z "$EXTRA_DOCKER_RUN_OPTIONS" ]
-  then
-    EXTRA_DOCKER_RUN_OPTIONS=""
-fi
 
 if [ "$DEBUG_MODE" == "TRUE" ]
   then
@@ -227,8 +225,8 @@ fi
 
 docker run --rm \
   -e CLOUDREACTOR_TASK_VERSION_SIGNATURE=$CLOUDREACTOR_TASK_VERSION_SIGNATURE \
-  -e DOCKERFILE_PATH=$DOCKERFILE_PATH \
   -e HOST_PWD=$PWD \
+  -e CONTAINER_DOCKER_CONTEXT_DIR=/work/docker_context \
   $ENV_FILE_OPTIONS \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v $PWD/deploy_config:/work/deploy_config \
