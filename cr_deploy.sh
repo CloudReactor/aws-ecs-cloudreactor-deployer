@@ -97,7 +97,12 @@ if [ -z "$1" ] || [[ "$1" =~ ^- ]]
     shift
 fi
 
-VAR_FILENAME="deploy_config/vars/$DEPLOYMENT_ENVIRONMENT.yml"
+if [ -z "$CONFIG_FILENAME_STEM" ]
+  then
+    CONFIG_FILENAME_STEM="$DEPLOYMENT_ENVIRONMENT"
+fi
+
+VAR_FILENAME="deploy_config/vars/$CONFIG_FILENAME_STEM.yml"
 
 echo "VAR_FILENAME = $VAR_FILENAME"
 
@@ -119,7 +124,7 @@ fi
 # PER_ENV_SETTINGS_FILE.
 if [ -z "$PER_ENV_SETTINGS_FILE" ]
   then
-    PER_ENV_SETTINGS_FILE="deploy.$DEPLOYMENT_ENVIRONMENT.env"
+    PER_ENV_SETTINGS_FILE="deploy.$CONFIG_FILENAME_STEM.env"
 fi
 
 if [[ -f $PER_ENV_SETTINGS_FILE ]]
@@ -130,6 +135,11 @@ fi
 if [ -z "$EXTRA_DOCKER_RUN_OPTIONS" ]
   then
     EXTRA_DOCKER_RUN_OPTIONS=""
+fi
+
+if [ "$DEPLOYMENT_ENVIRONMENT" != "$CONFIG_FILENAME_STEM" ]
+  then
+    EXTRA_DOCKER_RUN_OPTIONS="-e CONFIG_FILENAME_STEM=$CONFIG_FILENAME_STEM $EXTRA_DOCKER_RUN_OPTIONS"
 fi
 
 # The default Docker context directory on the host is the current directory.
@@ -145,7 +155,7 @@ echo "Docker context dir = $DOCKER_CONTEXT_DIR"
 # (in the container's filesystem).
 # Override by setting DOCKERFILE_PATH to an absolute path in the
 # container's filesystem, or a path relative to the Docker context directory.
-if [ -z "$DOCKERFILE_PATH" ]
+if [ -n "$DOCKERFILE_PATH" ]
   then
     EXTRA_DOCKER_RUN_OPTIONS="$EXTRA_DOCKER_RUN_OPTIONS -e DOCKERFILE_PATH=$DOCKERFILE_PATH"
 fi

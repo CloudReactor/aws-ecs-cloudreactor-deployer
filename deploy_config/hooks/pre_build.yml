@@ -15,14 +15,14 @@
     msg: "Pre-build: nothing to do"
     verbosity: 1
 
-# Uncomment to upload your locally encrypted file to Secrets Manager
+# Uncomment to upload your locally encrypted .env file to Secrets Manager
 # each time you deploy:
 # - name: Upload .env file to AWS Secrets Manager
 #   community.aws.aws_secret:
 #     name: 'myorg/{{project_name}}/secrets/{{env}}/env'
 #     state: present
 #     secret_type: 'string'
-#     secret: "{{ lookup('file', "{{deploy_config_dir}}/files/.env." + env)  }}"
+#     secret: "{{ lookup('file', "{{deploy_config_dir}}/files/.env." + config_filename_stem) }}"
 #   register: create_dotenv_secret_result
 
 # - debug:
