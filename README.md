@@ -7,7 +7,8 @@
   <img src="https://img.shields.io/github/license/CloudReactor/aws-ecs-cloudreactor-deployer.svg?style=flat-square" alt="License">
 </p>
 
-Deploys tasks running in ECS Fargate and managed by CloudReactor
+Deploys tasks running in ECS Fargate and managed by CloudReactor,
+either from the command-line or as a GitHub Action.
 
 ## Description
 
@@ -18,6 +19,8 @@ internally, but being a Docker image, you don't need to install the
 dependencies on your host machine.
 
 ## Prerequisites
+
+### Dockerize your project and wrap the entrypoint
 
 If you haven't already, Dockerize your project.
 Assuming you want to use CloudReactor to monitor your Tasks, ensure that
@@ -39,16 +42,27 @@ If using the python package:
 ENTRYPOINT python -m proc_wrapper $TASK_COMMAND
 ```
 
-## Configuration
+### Create or identify a AWS role or user with sufficient permissions
 
-To configure your project to use the deployer, copy `cr_deploy.sh`
-(or `cr_deploy.cmd` and `docker-compose-deploy.yml` if you are working on a
-Windows machine) to the root directory of your project.
+The deployer uses an AWS role or access keys for a user with permissions
+to deploy to ECS. This user could either be a power user, an admin,
+or the user created by the
+[Deployer CloudFormation Template](https://github.com/CloudReactor/aws-role-template#deployer-policy-role-and-user).
+The template also creates roles and access keys with the same permissions.
 
-Then copy the `deploy_config` directory of this project into your own,
+If deploying from the command-line, a role will work if you are running
+inside an EC2 instance, within ECS, or a lambda, as these can inherit roles
+from AWS. Access keys are also a simpler, but less secure option.
+
+If deploying using the GitHub action, you'll want to use access keys.
+
+## Configure the build
+
+To configure your project to use the deployer, first copy the
+ `deploy_config` directory of this project into your own,
 and customize it. Common properties for all deployment environments can
 be entered in `deploy_config/vars/common.yml`.
-For every deployment environment ("staging", "production") that
+For each deployment environment ("staging", "production") that
 you have, create a file `deploy_config/vars/<environment>.yml` that
 is based on `deploy_config/vars/example.yml` and add your settings there.
 
@@ -58,12 +72,13 @@ You can run custom build steps by adding steps to the following files in
 `deploy_config/hooks`:
 
 * `pre_build.yml`: run before the Docker image is built. Compilation and
-asset processing can be run here.
+asset processing can be run here. You can also login to Docker repositories
+and/or upload secrets to Secrets Manager.
 * `post_build.yml`: run after the Docker image has been uploaded. Executions
 of "docker run" can be run here. For example, database migrations can be
 run from the local deployment machine.
 * `post_task_creation.yml`: run each time a Task is deployed to ECR and
-CloudReactor. Execution of Task that were just deployed can be run here.
+CloudReactor. Execution of Tasks that were just deployed can be run here.
 
 In these build steps, you can use the
 [community.docker](https://docs.ansible.com/ansible/latest/collections/community/docker/docker_container_module.html) and [community.aws](https://docs.ansible.com/ansible/latest/collections/community/aws/index.html) Ansible Galaxy plugins which are included
@@ -77,23 +92,28 @@ in the deployer image, to perform setup operations like:
 If you need to use libraries (e.g. compilers) not available in this image,
 your custom build steps can either:
 
-1) Use the `docker` command to build intermediate files (like JAR files or executables).
+1) Use
+[multi-stage Dockerfiles](https://docs.docker.com/develop/develop-images/multistage-build/)
+as a way to build dependencies in the same Dockerfile that creates the final
+container. This may complicate the use of the same Dockerfile during
+development, however.
+
+2) Use the `docker` command to build intermediate files (like JAR files or executables).
 Use `docker build` to build images, `docker create` to
 create containers, and finally, `docker cp` to copy files from containers
 back to the host. When docker runs in the container, it will use the
 host machine's docker service.
 
-2) Use build tools installed in the custom deployer image. In this case, you'll
+3) Use build tools installed in the custom deployer image. In this case, you'll
 want to create a new image based on `cloudreactor/aws-ecs-cloudreactor-deployer`:
 
-    FROM cloudreactor/aws-ecs-cloudreactor-deployer
+        FROM cloudreactor/aws-ecs-cloudreactor-deployer:2.0.0
 
-    # Example: get the JDK to build JAR files
-    RUN apt-get update && \
-      apt-get -t stretch-backports install openjdk-11-jdk
+        # Example: get the JDK to build JAR files
+        RUN apt-get update && \
+          apt-get -t stretch-backports install openjdk-11-jdk
 
-    ...
-
+        ...
 
     Then set the `DOCKER_IMAGE` environment variable to the name of your new
     image, or change the deployment command in `cr_deploy.sh` to use your
@@ -101,49 +121,56 @@ want to create a new image based on `cloudreactor/aws-ecs-cloudreactor-deployer`
     ansible tasks can now use `javac`. If you create a Docker image for a
     specific language, we'd love to hear from you!
 
-Also, check out
-[multi-stage Dockerfiles](https://docs.docker.com/develop/develop-images/multistage-build/)
-as a way to build dependencies in the same Dockerfile that creates the final
-container. This may complicate the use of the same Dockerfile during
-development, however.
+During your custom build steps, the following variables are available:
 
-### cr_deploy.sh configuration
+1. `work_dir` points to the directory in the container in which
+the root directory of your project is mounted
+2. `deploy_config_dir` points to the directory in the container in which the
+`deploy_config` directory is mounted
+3. `docker_context_dir` points to the directory in the container in which the
+Docker context directory is mounted
 
-`cr_deploy.sh` is what you'll call on your host machine, which will
-run the Docker image for the deployer. It can be configured with the
-following environment variables:
+You can find more helpful variables in the `vars` section of
+[`ansible/vars/common.yml`](ansible/vars/common.yml).
+
+## Setup deployment from a command-line
+
+To enable deployment by running from a command-line, copy `cr_deploy.sh`
+to the root directory of your project. `cr_deploy.sh` will run the Docker
+image for the deployer. It can be configured with the following
+environment variables:
 
 | Environment variable name |       Default value      | Description                                                                                    |
 |---------------------------|:------------------------:|------------------------------------------------------------------------------------------------|
 | DOCKER_CONTEXT_DIR        |     Current directory    | The absolute path of the Docker context directory                                              |
 | DOCKERFILE_PATH           |        `Dockerfile`      | Path to the Dockerfile, relative to the Docker context                                                |
-| CLOUDREACTOR_TASK_VERSION |           Empty          | A version number to report to CloudReactor. If empty, the latest git commit hash will be used. |
-| PER_ENV_SETTINGS_FILE     |`deploy.<environment>.env`| Path to a dotenv file containing environment-specific settings                                 |
+| CLOUDREACTOR_TASK_VERSION |           Empty          | A version number to report to CloudReactor. If empty, the latest git commit hash will be used if git is available. If git is not available, the current timestamp will be used. |
+| CONFIG_FILENAME_STEM      | The deployment environment | Use this setting if you store configuration in files that have a different name than the deployment environment they are for. For example, you can use the file `deploy_config/vars/staging-cmdline.yml` to store the settings for the `staging` deployment environment, if you set `CONFIG_FILENAME_STEM` to `"staging-cmdline"`. |
+| PER_ENV_SETTINGS_FILE     |`deploy.<config filename stem>.env`| Path to a dotenv file containing environment-specific settings                                 |
 | USE_USER_AWS_CONFIG       |          `FALSE`         | Set to TRUE to use your AWS configuration in `$HOME/.aws` |
 | AWS_PROFILE     |Empty| The name of the AWS profile to use, if `USE_USER_AWS_CONFIG` is `TRUE`. If not specified, the default profile will be used. |
 | EXTRA_DOCKER_RUN_OPTIONS     |Empty| Additional [options](https://docs.docker.com/engine/reference/commandline/run/) to pass to `docker run`                                 |
 | DEPLOY_COMMAND            |    `python deploy.py`    | The command to use when running the image. Defaults to `bash` when `DEBUG_MODE` is `TRUE`.
 | EXTRA_ANSIBLE_OPTIONS     |           Empty          | If specified, the default `DEPLOY_COMMAND` will appended with `--ansible-args $EXTRA_ANSIBLE_OPTIONS`. These options will be passed to `ansible-playbook` inside the container. |
 | DOCKER_IMAGE              	|`cloudreactor/aws-ecs-cloudreactor-deployer`	| The Docker image to run. Can be set to another name in case you extend the image to add build or deployment tools. 	|
-| DOCKER_IMAGE_TAG           	|`1`	| The tag of the Docker image to run. Can also be set to pinned versions like `1.2.2`, compatible releases like `1.2`, or `latest`. |
+| DOCKER_IMAGE_TAG           	|`2`	| The tag of the Docker image to run. Can also be set to pinned versions like `2.0.0`, compatible releases like `2.0`, or `latest`. |
 | DEBUG_MODE                  | `FALSE` | If set to `TRUE`, docker will be run in interactive mode (`-ti`) and a bash shell will be started inside the container. |
 
-
-If you want to avoid modifying `cr_deploy.sh`, you can create a script that
-configures some settings with environment variables, then calls `cr_deploy.sh`.
+If possible, try to avoid modifying `cr_deploy.sh` by creating a wrapper script
+that configures some settings with environment variables, then calls
+`cr_deploy.sh`.
 See [`deploy_sample.sh`](https://github.com/CloudReactor/aws-ecs-cloudreactor-deployer/blob/main/deploy_sample.sh)
 for an example.
 
-The deployer Docker image has an
-entrypoint that executes the python script `deploy.py`, which in turn,
-executes ansible-playbook.
+The deployer Docker image has an entrypoint that executes the python script
+`deploy.py`, which in turn, executes ansible-playbook.
 
 The Ansible tasks in `ansible/deploy.yml` reference files that you
 can make available with Docker volume mounts. You can either modify
 `cr_deploy.sh` to add or modify existing mounts, or configure the
 files/directories with environment variables. The Ansible tasks also read
 environment variables which you can set in `deploy.env` or
-`deploy.<environment>.env`.
+`deploy.<config filename stem>.env`.
 
 The behavior of ansible-playbook can be modified with many command-line
 options. To pass options to ansible-playbook, either:
@@ -165,14 +192,19 @@ the command-line during deployment:
         #!/bin/bash
         echo `aws s3 cp s3://widgets-co/vault_pass.$DEPLOYMENT_ENVIRONMENT.txt -`
 
+    The file `ansible/vault_pass_from_env.sh` may also be used so that the
+    vault password can come from the environment variable `ANSIBLE_VAULT_PASS`:
+
+        ./cr_deploy.sh staging --ansible-args --vault-password-file /work/vault_pass_from_env.sh
+
 If you use a password file, make sure it is available in the Docker
 context of the container. You can either put it in your Docker context
 directory or add an additional mount option to the docker command-line.
 
-2. Or, specify `EXTRA_ANSIBLE_OPTIONS`. For example, to specify the password
-file:
+2. Or, specify the `EXTRA_ANSIBLE_OPTIONS` environment variable. For example,
+to specify the password file:
 
-        EXTRA_ANSIBLE_OPTIONS="--vault-password-file pw.txt"
+        EXTRA_ANSIBLE_OPTIONS="--vault-password-file pw.txt" ./cr_deploy.sh staging
 
 ### More customization
 
@@ -196,7 +228,7 @@ modify the templates, you can override the default templates similarly:
 
     export EXTRA_DOCKER_RUN_OPTIONS="-v $PWD/ansible_overrides/templates/ecs_task_definition.json.j2:/work/templates/ecs_task_definition.json.j2"
 
-## Deploying
+### Deploying by command-line:
 
 Once you are done with configuration, you can deploy:
 
@@ -209,28 +241,30 @@ or in Windows:
 where `TASK_NAMES` is an optional, comma-separated list of Tasks to deploy.
 If `TASK_NAMES` is omitted, or set to `ALL`, all Tasks will be deployed.
 
-## Debugging
+If you wrote a wrapper over `cr_deploy.sh`, use that instead.
+
+### Debugging
 
 With the sample scripts, you can specify an entrypoint for the deployer
 container:
 
 In bash environments:
 
-    DEPLOY_COMMAND=bash ./cr_deploy.sh <environment>
+    DEBUG_MODE=TRUE ./cr_deploy.sh <environment>
 
-In a bash environment with docker-compose installed:
+In a bash environment with docker compose installed:
 
-    DEPLOYMENT_ENVIRONMENT=<environment> docker-compose -f docker-compose-deployer.yml run --rm deployer-shell
+    DEBUG_MODE=TRUE docker compose -f docker compose-deployer.yml run --rm deployer-shell
 
 In a Windows command prompt:
 
     set DEPLOYMENT_ENVIRONMENT=<environment>
-    docker-compose -f docker-compose-deployer.yml run --rm deployer-shell
+    docker compose -f docker compose-deployer.yml run --rm deployer-shell
 
 In a Windows PowerShell:
 
     $env:DEPLOYMENT_ENVIRONMENT = '<environment>'
-    docker-compose -f docker-compose-deployer.yml run --rm deployer-shell
+    docker compose -f docker compose-deployer.yml run --rm deployer-shell
 
 This will take you to a bash shell in the container you can use to inspect
 the filesystem. Inside the bash shell you can start the deployment by running:
@@ -239,6 +273,50 @@ the filesystem. Inside the bash shell you can start the deployment by running:
 
 After the script finishes (successfully or not), it should output intermediate
 files to `/work/build` which you can inspect for problems.
+
+## Setup deployment via GitHub Actions
+
+This Docker image can also be used as a
+[GitHub Action](https://github.com/marketplace/actions/cloudreactor-aws-ecs-deployer).
+As an example, in a file named `.github/workflows/deploy.yml`, you could have
+something like this to deploy to your staging environment after you commit to
+the master branch:
+
+    name: Deploy to AWS ECS and CloudReactor
+    on:
+      push:
+        branches:
+          - master
+        paths-ignore:
+          - '*.md'
+          - 'docs/**'
+      workflow_dispatch: # Allows deployment to be triggered manually
+        inputs: {}
+    jobs:
+      deploy:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v2
+        - name: Deploy to AWS ECS and CloudReactor
+          uses: CloudReactor/aws-ecs-cloudreactor-deployer@2.0.0
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: ${{ secrets.AWS_REGION }}
+            ansible-vault-password: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+            deployment-environment: staging
+            log-level: DEBUG
+
+In `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` repository or organization
+secrets (stored in the settings for your GitHub account), you would set
+the access key ID and secret access key for the AWS user that has the permissions
+necessary to deploy to ECS, described above.
+
+The optional `ANSIBLE_VAULT_PASSWORD` GitHub secret would store the password for
+that could be used to decrypt configuration files that were encrypted with
+Ansible Vault.
+
+See [action.yml](action.yml) for a full list of options.
 
 ## Common errors
 
@@ -283,4 +361,10 @@ if you're using an AWS access key. If using your AWS configuration:
 After deployment finishes, you should see these Tasks in the CloudReactor
 Dashboard and can execute and schedule them in the Dashboard.
 
-The Tasks are implemented as simple bash scripts.
+You can also try getting the GitHub Action to work, as this project is
+configured to deploy the sample tasks on commit of the main branch.
+See `.github/workflows/test_deploy.yml`. You'll have create your own
+`deploy_config/vars/staging.yml` and optionally encrypt it with Ansible Vault.
+
+The sample Tasks are implemented as simple bash scripts so no dependencies are
+required.
