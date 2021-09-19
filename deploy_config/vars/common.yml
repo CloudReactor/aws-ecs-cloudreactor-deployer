@@ -50,7 +50,7 @@ default_task_config:
       #   assign_public_ip: true
       tags:
         ManagedBy: CloudReactor
-        Application: {{ project_name }}
+        Application: "{{ project_name }}"
 
     # # By default, the entrypoint is run with the tinit init process so that
     # # commands in shell form (like calling proc_wrapper) pass on SIGTERM to
