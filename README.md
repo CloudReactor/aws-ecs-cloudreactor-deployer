@@ -42,6 +42,52 @@ If using the python package:
 ENTRYPOINT python -m proc_wrapper $TASK_COMMAND
 ```
 
+### Create a CloudReactor account
+
+If you want to use CloudReactor to monitor and manage your Tasks,
+[create a free CloudReactor account](https://dash.cloudreactor.io/signup).
+Monitoring and managing your first 10 Tasks is free!
+
+### Setup AWS ECS infrastructure
+
+If you plan on using CloudReactor or don't yet have the infrastructure to
+run ECS tasks in AWS, run the
+[CloudReactor AWS Setup Wizard](https://github.com/CloudReactor/cloudreactor-aws-setup-wizard).
+
+This wizard:
+* creates an ECS cluster if you don't already have one
+* creates associated VPC, subnets and security groups (or allows you to select existing VPCs, subnets and security groups to use)
+* enables CloudReactor to manage tasks deployed in your AWS account
+
+The wizard enables you to have a working ECS environment in minutes.
+Without it, you would need to set up each of these pieces individually which
+could be tedious and error-prone.
+
+It can reuse your existing infrastructure if available, and is deployed as
+CloudFormation templates you can easily uninstall if you change your mind.
+You can reuse the same infrastructure for all projects you deploy to
+AWS ECS and CloudReactor, so you only need to run the wizard once.
+
+### Create CloudReactor API keys
+
+Once you are logged into CloudReactor, create two API keys, one for deployment
+and one for your task to report its state. Go to the
+[CloudReactor dashboard](https://cloudreactor.io/api_keys) and select
+"API keys" in the menu that pops up when you click your username in the upper
+right corner. Select the button "Add new API key..." which will take you to a
+form to fill in details. Give the API key a name like `Example Project - staging`
+and associate it with the
+Run Environment you created. Ensure the Group is correct, the Enabled checkbox
+is checked, and the Access Level is `Task`. Then select the Save button. You
+should then see your new API key listed. Copy the value of the key. This is the
+`Task API key`.
+
+Then repeat the above instructions, except select the Access Level of
+`Developer`, and give it a name like `Deployment - staging`.
+The value of the key is the `Deployment API key`. You can reuse
+the same Deployment API Key for all projects you deploy to the same CloudReactor
+Run Environment.
+
 ### Create or identify a AWS role or user with sufficient permissions
 
 The deployer uses an AWS role or access keys for a user with permissions
@@ -54,17 +100,77 @@ If deploying from the command-line, a role will work if you are running
 inside an EC2 instance, within ECS, or a lambda, as these can inherit roles
 from AWS. Access keys are also a simpler, but less secure option.
 
-If deploying using the GitHub action, you'll want to use access keys.
+If deploying using the GitHub Action, you'll want to use access keys.
 
 ## Configure the build
 
-To configure your project to use the deployer, first copy the
+These steps are needed for both command-line deployment and deployment using the
+GitHub Action.
+
+First, copy the
  `deploy_config` directory of this project into your own,
 and customize it. Common properties for all deployment environments can
-be entered in `deploy_config/vars/common.yml`.
+be entered in `deploy_config/vars/common.yml`. There you can set the
+command-lines that each Task in your project runs. For example:
+
+    task_name_to_config:
+      smoke:
+        command: "echo 'hi'"
+        ...
+      write_file:
+        command: "./write_file.sh"
+        ...
+
+defines 2 tasks, `smoke` and `write_file` that run different commands. Edit
+`deploy_config/vars/common.yml` to run the command(s) you want.
+
 For each deployment environment ("staging", "production") that
 you have, create a file `deploy_config/vars/<environment>.yml` that
 is based on `deploy_config/vars/example.yml` and add your settings there.
+
+If you plan to deploy via command-line, you should add the value of the
+`Deployment API key` to `deploy_config/vars/<environment>.yml`:
+
+    cloudreactor:
+      ...
+      deploy_api_key: PASTE_DEPLOY_API_KEY_HERE
+      ...
+
+If you only plan on deploying via GitHub, you can leave this setting blank,
+but populate the GitHub secret
+`CLOUDREACTOR_DEPLOY_API_KEY` with the value of your `Deployment API key`.
+
+Unless you have very stringent security requirements, you can also populate
+the `Task API key` in the same file:
+
+
+    cloudreactor:
+      ...
+      task_api_key: PASTE_DEPLOY_API_KEY_HERE
+
+along with other secrets in the environment the Tasks will see at runtime:
+
+    default_env_task_config:
+      ...
+      env:
+        ...
+        DATABASE_PASSWORD: xxxx
+
+(Runtime secrets populated this way will be present in your
+ECS Task Definitions which may not be secure enough for your needs.
+See the [guide to using AWS Secrets Manager with CloudReactor](https://docs.cloudreactor.io/secrets.html#runtime-secrets-with-aws-secrets-manager) for a more secure
+method of storing runtime secrets.)
+
+Once you fill in all the settings, you may wish to encrypt your
+`deploy_config/vars/<environment>.yml` using Ansible Vault, especially if
+it includes secrets:
+
+    ansible-vault encrypt deploy_config/vars/<environment>.yml
+
+ansible-vault will prompt for a password, then encrypt the file. Then it is
+safe to commit the file to source control. You may store the password in
+an external file if deploying by command-line, or in a GitHub secret if
+deploying by GitHub Action.
 
 ### Custom build steps
 
@@ -104,7 +210,7 @@ create containers, and finally, `docker cp` to copy files from containers
 back to the host. When docker runs in the container, it will use the
 host machine's docker service.
 
-3) Use build tools installed in the custom deployer image. In this case, you'll
+3) Use build tools installed in a custom deployer image. In this case, you'll
 want to create a new image based on `cloudreactor/aws-ecs-cloudreactor-deployer`:
 
         FROM cloudreactor/aws-ecs-cloudreactor-deployer:2.0.0
@@ -124,18 +230,22 @@ want to create a new image based on `cloudreactor/aws-ecs-cloudreactor-deployer`
 During your custom build steps, the following variables are available:
 
 1. `work_dir` points to the directory in the container in which
-the root directory of your project is mounted
+the root directory of your project is mounted. This is `/work` for
+command-line builds.
 2. `deploy_config_dir` points to the directory in the container in which the
-`deploy_config` directory is mounted
-3. `docker_context_dir` points to the directory in the container in which the
-Docker context directory is mounted
+`deploy_config` directory is mounted. This is `/work/deploy_config` for
+command-line builds.
+3. `docker_context_dir` points to the directory on the host is the Docker context
+directory. For command-line builds, this is the project root directory unless
+overridden by `DOCKER_CONTEXT_DIR`. It is mounted in `/work/docker_context`
+in the container.
 
 You can find more helpful variables in the `vars` section of
 [`ansible/vars/common.yml`](ansible/vars/common.yml).
 
-## Setup deployment from a command-line
+## Setup deployment from the command-line
 
-To enable deployment by running from a command-line, copy `cr_deploy.sh`
+To enable deployment by running from a command-line prompt, copy `cr_deploy.sh`
 to the root directory of your project. `cr_deploy.sh` will run the Docker
 image for the deployer. It can be configured with the following
 environment variables:
@@ -145,6 +255,7 @@ environment variables:
 | DOCKER_CONTEXT_DIR        |     Current directory    | The absolute path of the Docker context directory                                              |
 | DOCKERFILE_PATH           |        `Dockerfile`      | Path to the Dockerfile, relative to the Docker context                                                |
 | CLOUDREACTOR_TASK_VERSION |           Empty          | A version number to report to CloudReactor. If empty, the latest git commit hash will be used if git is available. If git is not available, the current timestamp will be used. |
+| CLOUDREACTOR_DEPLOY_API_KEY |         Empty         | The CloudReactor Deployment API key. Can be used instead of setting it in `deploy_config/vars/<environment>.yml`. |
 | CONFIG_FILENAME_STEM      | The deployment environment | Use this setting if you store configuration in files that have a different name than the deployment environment they are for. For example, you can use the file `deploy_config/vars/staging-cmdline.yml` to store the settings for the `staging` deployment environment, if you set `CONFIG_FILENAME_STEM` to `"staging-cmdline"`. |
 | PER_ENV_SETTINGS_FILE     |`deploy.<config filename stem>.env`| Path to a dotenv file containing environment-specific settings                                 |
 | USE_USER_AWS_CONFIG       |          `FALSE`         | Set to TRUE to use your AWS configuration in `$HOME/.aws` |
@@ -152,11 +263,14 @@ environment variables:
 | EXTRA_DOCKER_RUN_OPTIONS     |Empty| Additional [options](https://docs.docker.com/engine/reference/commandline/run/) to pass to `docker run`                                 |
 | DEPLOY_COMMAND            |    `python deploy.py`    | The command to use when running the image. Defaults to `bash` when `DEBUG_MODE` is `TRUE`.
 | EXTRA_ANSIBLE_OPTIONS     |           Empty          | If specified, the default `DEPLOY_COMMAND` will appended with `--ansible-args $EXTRA_ANSIBLE_OPTIONS`. These options will be passed to `ansible-playbook` inside the container. |
+| ANSIBLE_VAULT_PASSWORD    |           Empty          | If specified, the password will be used to decrypt files encrypted by Ansible Vault |
 | DOCKER_IMAGE              	|`cloudreactor/aws-ecs-cloudreactor-deployer`	| The Docker image to run. Can be set to another name in case you extend the image to add build or deployment tools. 	|
 | DOCKER_IMAGE_TAG           	|`2`	| The tag of the Docker image to run. Can also be set to pinned versions like `2.0.0`, compatible releases like `2.0`, or `latest`. |
 | DEBUG_MODE                  | `FALSE` | If set to `TRUE`, docker will be run in interactive mode (`-ti`) and a bash shell will be started inside the container. |
+| DEPLOY_COMMAND            |    `python deploy.py`    | The command to use when running the image. Defaults to `bash` when `DEBUG_MODE` is `TRUE`. |
 
-If possible, try to avoid modifying `cr_deploy.sh` by creating a wrapper script
+If possible, try to avoid modifying `cr_deploy.sh`, because this project
+will frequently update it with options. Instead, create a wrapper script
 that configures some settings with environment variables, then calls
 `cr_deploy.sh`.
 See [`deploy_sample.sh`](https://github.com/CloudReactor/aws-ecs-cloudreactor-deployer/blob/main/deploy_sample.sh)
@@ -305,16 +419,20 @@ the master branch:
             aws-region: ${{ secrets.AWS_REGION }}
             ansible-vault-password: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
             deployment-environment: staging
+            cloudreactor-deploy-api-key: ${{ secrets.CLOUDREACTOR_DEPLOY_API_KEY }}
             log-level: DEBUG
 
-In `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` repository or organization
-secrets (stored in the settings for your GitHub account), you would set
+In the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` GitHub secrets, you would set
 the access key ID and secret access key for the AWS user that has the permissions
-necessary to deploy to ECS, described above.
+necessary to deploy to ECS, as described above. The `AWS_REGION` would store
+the region, such as `us-west-1`, where you want deploy your Task(s).
 
-The optional `ANSIBLE_VAULT_PASSWORD` GitHub secret would store the password for
-that could be used to decrypt configuration files that were encrypted with
-Ansible Vault.
+You would populate the GitHub secret `CLOUDREACTOR_DEPLOY_API_KEY` with the
+value of the `Deployment API key`, as described above.
+
+The optional `ANSIBLE_VAULT_PASSWORD` GitHub secret would store the password
+used to decrypt configuration files (such as
+`deploy_config/vars/staging.yml`) that were encrypted with Ansible Vault.
 
 See [action.yml](action.yml) for a full list of options.
 
@@ -362,9 +480,17 @@ After deployment finishes, you should see these Tasks in the CloudReactor
 Dashboard and can execute and schedule them in the Dashboard.
 
 You can also try getting the GitHub Action to work, as this project is
-configured to deploy the sample tasks on commit of the main branch.
+configured to deploy the sample tasks on commit of the `main` branch.
 See `.github/workflows/test_deploy.yml`. You'll have create your own
 `deploy_config/vars/staging.yml` and optionally encrypt it with Ansible Vault.
+Also you'll need to set the GitHub secrets used in
+`.github/workflows/test_deploy.yml` in your own GitHub account.
 
 The sample Tasks are implemented as simple bash scripts so no dependencies are
 required.
+
+## Need help?
+
+Feel free to reach out to us at support@cloudreactor.io
+if you have any questions or issues! We'd be glad to help you get your
+project monitored and managed by CloudReactor.
