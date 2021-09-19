@@ -19,6 +19,7 @@ jobs:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
+        cloudreactor-deploy-api-key: ${{ secrets.CLOUDREACTOR_DEPLOY_API_KEY }}
         ansible-vault-password: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
         deployment-environment: staging
         docker-context-dir: sample_docker_context
