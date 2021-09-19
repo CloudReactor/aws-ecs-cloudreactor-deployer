@@ -146,7 +146,7 @@ the `Task API key` in the same file:
 
     cloudreactor:
       ...
-      task_api_key: PASTE_DEPLOY_API_KEY_HERE
+      task_api_key: PASTE_TASK_API_KEY_HERE
 
 along with other secrets in the environment the Tasks will see at runtime:
 
@@ -254,14 +254,13 @@ environment variables:
 |---------------------------|:------------------------:|------------------------------------------------------------------------------------------------|
 | DOCKER_CONTEXT_DIR        |     Current directory    | The absolute path of the Docker context directory                                              |
 | DOCKERFILE_PATH           |        `Dockerfile`      | Path to the Dockerfile, relative to the Docker context                                                |
-| CLOUDREACTOR_TASK_VERSION |           Empty          | A version number to report to CloudReactor. If empty, the latest git commit hash will be used if git is available. If git is not available, the current timestamp will be used. |
+| CLOUDREACTOR_TASK_VERSION_SIGNATURE |       Empty          | A version number to report to CloudReactor. If empty, the latest git commit hash will be used if git is available. If git is not available, the current timestamp will be used. |
 | CLOUDREACTOR_DEPLOY_API_KEY |         Empty         | The CloudReactor Deployment API key. Can be used instead of setting it in `deploy_config/vars/<environment>.yml`. |
 | CONFIG_FILENAME_STEM      | The deployment environment | Use this setting if you store configuration in files that have a different name than the deployment environment they are for. For example, you can use the file `deploy_config/vars/staging-cmdline.yml` to store the settings for the `staging` deployment environment, if you set `CONFIG_FILENAME_STEM` to `"staging-cmdline"`. |
 | PER_ENV_SETTINGS_FILE     |`deploy.<config filename stem>.env`| Path to a dotenv file containing environment-specific settings                                 |
 | USE_USER_AWS_CONFIG       |          `FALSE`         | Set to TRUE to use your AWS configuration in `$HOME/.aws` |
 | AWS_PROFILE     |Empty| The name of the AWS profile to use, if `USE_USER_AWS_CONFIG` is `TRUE`. If not specified, the default profile will be used. |
 | EXTRA_DOCKER_RUN_OPTIONS     |Empty| Additional [options](https://docs.docker.com/engine/reference/commandline/run/) to pass to `docker run`                                 |
-| DEPLOY_COMMAND            |    `python deploy.py`    | The command to use when running the image. Defaults to `bash` when `DEBUG_MODE` is `TRUE`.
 | EXTRA_ANSIBLE_OPTIONS     |           Empty          | If specified, the default `DEPLOY_COMMAND` will appended with `--ansible-args $EXTRA_ANSIBLE_OPTIONS`. These options will be passed to `ansible-playbook` inside the container. |
 | ANSIBLE_VAULT_PASSWORD    |           Empty          | If specified, the password will be used to decrypt files encrypted by Ansible Vault |
 | DOCKER_IMAGE              	|`cloudreactor/aws-ecs-cloudreactor-deployer`	| The Docker image to run. Can be set to another name in case you extend the image to add build or deployment tools. 	|
@@ -284,7 +283,7 @@ can make available with Docker volume mounts. You can either modify
 `cr_deploy.sh` to add or modify existing mounts, or configure the
 files/directories with environment variables. The Ansible tasks also read
 environment variables which you can set in `deploy.env` or
-`deploy.<config filename stem>.env`.
+`deploy.<config filename stem>.env`. 
 
 The behavior of ansible-playbook can be modified with many command-line
 options. To pass options to ansible-playbook, either:
