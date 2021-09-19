@@ -50,7 +50,7 @@ default_task_config:
       #   assign_public_ip: true
       tags:
         ManagedBy: CloudReactor
-        Application: aws-ecs-cloudreactor-deploy test
+        Application: {{ project_name }}
 
     # # Uncomment to add properties to the main container:
     # extra_main_container_properties
