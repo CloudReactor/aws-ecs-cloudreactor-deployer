@@ -52,6 +52,17 @@ default_task_config:
         ManagedBy: CloudReactor
         Application: {{ project_name }}
 
+    # # By default, the entrypoint is run with the tinit init process so that
+    # # commands in shell form (like calling proc_wrapper) pass on SIGTERM to
+    # # the underlying commands. This is so AWS ECS can gracefully shutdown a
+    # # container, if the command handles the SIGTERM signal.
+    # # To enable tinit, we set the containerDefinitionss[0].linuxParameters
+    # # property to { "initProcessEnabled" true }. However, if you need to set
+    # # other linuxParameter properties, you can set
+    # # use_default_linux_parameters to false and pass them in via
+    # # extra_main_container_properties.
+    # use_default_linux_parameters: true
+
     # # Uncomment to add properties to the main container:
     # extra_main_container_properties
     #   secrets:

@@ -76,6 +76,7 @@
 {% set memory_mb=ecs.memory_mb | default(512) %}
 {% set extra_container_cpu_units=ecs.extra_container_cpu_units | default(0) %}
 {% set extra_container_memory_mb=ecs.extra_container_memory_mb | default(0) %}
+{% set use_default_linux_parameters=ecs.use_default_linux_parameters | default(true) %}
 {% set environment_variables=task_config.env | default({}) %}
 
 {% set resolvable_env_var_name_prefix = wrapper.resolvable_env_var_name_prefix | default('') %}
@@ -243,6 +244,12 @@
                     "value" : {{ task_config.command | to_json }}
                 }
             ]
+            {% if use_default_linux_parameters %}
+            ,
+            "linuxParameters": {
+              "initProcessEnabled": true
+            }
+            {% endif %}
             {% if ecs.extra_main_container_properties is defined %}
             ,
             {% for name, value in ecs.extra_main_container_properties.items() %}
