@@ -7,8 +7,8 @@
   <img src="https://img.shields.io/github/license/CloudReactor/aws-ecs-cloudreactor-deployer.svg?style=flat-square" alt="License">
 </p>
 
-Deploys tasks running in ECS Fargate and managed by CloudReactor,
-either from the command-line or as a GitHub Action.
+Deploys tasks that run in ECS Fargate and are monitored and managed by
+CloudReactor, either from the command-line or as a GitHub Action.
 
 ## Description
 
@@ -46,7 +46,7 @@ ENTRYPOINT python -m proc_wrapper $TASK_COMMAND
 
 If you want to use CloudReactor to monitor and manage your Tasks,
 [create a free CloudReactor account](https://dash.cloudreactor.io/signup).
-Monitoring and managing your first 10 Tasks is free!
+Monitoring and managing up to 25 Tasks is free!
 
 ### Setup AWS ECS infrastructure
 
@@ -90,8 +90,11 @@ Run Environment.
 
 ### Create or identify a AWS role or user with sufficient permissions
 
-The deployer uses an AWS role or access keys for a user with permissions
-to deploy to ECS. This user could either be a power user, an admin,
+The deployer needs to be configured with AWS credentials that
+allow it to deploy Docker images to AWS ECR and create tasks in ECS on your
+behalf.
+
+The credentials could come from either a power user, an admin,
 or the user created by the
 [Deployer CloudFormation Template](https://github.com/CloudReactor/aws-role-template#deployer-policy-role-and-user).
 The template also creates roles and access keys with the same permissions.
@@ -101,6 +104,9 @@ inside an EC2 instance, within ECS, or a lambda, as these can inherit roles
 from AWS. Access keys are also a simpler, but less secure option.
 
 If deploying using the GitHub Action, you'll want to use access keys.
+
+See [Deployer AWS Permissions](https://docs.cloudreactor.io/deployer_aws_permissions.html)
+for the exact permissions required.
 
 ## Configure the build
 
@@ -142,7 +148,6 @@ but populate the GitHub secret
 
 Unless you have very stringent security requirements, you can also populate
 the `Task API key` in the same file:
-
 
     cloudreactor:
       ...
@@ -213,8 +218,7 @@ host machine's docker service.
 3) Use build tools installed in a custom deployer image. In this case, you'll
 want to create a new image based on `cloudreactor/aws-ecs-cloudreactor-deployer`:
 
-        FROM cloudreactor/aws-ecs-cloudreactor-deployer:2.0.0
-
+        FROM cloudreactor/aws-ecs-cloudreactor-deployer:2.0.1
         # Example: get the JDK to build JAR files
         RUN apt-get update && \
           apt-get -t stretch-backports install openjdk-11-jdk
@@ -265,7 +269,7 @@ environment variables:
 | EXTRA_ANSIBLE_OPTIONS     |           Empty          | If specified, the default `DEPLOY_COMMAND` will appended with `--ansible-args $EXTRA_ANSIBLE_OPTIONS`. These options will be passed to `ansible-playbook` inside the container. |
 | ANSIBLE_VAULT_PASSWORD    |           Empty          | If specified, the password will be used to decrypt files encrypted by Ansible Vault |
 | DOCKER_IMAGE              	|`cloudreactor/aws-ecs-cloudreactor-deployer`	| The Docker image to run. Can be set to another name in case you extend the image to add build or deployment tools. 	|
-| DOCKER_IMAGE_TAG           	|`2`	| The tag of the Docker image to run. Can also be set to pinned versions like `2.0.0`, compatible releases like `2.0`, or `latest`. |
+| DOCKER_IMAGE_TAG           	|`2`	| The tag of the Docker image to run. Can also be set to pinned versions like `2.0.1`, compatible releases like `2.0`, or `latest`. |
 | DEBUG_MODE                  | `FALSE` | If set to `TRUE`, docker will be run in interactive mode (`-ti`) and a bash shell will be started inside the container. |
 | DEPLOY_COMMAND            |    `python deploy.py`    | The command to use when running the image. Defaults to `bash` when `DEBUG_MODE` is `TRUE`. |
 
@@ -284,7 +288,7 @@ can make available with Docker volume mounts. You can either modify
 `cr_deploy.sh` to add or modify existing mounts, or configure the
 files/directories with environment variables. The Ansible tasks also read
 environment variables which you can set in `deploy.env` or
-`deploy.<config filename stem>.env`. 
+`deploy.<config filename stem>.env`.
 
 The behavior of ansible-playbook can be modified with many command-line
 options. To pass options to ansible-playbook, either:
@@ -412,7 +416,7 @@ the master branch:
         steps:
         - uses: actions/checkout@v2
         - name: Deploy to AWS ECS and CloudReactor
-          uses: CloudReactor/aws-ecs-cloudreactor-deployer@v2.0.0
+          uses: CloudReactor/aws-ecs-cloudreactor-deployer@v2.0.1
           with:
             aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
             aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -457,7 +461,7 @@ in `deploy_config/vars/common.yml`:
        another_task:
          schedule: cron(9 15 * * ? *)
 
-## Deploying Sample Tasks
+## Deploying the sample tasks
 
 To check that your AWS account is setup properly with CloudReactor permissions,
 or to work on the development of the deployer,
