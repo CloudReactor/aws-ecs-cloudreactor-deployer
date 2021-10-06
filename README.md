@@ -260,6 +260,7 @@ environment variables:
 | PER_ENV_SETTINGS_FILE     |`deploy.<config filename stem>.env`| Path to a dotenv file containing environment-specific settings                                 |
 | USE_USER_AWS_CONFIG       |          `FALSE`         | Set to TRUE to use your AWS configuration in `$HOME/.aws` |
 | AWS_PROFILE     |Empty| The name of the AWS profile to use, if `USE_USER_AWS_CONFIG` is `TRUE`. If not specified, the default profile will be used. |
+| PASS_AWS_ACCESS_KEY       |          `FALSE`         | Set to TRUE to use pass the  `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables to the deployer |
 | EXTRA_DOCKER_RUN_OPTIONS     |Empty| Additional [options](https://docs.docker.com/engine/reference/commandline/run/) to pass to `docker run`                                 |
 | EXTRA_ANSIBLE_OPTIONS     |           Empty          | If specified, the default `DEPLOY_COMMAND` will appended with `--ansible-args $EXTRA_ANSIBLE_OPTIONS`. These options will be passed to `ansible-playbook` inside the container. |
 | ANSIBLE_VAULT_PASSWORD    |           Empty          | If specified, the password will be used to decrypt files encrypted by Ansible Vault |

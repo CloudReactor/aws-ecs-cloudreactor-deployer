@@ -58,17 +58,17 @@
 # that deploy.py runs in, which in turn passes the environment to
 # ansible-playbook.
 #
-# You can copy this script and make modifications for your use case, such as:
+# If possible, try to avoid modifying this script, because this project
+# will frequently update it with options. Instead, create a wrapper script
+# that configures some settings with environment variables, then calls
+# this script. Some things your wrapper script could do include:
 #
-#   - Specifying a different Docker build context directory
-#     (mapped to work/docker_context)
-#   - Specifying a different Dockerfile
-#     (mapped to work/docker_context/Dockerfile)
 #   - Passing secrets to the deploy container via environment variables
-#   - Using the host's AWS configuration files (map ~/.aws to /root/.aws)
 #   - Passing AWS (temporary) credentials to the deployer container
-#   - Passing Ansible decryption keys to the deployer container
-#   - Running a different container that has more build dependencies
+#   - Fetching the Ansible Vault password and using it to set
+#     CLOUDREACTOR_TASK_VERSION_SIGNATURE
+#   - Computing a commit signature and using it to set
+#     CLOUDREACTOR_TASK_VERSION_SIGNATURE
 
 set -e
 
@@ -184,18 +184,23 @@ if [ "$DEBUG_MODE" == "TRUE" ]
     EXTRA_DOCKER_RUN_OPTIONS="-ti $EXTRA_DOCKER_RUN_OPTIONS --entrypoint bash"
 fi
 
+if [ "$PASS_AWS_ACCESS_KEY" == "TRUE" ]
+  then
+    EXTRA_DOCKER_RUN_OPTIONS="-e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY $EXTRA_DOCKER_RUN_OPTIONS"
+fi
+
 if [ "$USE_USER_AWS_CONFIG" == "TRUE" ]
   then
     EXTRA_DOCKER_RUN_OPTIONS="-v $HOME/.aws:/root/.aws $EXTRA_DOCKER_RUN_OPTIONS"
     if [ -n "$AWS_PROFILE" ]
       then
-        EXTRA_DOCKER_RUN_OPTIONS="-e AWS_PROFILE=$AWS_PROFILE $EXTRA_DOCKER_RUN_OPTIONS"
+        EXTRA_DOCKER_RUN_OPTIONS="-e AWS_PROFILE $EXTRA_DOCKER_RUN_OPTIONS"
     fi
 fi
 
 if [ -n "$AWS_DEFAULT_REGION" ]
     then
-      EXTRA_DOCKER_RUN_OPTIONS="-e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION $EXTRA_DOCKER_RUN_OPTIONS"
+      EXTRA_DOCKER_RUN_OPTIONS="-e AWS_DEFAULT_REGION $EXTRA_DOCKER_RUN_OPTIONS"
 fi
 
 echo "Extra Docker run options = '$EXTRA_DOCKER_RUN_OPTIONS'"
