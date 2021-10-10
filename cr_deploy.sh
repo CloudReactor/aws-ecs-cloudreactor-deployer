@@ -203,6 +203,12 @@ if [ -n "$AWS_DEFAULT_REGION" ]
       EXTRA_DOCKER_RUN_OPTIONS="-e AWS_DEFAULT_REGION $EXTRA_DOCKER_RUN_OPTIONS"
 fi
 
+if [ -n "$ANSIBLE_VAULT_PASSWORD" ]
+    then
+      EXTRA_DOCKER_RUN_OPTIONS="-e ANSIBLE_VAULT_PASSWORD $EXTRA_DOCKER_RUN_OPTIONS"
+fi
+
+
 echo "Extra Docker run options = '$EXTRA_DOCKER_RUN_OPTIONS'"
 
 # Optional: use the latest git commit hash to set the version signature,
