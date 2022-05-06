@@ -2,7 +2,7 @@
 
 # BSD 2-Clause License
 
-# Copyright (c) 2021, CloudReactor
+# Copyright (c) 2022, CloudReactor
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
@@ -80,7 +80,7 @@ if [ -z "$1" ]
         exit 1
     fi
   else
-    export DEPLOYMENT_ENVIRONMENT=$1
+    DEPLOYMENT_ENVIRONMENT=$1
     shift
 fi
 
