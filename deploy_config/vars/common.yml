@@ -79,8 +79,8 @@ default_task_config:
     # # Extra CPU/memory allocated to the extra containers,
     # # will be taken away from the total cpu_units and memory_mb
     # # allocated for the entire task.
-    #extra_container_cpu_units: 32
-    #extra_container_memory_mb: 128
+    # extra_container_cpu_units: 32
+    # extra_container_memory_mb: 128
     # # Each definition has the properties for containers in an AWS ECS task
     # # definition,
     # # The following example uses nginx as a reverse proxy. It assumed that a Docker image

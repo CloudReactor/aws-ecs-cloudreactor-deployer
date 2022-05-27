@@ -238,9 +238,14 @@
                    proc_wrapper module at runtime.
                 #}
                 {{ env_def(wrapper, 'rollbar_access_token', true) }}
-                {# This is last because it is required so it definitely does not end with a comma #}
+                {# Deprecated -- for python wrappers < 4.0.0 #}
                 {
                     "name" : "TASK_COMMAND",
+                    "value" : {{ task_config.command | to_json }}
+                },
+                {# This is last because it is required so it definitely does not end with a comma #}
+                {
+                    "name" : "PROC_WRAPPER_TASK_COMMAND",
                     "value" : {{ task_config.command | to_json }}
                 }
             ]

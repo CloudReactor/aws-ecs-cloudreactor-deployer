@@ -42,4 +42,4 @@ RUN chmod +x proc_wrapper
 COPY --chown=appuser:appuser src .
 RUN chmod +x write_file.sh
 
-ENTRYPOINT ./proc_wrapper $TASK_COMMAND
+ENTRYPOINT ["./proc_wrapper"]
