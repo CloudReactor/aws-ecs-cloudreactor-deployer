@@ -2,7 +2,7 @@ FROM debian:buster-slim
 
 # We could also start from a python base image to be able to run the
 # proc_wrapper module.
-# FROM python:3.9.2-slim-buster
+# FROM python:3.9.13-slim-buster
 # This is good if we're only running python code.
 # But debian:buster-slim is more likely to be a base image that different
 # language environment inherit from.
@@ -21,9 +21,10 @@ ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-  openssl=1.1.1d-0+deb10u7 libexpat1=2.2.6-2+deb10u1 \
-  ca-certificates=20200601~deb10u2 \
-  wget=1.20.1-1.1 \
+  openssl \
+  libexpat1 \
+  ca-certificates \
+  wget \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Run as non-root user for better security
@@ -36,10 +37,12 @@ WORKDIR /home/appuser
 RUN mkdir scratch
 
 # Use standalone executable for x64/AMD64 Linux
-RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/main/bin/nuitka/linux_amd64/proc_wrapper-4.0.0-alpha1.bin -O proc_wrapper
-RUN chmod +x proc_wrapper
+RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/main/bin/nuitka/linux_amd64/4.0.0-alpha1/proc_wrapper.bin -O proc_wrapper_app_image \
+  && chmod +x proc_wrapper_app_image \
+  && ./proc_wrapper_app_image --appimage-extract \
+  && rm ./proc_wrapper_app_image
 
 COPY --chown=appuser:appuser src .
 RUN chmod +x write_file.sh
 
-ENTRYPOINT ["./proc_wrapper"]
+ENTRYPOINT ["squashfs-root/proc_wrapper.bin"]
