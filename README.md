@@ -218,7 +218,7 @@ host machine's docker service.
 3) Use build tools installed in a custom deployer image. In this case, you'll
 want to create a new image based on `cloudreactor/aws-ecs-cloudreactor-deployer`:
 
-        FROM cloudreactor/aws-ecs-cloudreactor-deployer:2.0.1
+        FROM cloudreactor/aws-ecs-cloudreactor-deployer:3.0.0
         # Example: get the JDK to build JAR files
         RUN apt-get update && \
           apt-get -t stretch-backports install openjdk-11-jdk
@@ -269,7 +269,7 @@ environment variables:
 | EXTRA_ANSIBLE_OPTIONS     |           Empty          | If specified, the default `DEPLOY_COMMAND` will appended with `--ansible-args $EXTRA_ANSIBLE_OPTIONS`. These options will be passed to `ansible-playbook` inside the container. |
 | ANSIBLE_VAULT_PASSWORD    |           Empty          | If specified, the password will be used to decrypt files encrypted by Ansible Vault |
 | DOCKER_IMAGE              	|`cloudreactor/aws-ecs-cloudreactor-deployer`	| The Docker image to run. Can be set to another name in case you extend the image to add build or deployment tools. 	|
-| DOCKER_IMAGE_TAG           	|`2`	| The tag of the Docker image to run. Can also be set to pinned versions like `2.0.1`, compatible releases like `2.0`, or `latest`. |
+| DOCKER_IMAGE_TAG           	|`3`	| The tag of the Docker image to run. Can also be set to pinned versions like `3.0.0`, compatible releases like `3.0`, or `latest`. |
 | DEBUG_MODE                  | `FALSE` | If set to `TRUE`, docker will be run in interactive mode (`-ti`) and a bash shell will be started inside the container. |
 | DEPLOY_COMMAND            |    `python deploy.py`    | The command to use when running the image. Defaults to `bash` when `DEBUG_MODE` is `TRUE`. |
 

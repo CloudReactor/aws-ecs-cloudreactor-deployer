@@ -23,6 +23,25 @@
 {% set cpu_units=project_task_ecs.cpu_units | default(256) %}
 {% set memory_mb=project_task_ecs.memory_mb | default(512) %}
 
+{% set task_property_names = [
+  'description',
+  'enabled',
+  'max_manual_start_delay_seconds',
+  'max_heartbeat_lateness',
+  'schedule',
+  'scheduled_instance_count',
+  'min_service_instance_count',
+  'postponed_failure_before_success_seconds',
+  'max_postponed_failure_count',
+  'postponed_timeout_before_success_seconds',
+  'max_postponed_timeout_count',
+  'postponed_missing_execution_before_start_seconds',
+  'max_postponed_missing_execution_count',
+  'min_missing_execution_delay_seconds',
+  'should_clear_failure_alerts_on_success',
+  'should_clear_timeout_alerts_on_success'
+] %}
+
 {% set project_aws_subnets=project_aws.subnets | default('inherit') %}
 {% set subnets=project_task_ecs.task.network.subnets | default(project_aws_subnets) %}
 
@@ -34,6 +53,20 @@
 
 {# This should be the awslogs-group in ecs_task_definition.json #}
 {% set log_query="/aws/fargate/" + project_name + "-" + env + "-" + task_name %}
+
+{% macro prop_def(obj, name, prop_name='') -%}
+  {%- if (obj[name] is defined) and (obj[name] != 'inherit') -%}
+    {%- if prop_name == '' -%}
+      {%- set prop_name = name %}
+    {%- endif -%}
+    {%- set v = obj[name] -%}
+    {%- if v is none -%}
+      "{{ prop_name }}": null
+    {%- else -%}
+      "{{ prop_name }}": "{{ v }}"
+    {%- endif -%}
+  {%- endif -%}
+{%- endmacro %}
 
 # For debugging
 # task_config: {{ task_config | to_json }}
@@ -47,20 +80,12 @@
 
 name: "{{project_name}}_{{task_name}}_{{env}}"
 
-{% if task_config.description is defined %}
-description: {{task_config.description}}
-{% endif %}
-
-{% if task_config.enabled is defined %}
-enabled: {{ task_config.enabled }}
-{% endif %}
+{% for prop_name in task_property_names %}
+{{ prop_def(task_config, prop_name) }}
+{% endfor %}
 
 {% if project_url is defined %}
 project_url: "{{project_url}}"
-{% endif %}
-
-{% if task_config.max_manual_start_delay_seconds is defined %}
-max_manual_start_delay_seconds: {{ task_config.max_manual_start_delay_seconds }}
 {% endif %}
 
 {% if wrapper.api_heartbeat_interval_seconds is defined %}
@@ -71,30 +96,14 @@ api_heartbeat_interval_seconds: 30
 api_heartbeat_interval_seconds: 600
 {% endif %}
 
-{% if task_config.max_heartbeat_lateness is defined %}
-max_heartbeat_lateness_seconds: {{ task_config.heartbeat_lateness_seconds }}
-{% endif %}
-
 {% if task_config.max_concurrency is defined %}
 max_concurrency: {% if max_concurrency is number %}{{ max_concurrency }}{% else %}null{% endif %}
 {% endif %}
 
 is_service: {{is_service}}
 
-{% if task_config.schedule is defined %}
-schedule: {{ task_config.schedule }}
-{% endif %}
-
-{% if task_config.scheduled_instance_count is defined %}
-scheduled_instance_count: {{ task_config.scheduled_instance_count }}
-{% endif %}
-
 {% if service_instance_count != 'null' %}
 service_instance_count: {{service_instance_count}}
-{% endif %}
-
-{% if task_config.min_service_instance_count is defined %}
-min_service_instance_count: {{ task_config.min_service_instance_count }}
 {% endif %}
 
 max_age_seconds: {% if service_instance_count == 'null' %}{{task_config.max_age_seconds | default('3600') }}{% else %}null{% endif %}
@@ -109,13 +118,8 @@ execution_method_capability:
   supported_launch_types:
     - FARGATE
 
-  {% if project_task_ecs.cluster_name is defined %}
-  default_cluster_arn: {{ project_task_ecs.cluster_name }}
-  {% endif %}
-
-  {% if project_task_ecs.platform_version is defined %}
-  default_platform_version: {{ project_task_ecs.platform_version }}
-  {% endif %}
+  {{ prop_def(project_task_ecs, 'cluster_name', 'default_cluster_name') }}
+  {{ prop_def(project_task_ecs, 'platform_version', 'default_platform_version') }}
 
   {% if subnets is none %}
   default_subnets: null
@@ -143,25 +147,16 @@ execution_method_capability:
   tags: {{ project_task_ecs.task.tags | to_yaml(width=2147483647) }}
   {% endif %}
 
-  {% if project_task_ecs.task.network.assign_public_ip is defined %}
-  default_assign_public_ip: {{project_task_ecs.task.network.assign_public_ip}}
-  {% endif %}
+  {{ prop_def(project_task_ecs.task.network, 'assign_public_ip', 'default_assign_public_ip') }}
 
-  {% if project_task_ecs.execution_role_arn is defined %}
-  default_execution_role: {{project_task_ecs.execution_role_arn}}
-  {% endif %}
-
-  {% if project_task_ecs.task.role_arn is defined %}
-  default_task_role: {{project_task_ecs.task.role_arn}}
-  {% endif %}
+  {{ prop_def(project_task_ecs, 'execution_role_arn', 'default_execution_role') }}
+  {{ prop_def(project_task_ecs.task, 'role_arn', 'default_task_role') }}
 
   allocated_cpu_units: {{cpu_units}}
   allocated_memory_mb: {{memory_mb}}
   main_container_name: "{{project_name}}_{{task_name}}_{{env}}"
 
-  {% if project_task_ecs.enable_ecs_managed_tags is defined %}
-  enable_ecs_managed_tags: {{ project_task_ecs.enable_ecs_managed_tags }}
-  {% endif %}
+  {{ prop_def(project_task_ecs, 'enable_ecs_managed_tags') }}
 
   {% if project_task_ecs.service is defined %}
   service_options:
@@ -187,12 +182,9 @@ execution_method_capability:
     deploy_enable_circuit_breaker: {{ project_task_ecs.service.deployment_configuration.enable_circuit_breaker | default(true) }}
     deploy_rollback_on_failure: {{ project_task_ecs.service.deployment_configuration.rollback_on_failure | default(true) }}
     {% endif %}
-    {% if project_task_ecs.service.enable_ecs_managed_tags is defined %}
-    enable_ecs_managed_tags: {{ project_task_ecs.service.enable_ecs_managed_tags }}
-    {% endif %}
-    {% if project_task_ecs.service.propagate_tags is defined %}
-    propagate_tags: {{ project_task_ecs.service.propagate_tags }}
-    {% endif %}
+
+    {{ prop_def(project_task_ecs.service, 'enable_ecs_managed_tags') }}
+    {{ prop_def(project_task_ecs.service, 'propagate_tags') }}
 
     {% if project_task_ecs.service.tags is defined %}
     tags: {{ project_task_ecs.service.tags | to_yaml(width=2147483647) }}
@@ -221,13 +213,9 @@ links: null
 links:
     {% for link in links %}
   - name: "{{link.name}}"
-    link_url_template: "{{link.link_url_template}}"
-    {% if link.icon_url is defined %}
-    icon_url: "{{link.icon_url}}"
-    {% endif %}
-    {% if link.description is defined %}
-    description: "{{link.description}}"
-    {% endif %}
+    {{ prop_def(link, 'link_url_template') }}
+    {{ prop_def(link, 'icon_url') }}
+    {{ prop_def(link, 'description') }}
     {% endfor %}
   {% else %}
 links: []

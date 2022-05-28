@@ -1,4 +1,4 @@
-FROM python:3.9.7-buster
+FROM python:3.9.13-buster
 
 # See https://github.com/hadolint/hadolint/wiki/DL4006
 # Needed since we use pipes in the curl command
@@ -44,7 +44,8 @@ RUN apt-get update && \
     docker-ce=5:20.10.5~3-0~debian-buster \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --upgrade pip==21.1.3 pip-tools==5.5.0 MarkupSafe==1.1.1 requests==2.24.0
+RUN pip install --upgrade pip==22.0.4
+RUN pip install pip-tools==6.6.1 MarkupSafe==1.1.1 requests==2.27.1
 
 COPY deploy-requirements.in /tmp/deploy-requirements.in
 
@@ -54,8 +55,8 @@ RUN pip-compile --allow-unsafe --generate-hashes \
 # Install dependencies
 RUN pip install -r /tmp/deploy-requirements.txt
 
-RUN ansible-galaxy collection install community.docker:==1.7.0
-RUN ansible-galaxy collection install community.aws:==1.5.0
+RUN ansible-galaxy collection install community.docker:==2.6.0
+RUN ansible-galaxy collection install community.aws:==3.2.1
 
 RUN mkdir /work
 COPY ansible/ /work
