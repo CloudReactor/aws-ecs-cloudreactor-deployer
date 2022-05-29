@@ -18,13 +18,13 @@ services:
     <<: *sample-base
     environment:
       <<: *sample-env-base
-      TASK_COMMAND: "echo 'hi'"
+      PROC_WRAPPER_TASK_COMMAND: "echo 'hi'"
 
   write_file:
     <<: *sample-base
     environment:
       <<: *sample-env-base
-      TASK_COMMAND: "./write_file.sh"
+      PROC_WRAPPER_TASK_COMMAND: "./write_file.sh"
 
   dev-shell:
     <<: *sample-base
