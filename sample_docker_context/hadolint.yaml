@@ -1,3 +1,4 @@
 ignored:
-  # Process wrapper requires shell form
-  - DL3025
+  # We do not pin versions for OS libraries, expecting that later versions may
+  # have security updates.
+  - DL3008
