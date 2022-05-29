@@ -1,10 +1,10 @@
-FROM debian:buster-slim
+FROM debian:bullseye-slim
 
 # We could also start from a python base image to be able to run the
 # proc_wrapper module.
-# FROM python:3.9.13-slim-buster
+# FROM python:3.9.13-slim-bullseye
 # This is good if we're only running python code.
-# But debian:buster-slim is more likely to be a base image that different
+# But debian:bullseye-slim is more likely to be a base image that different
 # language environment inherit from.
 LABEL maintainer="jeff@cloudreactor.io"
 
@@ -19,7 +19,10 @@ WORKDIR /usr/src/app
 # See https://github.com/phusion/baseimage-docker/issues/58
 ENV DEBIAN_FRONTEND noninteractive
 
+# We do not pin versions for OS libraries, expecting that later
+# versions may have security updates.
 RUN apt-get update \
+  && apt-get upgrade -y \
   && apt-get install -y --no-install-recommends \
   openssl \
   libexpat1 \
@@ -36,7 +39,9 @@ WORKDIR /home/appuser
 # when ECS mounts a volume, otherwise it will be owned by root.
 RUN mkdir scratch
 
-# Use standalone executable for x64/AMD64 Linux
+# Use the standalone executable for x64/AMD64 Linux.
+# Unfortunately, it is an AppImage that needs to be extracted to
+# run in a container, since FUSE inside a container is problematic.
 RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/main/bin/nuitka/linux_amd64/4.0.0-alpha1/proc_wrapper.bin -O proc_wrapper_app_image \
   && chmod +x proc_wrapper_app_image \
   && ./proc_wrapper_app_image --appimage-extract \
