@@ -1,8 +1,8 @@
 project_name: "aws-ecs-cloudreactor-deployer-sample"
 project_version_text: 3.0.0
-# Optionally, provide a steadily increasing whole number to indicate which
-# build is more updated than another.
-# project_version_number: 1
+# # Optionally, provide a steadily increasing whole number to indicate which
+# # build is more updated than another.
+# # project_version_number: 1
 project_url: "https://github.com/CloudReactor/aws-ecs-cloudreactor-deployer"
 
 default_build_options:
@@ -14,7 +14,7 @@ default_cloudreactor:
   # # instance of the CloudReactor Task Manager.
   # api_base_url: https://api.cloudreactor.io
 
-  # Set to false to disable monitoring and management in CloudReactor.
+  # # Set to false to disable monitoring and management in CloudReactor.
   enabled: true
 
 # These settings will apply by default to all tasks and in all deployments.
@@ -24,15 +24,15 @@ default_cloudreactor:
 # Run Environment, set the property value to null.
 default_task_config:
   # # Set to false to skip this Task's deployment.
-  # # deployed: false
+  # deployed: false
 
   # # Set to false to disable the Tasks's schedule/service in CloudReactor.
   # # Usually you should leave this unset and manage the setting in the
   # # CloudReactor dashboard.
   # enabled: true
 
-  # Maximum number of concurrent Task Executions of the same Task.
-  # -1 means no limit.
+  # # Maximum number of concurrent Task Executions of the same Task.
+  # # -1 means no limit.
   # max_concurrency: 1
 
   # max_age_seconds: 7200
@@ -40,8 +40,8 @@ default_task_config:
   # max_heartbeat_lateness_seconds: 120
 
   ecs:
-    # See https://aws.amazon.com/fargate/pricing/
-    # for supported combinations.
+    # # See https://aws.amazon.com/fargate/pricing/
+    # # for supported combinations.
     cpu_units: 256
     memory_mb: 512
     # # See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/platform_versions.html
@@ -173,7 +173,7 @@ default_task_config:
     # # Merge stategy for configuration / environment. Can be one of these:
     # # SHALLOW, REPLACE, ADDITIVE, TYPESAFE_REPLACE, TYPESAFE_ADDITIVE
     # # Strategies other than SHALLOW require merge_deep to be installed.
-    # # config_merge_strategy: SHALLOW
+    # config_merge_strategy: SHALLOW
 
     # # Normally secrets fetched externally do not overwrite environment
     # # variables that are already set, since they could be set when manually
@@ -242,7 +242,7 @@ default_task_config:
     # send_hostname: true
 
     # # Send metadata about the runtime environment (such as the ECS Task ARN)
-    # to CloudReactor for debugging and management purposes.
+    # # to CloudReactor for debugging and management purposes.
     # send_runtime_metadata: true
 
     # # Number of seconds to wait between sending heartbeats to CloudReactor.
