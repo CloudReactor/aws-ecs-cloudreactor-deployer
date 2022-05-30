@@ -1,11 +1,11 @@
-FROM debian:bullseye-slim
-
 # We could also start from a python base image to be able to run the
 # proc_wrapper module.
 # FROM python:3.9.13-slim-bullseye
 # This is good if we're only running python code.
 # But debian:bullseye-slim is more likely to be a base image that different
 # language environment inherit from.
+FROM debian:bullseye-slim
+
 LABEL maintainer="jeff@cloudreactor.io"
 
 WORKDIR /usr/src/app
@@ -42,7 +42,7 @@ RUN mkdir scratch
 # Use the standalone executable for x64/AMD64 Linux.
 # Unfortunately, it is an AppImage that needs to be extracted to
 # run in a container, since FUSE inside a container is problematic.
-RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/main/bin/nuitka/linux_amd64/4.0.0-alpha1/proc_wrapper.bin -O proc_wrapper_app_image \
+RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/4.0/bin/nuitka/linux-amd64/4.0.0-alpha1/proc_wrapper.bin -O proc_wrapper_app_image \
   && chmod +x proc_wrapper_app_image \
   && ./proc_wrapper_app_image --appimage-extract \
   && rm ./proc_wrapper_app_image
