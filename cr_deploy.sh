@@ -70,7 +70,7 @@
 #   - Computing a commit signature and using it to set
 #     CLOUDREACTOR_TASK_VERSION_SIGNATURE
 
-set -e
+set -eo pipefail
 
 if [ -z "$1" ]
   then
