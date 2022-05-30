@@ -1,7 +1,7 @@
-ansible==2.10.7
-awscli==1.24.10
-boto3==1.23.5
-docker==5.0.2
+ansible>=2.10.7
+awscli>=1.24.10
+boto3>=1.23.5
+docker>=5.0.2
 PyYAML==5.4.1
-cloudreactor_procwrapper==3.1.2
+cloudreactor_procwrapper==4.0.0
 jsonpath-ng>=1.5.0

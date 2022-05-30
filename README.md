@@ -26,7 +26,7 @@ If you haven't already, Dockerize your project.
 Assuming you want to use CloudReactor to monitor your Tasks, ensure that
 your Docker image contains the files necessary to run
 [proc_wrapper](https://github.com/CloudReactor/cloudreactor-procwrapper).
-This could either be a standalone executable, or having python 3.6+ installed
+This could either be a standalone executable, or having python 3.7+ installed
 and installing the
 [cloudreactor-procwrapper](https://pypi.org/project/cloudreactor-procwrapper/)
 package. Your Dockerfile should call proc_wrapper as its entrypoint. If using
@@ -414,7 +414,7 @@ the master branch:
       deploy:
         runs-on: ubuntu-latest
         steps:
-        - uses: actions/checkout@v2
+        - uses: actions/checkout@v3
         - name: Deploy to AWS ECS and CloudReactor
           uses: CloudReactor/aws-ecs-cloudreactor-deployer@v2.0.1
           with:
@@ -492,6 +492,15 @@ Also you'll need to set the GitHub secrets used in
 
 The sample Tasks are implemented as simple bash scripts so no dependencies are
 required.
+
+## Example Projects
+
+These projects contain sample Tasks that use this Docker image to deploy to
+AWS ECS Fargate and CloudReactor:
+
+* [cloudreactor-python-ecs-quickstart](https://github.com/CloudReactor/cloudreactor-python-ecs-quickstart)
+* [cloudreactor-java-ecs-quickstart](https://github.com/CloudReactor/cloudreactor-java-ecs-quickstart)
+
 
 ## Need help?
 

@@ -22,22 +22,80 @@ default_cloudreactor:
 # To manage a setting in the CloudReactor UI, omit the property name and value.
 # To clear a property name and value, using the default value in the
 # Run Environment, set the property value to null.
+# See https://apidocs.cloudreactor.io/#operation/tasks_create for a list of all
+# properties.
+# These properties can also be applied to task_name_to_config[task_name] and
+# default_env_task_config[task_name], which will override those set here.
 default_task_config:
-  # # Set to false to skip this Task's deployment.
+  # # Set to false to skip this Task's deployment. This is usually set per-Task
+  # # in task_name_to_config[task_name].deployed
   # deployed: false
 
   # # Set to false to disable the Tasks's schedule/service in CloudReactor.
   # # Usually you should leave this unset and manage the setting in the
-  # # CloudReactor dashboard.
+  # # CloudReactor dashboard. This is usually set per-Task in
+  # # task_name_to_config[task_name].enabled
   # enabled: true
 
+  # # To execute the Task on a schedule, a cron or rate expression can be used.
+  # # Expression syntax is documented here:
+  # # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+  # # This is usually set per-Task in task_name_to_config[task_name].schedule
+  # schedule: cron(0 12 * * ? *)
+
+  # # The
+  # scheduled_instance_count:
+
+  # service_instance_count
+
   # # Maximum number of concurrent Task Executions of the same Task.
+  # # CloudReactor will block attempts to start Task Executions when the
+  # # existing number of running Task Executions reaches this limit.
   # # -1 means no limit.
   # max_concurrency: 1
 
+  # min_service_instance_count
+
   # max_age_seconds: 7200
-  # max_manual_start_delay_seconds: 60
-  # max_heartbeat_lateness_seconds: 120
+
+  # # The number of seconds after which a Task is manually started, but
+  # # before the Task actually reports it started, before an alert is
+  # # triggered.
+  # max_manual_start_delay_before_alert_seconds: 60
+
+  # max_manual_start_delay_before_abandonment_seconds:
+
+  # # Tolerance for late heartbearts, in seconds, before a missing heartbeat
+  # # alert is triggered.
+  # max_heartbeat_lateness_before_alert_seconds: 120
+
+  # max_heartbeat_lateness_before_abandonment_seconds:
+
+  # postponed_failure_before_success_seconds
+  # max_postponed_failure_count
+  # max_postponed_timeout_count
+  # postponed_missing_execution_before_start_seconds
+  # max_postponed_missing_execution_count
+  # min_missing_execution_delay_seconds
+  # should_clear_failure_alerts_on_success
+  # should_clear_timeout_alerts_on_success
+
+  # # Environment variables to set in the process environment
+  env:
+    DEPLOYMENT: "{{env}}"
+
+  # alert_methods:
+  #   - Alert Method 1
+  # links:
+  #  - name: Rollbar
+  #    link_url_template: "https://rollbar.com/YourCompanyName/YourProject/"
+  #    icon_url: "https://cdn.rollbar.com/static/img/favicon.ico"
+  #  - name: SumoLogic
+  #    # We have to do some tricks because this file is parsed as Jinja2, then re-parsed on upload.
+  #    link_url_template: "https://service.us2.sumologic.com/ui/index.html#section/search/@{% raw %}{{ '{{' }}(current_timestamp * 1000) - 3600000{{ '}}' }},{{ '{{' }}current_timestamp * 1000{{ '}}' }}{% endraw %}@_sourceHost={{log_query | urlencode}}"
+  #    # Unfortunately, this icon does not show up, probably due to some cross-site inclusion limitations.
+  #    icon_url: "https://www.sumologic.com/favicon.ico"
+  #    description: "{{log_query}}"
 
   ecs:
     # # See https://aws.amazon.com/fargate/pricing/
@@ -112,6 +170,8 @@ default_task_config:
     #      - hostPort: 8000    # port of the target group
     #      - protocol: tcp
 
+  # Properties sent to the wrapper, normally CloudReactor python proc_wrapper.
+  # See https://github.com/CloudReactor/cloudreactor-procwrapper
   wrapper:
     # # Working directory to execute command in
     # work_dir: .
@@ -302,7 +362,7 @@ default_task_config:
     # # This data is sent back from the wrapper to CloudReactor when it starts.
     # # It may be used to identify properties about instance of the task that is
     # # running.
-    # other_instance_metadata:
+    # other_metadata:
     #   a: 'b'
     #   embedded:
     #     c: 'd'
@@ -321,26 +381,11 @@ default_task_config:
     # # Timeout for contacting Rollbar server, in seconds.
     # rollbar_timeout_seconds: 30
 
-  env:
-    DEPLOYMENT: "{{env}}"
-
-  # alert_methods:
-  #   - Alert Method 1
-  # links:
-  #  - name: Rollbar
-  #    link_url_template: "https://rollbar.com/YourCompanyName/YourProject/"
-  #    icon_url: "https://cdn.rollbar.com/static/img/favicon.ico"
-  #  - name: SumoLogic
-  #    # We have to do some tricks because this file is parsed as Jinja2, then re-parsed on upload.
-  #    link_url_template: "https://service.us2.sumologic.com/ui/index.html#section/search/@{% raw %}{{ '{{' }}(current_timestamp * 1000) - 3600000{{ '}}' }},{{ '{{' }}current_timestamp * 1000{{ '}}' }}{% endraw %}@_sourceHost={{log_query | urlencode}}"
-  #    # Unfortunately, this icon does not show up, probably due to some cross-site inclusion limitations.
-  #    icon_url: "https://www.sumologic.com/favicon.ico"
-  #    description: "{{log_query}}"
-
 # These are per-task settings that will inherit and override the settings in
 # default_task_config, in all environments.
 # To add a task, add an additional property to task_name_to_config (e.g. task_1, file_io)
-# Each task must at a minimum define which command to run i.e. `command: python main.py`
+# Each task must at a minimum define which command to run i.e.
+# `command: python main.py`
 task_name_to_config:
   smoke:
     description: "This description shows up in CloudReactor dashboard"
