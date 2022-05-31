@@ -61,4 +61,4 @@ RUN ansible-galaxy collection install community.aws:==3.2.1
 RUN mkdir /work
 COPY ansible/ /work
 
-ENTRYPOINT [ "python", "/work/deploy.py" ]
+ENTRYPOINT [ "python", "-m", "proc_wrapper", "python", "/work/deploy.py" ]
