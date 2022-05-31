@@ -23,6 +23,7 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK 1
 ENV ANSIBLE_CONFIG /work/ansible.cfg
 
 RUN apt-get update \
+  && apt-get upgrade -y \
   && apt-get install -y --no-install-recommends \
     binutils=2.31.1-16 \
     libproj-dev=5.2.0-1 \
