@@ -59,13 +59,14 @@ RUN pip install -r /tmp/deploy-requirements.txt
 RUN ansible-galaxy collection install community.docker:==2.6.0
 RUN ansible-galaxy collection install community.aws:==3.2.1
 
+# Can't do this because GitHub actions must be run as root
 # Run as non-root user for better security
-RUN groupadd appuser && useradd -g appuser --create-home appuser
-RUN usermod -a -G docker appuser
-USER appuser
+# RUN groupadd appuser && useradd -g appuser --create-home appuser
+# RUN usermod -a -G docker appuser
+# USER appuser
 
-RUN mkdir /home/appuser/work
-WORKDIR /home/appuser/work
-COPY ansible/ .
+RUN mkdir -p /home/appuser/work
+COPY ansible/ /home/appuser/work/
 
-ENTRYPOINT [ "python", "-m", "proc_wrapper", "python", "deploy.py" ]
+ENTRYPOINT [ "python", "-m", "proc_wrapper", \
+  "python", "/home/appuser/work/deploy.py" ]

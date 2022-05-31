@@ -189,9 +189,13 @@ if [ "$PASS_AWS_ACCESS_KEY" == "TRUE" ]
     EXTRA_DOCKER_RUN_OPTIONS="-e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY $EXTRA_DOCKER_RUN_OPTIONS"
 fi
 
+# GitHub Actions must be run as root, but keep this as a variable in case
+# we publish another Docker image that runs as appuser.
+DOCKER_USER_HOME=/root
+
 if [ "$USE_USER_AWS_CONFIG" == "TRUE" ]
   then
-    EXTRA_DOCKER_RUN_OPTIONS="-v $HOME/.aws:/home/appuser/.aws $EXTRA_DOCKER_RUN_OPTIONS"
+    EXTRA_DOCKER_RUN_OPTIONS="-v $HOME/.aws:$DOCKER_USER_HOME/.aws $EXTRA_DOCKER_RUN_OPTIONS"
     if [ -n "$AWS_PROFILE" ]
       then
         EXTRA_DOCKER_RUN_OPTIONS="-e AWS_PROFILE $EXTRA_DOCKER_RUN_OPTIONS"
