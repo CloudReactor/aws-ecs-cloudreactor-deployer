@@ -218,7 +218,7 @@ host machine's docker service.
 3) Use build tools installed in a custom deployer image. In this case, you'll
 want to create a new image based on `cloudreactor/aws-ecs-cloudreactor-deployer`:
 
-        FROM cloudreactor/aws-ecs-cloudreactor-deployer:3.0.0
+        FROM cloudreactor/aws-ecs-cloudreactor-deployer:3.0.1
         # Example: get the JDK to build JAR files
         RUN apt-get update && \
           apt-get -t stretch-backports install openjdk-11-jdk

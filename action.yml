@@ -34,7 +34,7 @@ inputs:
     description: The name of the deployment environment
     required: true
   version-signature:
-    description: "The version signature of the Task. Defaults to the commit hash (github.sha)."
+    description: "The version signature of the Tasks. Defaults to the commit hash (github.sha)."
     required: false
     default: ${{ github.sha }}
   task-names:
@@ -55,7 +55,7 @@ inputs:
     default: INFO
 runs:
   using: docker
-  image: docker://cloudreactor/aws-ecs-cloudreactor-deployer:3.0.0
+  image: docker://cloudreactor/aws-ecs-cloudreactor-deployer:3.0.1
   env:
     AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
     AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
