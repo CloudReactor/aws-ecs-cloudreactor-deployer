@@ -54,7 +54,7 @@
 {% set common_task_config=default_task_config | default({}) | combine(task_name_to_config[task_name] | default({}), recursive=True) %}
 {% set env_task_config=default_env_task_config | default({}) | combine(task_name_to_env_config[task_name] | default({}), recursive=True) %}
 {% set task_config=common_task_config | combine(env_task_config, recursive=True) %}
-{% set service_instance_count=task_config.service_instance_count | default('null') %}
+{% set service_instance_count=task_config.service_instance_count | default('__unset__') %}
 
 {% if task_config.is_service is defined %}
   {% set is_service=task_config.is_service %}
@@ -67,9 +67,9 @@
 {% endif %}
 
 {% set max_concurrency=task_config.max_concurrency | default(1) %}
-{% set global_task_version_number=project_version_number | default('null') %}
+{% set global_task_version_number=project_version_number | default('__unset__') %}
 {% set task_version_number=task_config.task_version_number | default(global_task_version_number) %}
-{% set global_task_version_text=project_version_text | default('null') %}
+{% set global_task_version_text=project_version_text | default('__unset__') %}
 {% set task_version_text=task_config.task_version_text | default(global_task_version_text) %}
 {% set wrapper=task_config.wrapper | default({}) %}
 {% set aws_ecs=aws.ecs | default({}) %}
@@ -87,7 +87,7 @@
 
 {% macro env_def(obj, name, maybe_secret=false, env_name='',
   formatter=default_formatter) -%}
-  {%- if (obj[name] is defined) and (obj[name] != 'null') -%}
+  {%- if (obj[name] is defined) and (obj[name] != '__unset__') -%}
     {%- set v = obj[name] -%}
     {%- set is_secret = maybe_secret and (v is string) and
         (v.startswith('arn:aws:secretsmanager:') or
@@ -202,19 +202,19 @@
                 },
                 {% endif %}
                 {{ env_def(task_config, 'work_dir') }}
-                {% if service_instance_count == 'null' %}
+                {% if service_instance_count == '__unset__' %}
                 {
                     "name" : "PROC_WRAPPER_PROCESS_TIMEOUT_SECONDS",
                     "value" : "{{ wrapper.process_timeout_seconds | default(-1) }}"
                 },
                 {% endif %}
-                {% if task_version_number != 'null' %}
+                {% if task_version_number != '__unset__' %}
                 {
                     "name" : "PROC_WRAPPER_TASK_VERSION_NUMBER",
                     "value" : "{{task_version_number}}"
                 },
                 {% endif %}
-                {% if task_version_text != 'null' %}
+                {% if task_version_text != '__unset__' %}
                 {
                     "name" : "PROC_WRAPPER_TASK_VERSION_TEXT",
                     "value" : {{ task_version_text | to_json }}

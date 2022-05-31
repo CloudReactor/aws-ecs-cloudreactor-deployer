@@ -3,7 +3,7 @@
 {% set common_task_config=default_task_config | default({}) | combine(task_name_to_config[task_name] | default({}), recursive=True) %}
 {% set env_task_config=default_env_task_config | default({}) | combine(task_name_to_env_config[task_name] | default({}), recursive=True) %}
 {% set task_config=common_task_config | combine(env_task_config, recursive=True) %}
-{% set service_instance_count=task_config.service_instance_count | default('null') %}
+{% set service_instance_count=task_config.service_instance_count | default('__unset__') %}
 
 {% if task_config.is_service is defined %}
   {% set is_service=task_config.is_service %}
@@ -42,20 +42,20 @@
   'should_clear_timeout_alerts_on_success'
 ] %}
 
-{% set project_aws_subnets=project_aws.subnets | default('inherit') %}
+{% set project_aws_subnets=project_aws.subnets | default('__unset__') %}
 {% set subnets=project_task_ecs.task.network.subnets | default(project_aws_subnets) %}
 
-{% set project_aws_security_groups=project_aws.security_groups | default('inherit') %}
+{% set project_aws_security_groups=project_aws.security_groups | default('__unset__') %}
 {% set security_groups=project_task_ecs.task.network.security_groups | default(project_aws_security_groups) %}
 
-{% set alert_methods=task_config.alert_methods | default('inherit') %}
-{% set links=task_config.links | default('inherit') %}
+{% set alert_methods=task_config.alert_methods | default('__unset__') %}
+{% set links=task_config.links | default('__unset__') %}
 
 {# This should be the awslogs-group in ecs_task_definition.json #}
 {% set log_query="/aws/fargate/" + project_name + "-" + env + "-" + task_name %}
 
 {% macro prop_def(obj, name, prop_name='') -%}
-  {%- if (obj[name] is defined) and (obj[name] != 'inherit') -%}
+  {%- if (obj[name] is defined) and (obj[name] != '__unset__') -%}
     {%- if prop_name == '' -%}
       {%- set prop_name = name %}
     {%- endif -%}
@@ -102,11 +102,11 @@ max_concurrency: {% if max_concurrency is number %}{{ max_concurrency }}{% else 
 
 is_service: {{is_service}}
 
-{% if service_instance_count != 'null' %}
+{% if service_instance_count != '__unset__' %}
 service_instance_count: {{service_instance_count}}
 {% endif %}
 
-max_age_seconds: {% if service_instance_count == 'null' %}{{task_config.max_age_seconds | default('3600') }}{% else %}null{% endif %}
+max_age_seconds: {% if service_instance_count == '__unset__' %}{{task_config.max_age_seconds | default('3600') }}{% else %}null{% endif %}
 
 run_environment:
   name: "{{ task_config.run_environment | default(run_environment_name) }}"
@@ -124,7 +124,7 @@ execution_method_capability:
   {% if subnets is none %}
   default_subnets: null
   {% else %}
-  {% if subnets != 'inherit' %}
+  {% if subnets != '__unset__' %}
   default_subnets:
   {% for subnet in subnets %}
     - "{{ subnet }}"
@@ -135,7 +135,7 @@ execution_method_capability:
   {% if security_groups is none %}
   default_security_groups: null
   {% else %}
-  {% if security_groups != 'inherit' %}
+  {% if security_groups != '__unset__' %}
   default_security_groups:
   {% for security_group in security_groups %}
     - "{{ security_group }}"
@@ -193,7 +193,7 @@ execution_method_capability:
 
 log_query: "{{log_query}}"
 
-{% if alert_methods != 'inherit' %}
+{% if alert_methods != '__unset__' %}
   {% if alert_methods is none %}
 alert_methods: null
   {% elif alert_methods[0] is defined %}
@@ -206,7 +206,7 @@ alert_methods: []
   {% endif %}
 {% endif %}
 
-{% if links != 'inherit' %}
+{% if links != '__unset__' %}
   {% if links is none %}
 links: null
   {% elif links[0] is defined %}
