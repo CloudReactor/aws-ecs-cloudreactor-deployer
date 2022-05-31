@@ -51,7 +51,7 @@ x-deployer-base: &deployer-base
 services:
   deploy:
     <<: *deployer-base
-    entrypoint: "python deploy.py"
+    entrypoint: "python /work/deploy.py"
 
   # For debugging your Docker build
   deployer-shell:
