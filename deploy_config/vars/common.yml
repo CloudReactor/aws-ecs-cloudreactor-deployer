@@ -7,7 +7,27 @@ project_url: "https://github.com/CloudReactor/aws-ecs-cloudreactor-deployer"
 
 default_build_options:
   # dockerfile_path: "{{ docker_context_dir }}/Dockerfile"
+
+  # Options passed after "docker" to all docker commands
+  # docker_common_general_options: ""
+
+  # Options passed after "docker" and "build"
+  # docker_build_general_options: "--debug"
+
+  # Additional options passed after "docker build"
   extra_docker_build_args: ""
+
+  # # Options passed between "docker" and "tag"
+  # docker_tag_general_options: ""
+
+  # # Additional options passed after "docker tag"
+  # extra_docker_tag_args: ""
+
+  # # Options passed between "docker" and "push"
+  # docker_push_general_options: ""
+
+  # # Additional options passed after "docker push"
+  # extra_docker_push_args: ""
 
 default_cloudreactor:
   # # Base URL of API server. Can be overridden if you're running your own
@@ -43,10 +63,13 @@ default_task_config:
   # # This is usually set per-Task in task_name_to_config[task_name].schedule
   # schedule: cron(0 12 * * ? *)
 
-  # # The
-  # scheduled_instance_count:
+  # # The number of Task Executions to create at the scheduled time.
+  # scheduled_instance_count: 1
 
-  # service_instance_count
+  # # The number of Task Executions to keep running continuously. Setting this
+  # # to 1 or greater makes the Task a service. Setting this to null or 0 makes
+  # # the Task a non-service.
+  # service_instance_count: 1
 
   # # Maximum number of concurrent Task Executions of the same Task.
   # # CloudReactor will block attempts to start Task Executions when the
@@ -70,7 +93,6 @@ default_task_config:
   # max_heartbeat_lateness_before_alert_seconds: 120
 
   # max_heartbeat_lateness_before_abandonment_seconds:
-
   # postponed_failure_before_success_seconds
   # max_postponed_failure_count
   # max_postponed_timeout_count

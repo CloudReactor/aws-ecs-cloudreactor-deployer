@@ -13,7 +13,13 @@
     config_filename_stem: "{{ lookup('env', 'CONFIG_FILENAME_STEM') | default(env, true) }}"
     build_options: "{{ default_build_options | default({}) }}"
     dockerfile_path: "{{ lookup('env', 'DOCKERFILE_PATH') | default(build_options.dockerfile_path | default(docker_context_dir + '/Dockerfile', true), true) }}"
+    docker_common_general_options: "{{ lookup('env', 'DOCKER_COMMON_GENERAL_OPTIONS') | default(build_options.docker_common_general_options | default(''), true) }}"
+    docker_build_general_options: "{{ lookup('env', 'DOCKER_BUILD_GENERAL_OPTIONS') | default(build_options.docker_build_general_options | default(''), true) }}"
     extra_docker_build_args: "{{ lookup('env', 'EXTRA_DOCKER_BUILD_ARGS') | default(build_options.extra_docker_build_args | default(''), true) }}"
+    docker_tag_general_options: "{{ lookup('env', 'DOCKER_TAG_GENERAL_OPTIONS') | default(build_options.docker_tag_general_options | default(''), true) }}"
+    extra_docker_tag_args: "{{ lookup('env', 'EXTRA_DOCKER_TAG_ARGS') | default(build_options.extra_docker_tag_args | default(''), true) }}"
+    docker_push_general_options: "{{ lookup('env', 'DOCKER_PUSH_GENERAL_OPTIONS') | default(build_options.docker_push_general_options | default(''), true) }}"
+    extra_docker_push_args: "{{ lookup('env', 'EXTRA_DOCKER_PUSH_ARGS') | default(build_options.extra_docker_push_args | default(''), true) }}"
     resolved_cloudreactor: "{{ default_cloudreactor | default({}) | combine(cloudreactor | default({})) }}"
     cloudreactor_enabled: "{{ resolved_cloudreactor.enabled | default(true) }}"
     cloudreactor_api_base_url: "{{ lookup('env', 'CLOUDREACTOR_API_BASE_URL') | default(resolved_cloudreactor.api_base_url | default('https://api.cloudreactor.io', true), true) }}"
@@ -104,7 +110,7 @@
       - create_tasks
 
   - name: Login to ECR
-    shell: "aws ecr get-login-password --region {{aws.region | quote}} | docker login --username AWS --password-stdin {{ecr_hostname}}"
+    shell: "aws ecr get-login-password --region {{aws.region | quote}} | docker {{docker_common_general_options}} login --username AWS --password-stdin {{ecr_hostname}}"
     tags:
       - upload
 
@@ -122,20 +128,20 @@
 
   - name: Output Docker build options
     debug:
-      msg: "Docker build options: {{build_options}}, extra_docker_build_args={{extra_docker_build_args}}"
+      msg: "Docker build options: {{build_options}}"
       verbosity: 1
     tags:
       - build
 
   - name: Output Docker build command
     debug:
-      msg: "Docker build command: 'docker --debug build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} .'"
+      msg: "Docker build command: 'docker {{docker_common_general_options}} {{docker_build_general_options}} build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} .'"
       verbosity: 1
     tags:
       - build
 
   - name: Build Docker image
-    command: "docker --debug build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} ."
+    command: "docker {{docker_common_general_options}} {{docker_build_general_options}} build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} ."
     args:
       chdir: "{{ docker_context_dir }}"
     tags:
@@ -150,12 +156,12 @@
       - create_ecr_repo
 
   - name: Tag Docker image
-    command: "docker tag {{docker_image_name}} {{ecr_hostname}}/{{docker_image_name}}"
+    command: "docker {{docker_common_general_options}} {{docker_tag_general_options}} tag {{docker_image_name}} {{ecr_hostname}}/{{docker_image_name}} {{extra_docker_tag_args}}"
     tags:
       - upload
 
   - name: Push Docker image
-    command: "docker push {{ecr_hostname}}/{{docker_image_name}}"
+    command: "docker {{docker_common_general_options}} {{docker_push_general_options}} push {{ecr_hostname}}/{{docker_image_name}} {{extra_docker_push_args}}"
     tags:
       - upload
 
@@ -171,6 +177,6 @@
       - create_tasks
 
   - name: Logout of ECR
-    command: "docker logout {{ecr_hostname}}"
+    command: "docker {{docker_common_general_options}} logout {{ecr_hostname}}"
     tags:
       - upload
