@@ -116,7 +116,7 @@
 
   - name: Create output directory
     file:
-      path: build/{{env}}
+      path: "build/{{env}}"
       state: directory
     tags:
       - build

@@ -234,14 +234,14 @@ want to create a new image based on `cloudreactor/aws-ecs-cloudreactor-deployer`
 During your custom build steps, the following variables are available:
 
 1. `work_dir` points to the directory in the container in which
-the root directory of your project is mounted. This is `/work` for
+the root directory of your project is mounted. This is `/home/appuser/work` for
 command-line builds.
 2. `deploy_config_dir` points to the directory in the container in which the
-`deploy_config` directory is mounted. This is `/work/deploy_config` for
+`deploy_config` directory is mounted. This is `/home/appuser/work/deploy_config` for
 command-line builds.
 3. `docker_context_dir` points to the directory on the host is the Docker context
 directory. For command-line builds, this is the project root directory unless
-overridden by `DOCKER_CONTEXT_DIR`. It is mounted in `/work/docker_context`
+overridden by `DOCKER_CONTEXT_DIR`. It is mounted in `/home/appuser/work/docker_context`
 in the container.
 
 You can find more helpful variables in the `vars` section of
@@ -313,7 +313,7 @@ the command-line during deployment:
     The file `ansible/vault_pass_from_env.sh` may also be used so that the
     vault password can come from the environment variable `ANSIBLE_VAULT_PASS`:
 
-        ./cr_deploy.sh staging --ansible-args --vault-password-file /work/vault_pass_from_env.sh
+        ./cr_deploy.sh staging --ansible-args --vault-password-file /home/appuser/work/vault_pass_from_env.sh
 
 If you use a password file, make sure it is available in the Docker
 context of the container. You can either put it in your Docker context
@@ -333,7 +333,7 @@ a volume mount option to the Docker command line. For example, to override
 `ansible.cfg` and `deploy.yml`, set the `EXTRA_DOCKER_RUN_OPTIONS` environment
 variable before calling `cr_deploy.sh`:
 
-    export EXTRA_DOCKER_RUN_OPTIONS="-v $PWD/ansible_overrides/ansible.cfg:/work/ansible.cfg -v $PWD/ansible_overrides/deploy.yml:/work/deploy.yml"
+    export EXTRA_DOCKER_RUN_OPTIONS="-v $PWD/ansible_overrides/ansible.cfg:/home/appuser/work/ansible.cfg -v $PWD/ansible_overrides/deploy.yml:/home/appuser/work/deploy.yml"
 
 * The ECS task definition is created with the Jinja2 template
 `ansible/templates/ecs_task_definition.json.j2`.
@@ -344,7 +344,7 @@ file that is converted to JSON before sending it CloudReactor.
 These templates use settings from the files described above. If you need to
 modify the templates, you can override the default templates similarly:
 
-    export EXTRA_DOCKER_RUN_OPTIONS="-v $PWD/ansible_overrides/templates/ecs_task_definition.json.j2:/work/templates/ecs_task_definition.json.j2"
+    export EXTRA_DOCKER_RUN_OPTIONS="-v $PWD/ansible_overrides/templates/ecs_task_definition.json.j2:/home/appuser/work/templates/ecs_task_definition.json.j2"
 
 ### Deploying by command-line:
 
@@ -390,7 +390,7 @@ the filesystem. Inside the bash shell you can start the deployment by running:
     python deploy.py <environment> [TASK_NAMES]
 
 After the script finishes (successfully or not), it should output intermediate
-files to `/work/build` which you can inspect for problems.
+files to `/home/appuser/work/build` which you can inspect for problems.
 
 ## Setup deployment via GitHub Actions
 

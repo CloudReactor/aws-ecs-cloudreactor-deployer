@@ -77,7 +77,7 @@ Deploys a project to AWS ECS and CloudReactor using Ansible.
         logging.debug(f"Found GitHub workspace dir = {work_dir}")
         process_env['WORK_DIR'] = work_dir
 
-    resolved_work_dir = work_dir or os.environ.get('WORK_DIR') or '/work'
+    resolved_work_dir = work_dir or os.environ.get('WORK_DIR') or '/home/appuser/work'
 
     relative_docker_context_dir = os.environ.get('RELATIVE_DOCKER_CONTEXT_DIR')
 
@@ -101,9 +101,9 @@ Deploys a project to AWS ECS and CloudReactor using Ansible.
 
     if ansible_vault_password:
         command_line.append('--vault-password-file')
-        command_line.append('/work/vault_pass_from_env.sh')
+        command_line.append('/home/appuser/work/vault_pass_from_env.sh')
 
-    command_line.append('/work/deploy.yml')
+    command_line.append('/home/appuser/work/deploy.yml')
 
     logging.debug(f"Ansible command line = {command_line}")
 

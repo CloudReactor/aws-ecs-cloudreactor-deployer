@@ -18,13 +18,13 @@ x-deployer-base: &deployer-base
     dockerfile: Dockerfile
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock
-    - ./deploy_config:/work/deploy_config
+    - ./deploy_config:/home/appuser/work/deploy_config
 
     # For your own project, most likely, you will want to change the next line:
-    - ./sample_docker_context:/work/docker_context
+    - ./sample_docker_context:/home/appuser/work/docker_context
     # To something like this:
-    # - ./Dockerfile:/work/docker_context/Dockerfile
-    # - ./src:/work/docker_context/src
+    # - ./Dockerfile:/home/appuser/work/docker_context/Dockerfile
+    # - ./src:/home/appuser/work/docker_context/src
 
   entrypoint: "python deploy.py"
   env_file:
@@ -51,7 +51,7 @@ x-deployer-base: &deployer-base
 services:
   deploy:
     <<: *deployer-base
-    entrypoint: "python /work/deploy.py"
+    entrypoint: "python deploy.py"
 
   # For debugging your Docker build
   deployer-shell:
@@ -59,8 +59,8 @@ services:
     entrypoint: bash
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./ansible:/work
-      - ./deploy_config:/work/deploy_config
+      - ./ansible:/home/appuser/work
+      - ./deploy_config:/home/appuser/work/deploy_config
 
   # Check your Dockerfile against best-practices:
   # See https://github.com/hadolint/hadolint

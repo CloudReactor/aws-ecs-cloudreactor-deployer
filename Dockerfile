@@ -20,7 +20,7 @@ ENV PIP_NO_INPUT 1
 ENV PIP_NO_CACHE_DIR 1
 ENV PIP_DISABLE_PIP_VERSION_CHECK 1
 
-ENV ANSIBLE_CONFIG /work/ansible.cfg
+ENV ANSIBLE_CONFIG /home/appuser/work/ansible.cfg
 
 RUN apt-get update \
   && apt-get upgrade -y \
@@ -59,7 +59,13 @@ RUN pip install -r /tmp/deploy-requirements.txt
 RUN ansible-galaxy collection install community.docker:==2.6.0
 RUN ansible-galaxy collection install community.aws:==3.2.1
 
-RUN mkdir /work
-COPY ansible/ /work
+# Run as non-root user for better security
+RUN groupadd appuser && useradd -g appuser --create-home appuser
+RUN usermod -a -G docker appuser
+USER appuser
 
-ENTRYPOINT [ "python", "-m", "proc_wrapper", "python", "/work/deploy.py" ]
+RUN mkdir /home/appuser/work
+WORKDIR /home/appuser/work
+COPY ansible/ .
+
+ENTRYPOINT [ "python", "-m", "proc_wrapper", "python", "deploy.py" ]

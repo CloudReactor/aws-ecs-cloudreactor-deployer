@@ -112,7 +112,7 @@ if [[ ! -f $VAR_FILENAME ]]
     exit 1
 fi
 
-ENV_FILE_OPTIONS="-e WORK_DIR=/work"
+ENV_FILE_OPTIONS="-e WORK_DIR=/home/appuser/work"
 
 if [[ -f "deploy.env" ]]
   then
@@ -151,7 +151,7 @@ fi
 
 echo "Docker context dir = $DOCKER_CONTEXT_DIR"
 
-# The default Dockerfile location is /work/Dockerfile
+# The default Dockerfile location is /home/appuser/work/Dockerfile
 # (in the container's filesystem).
 # Override by setting DOCKERFILE_PATH to an absolute path in the
 # container's filesystem, or a path relative to the Docker context directory.
@@ -191,7 +191,7 @@ fi
 
 if [ "$USE_USER_AWS_CONFIG" == "TRUE" ]
   then
-    EXTRA_DOCKER_RUN_OPTIONS="-v $HOME/.aws:/root/.aws $EXTRA_DOCKER_RUN_OPTIONS"
+    EXTRA_DOCKER_RUN_OPTIONS="-v $HOME/.aws:/home/appuser/.aws $EXTRA_DOCKER_RUN_OPTIONS"
     if [ -n "$AWS_PROFILE" ]
       then
         EXTRA_DOCKER_RUN_OPTIONS="-e AWS_PROFILE $EXTRA_DOCKER_RUN_OPTIONS"
@@ -247,11 +247,11 @@ fi
 exec docker run --rm \
   -e CLOUDREACTOR_TASK_VERSION_SIGNATURE=$CLOUDREACTOR_TASK_VERSION_SIGNATURE \
   -e HOST_PWD=$PWD \
-  -e CONTAINER_DOCKER_CONTEXT_DIR=/work/docker_context \
+  -e CONTAINER_DOCKER_CONTEXT_DIR=/home/appuser/work/docker_context \
   $ENV_FILE_OPTIONS \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  -v $PWD/deploy_config:/work/deploy_config \
-  -v $DOCKER_CONTEXT_DIR:/work/docker_context \
+  -v $PWD/deploy_config:/home/appuser/work/deploy_config \
+  -v $DOCKER_CONTEXT_DIR:/home/appuser/work/docker_context \
   $EXTRA_DOCKER_RUN_OPTIONS \
   $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG \
   $DEPLOY_COMMAND "$@"
