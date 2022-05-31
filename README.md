@@ -197,7 +197,7 @@ in the deployer image, to perform setup operations like:
 
 * Creating/updating secrets in Secrets Manager
 * Uploading files to S3
-* Creating roles and seting permissions
+* Creating roles and setting permissions
 * Sending messages via SNS
 
 If you need to use libraries (e.g. compilers) not available in this image,
