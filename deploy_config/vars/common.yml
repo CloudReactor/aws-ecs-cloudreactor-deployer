@@ -374,12 +374,20 @@ default_task_config:
     # # The port used to receive status updates from the process.
     # status_update_socket_port: 2373
 
-    # # Default log level is INFO, set to DEBUG here for initial deployments.
-    # # Valid choices are DEBUG, INFO, WARNING, ERROR, and CRITICAL.
+    # # The log level used by the wrapper, to control how verbose it is.
+    # # The default log level is INFO, set to DEBUG here for initial
+    # # deployments. Valid choices are DEBUG, INFO, WARNING, ERROR, and
+    # # CRITICAL.
     log_level: DEBUG
 
     # # Log sensitive information, such as the API key and fetched secrets.
     # log_secrets: true
+
+    # Set to false to exclude timestamps from the log output, in case
+    # are timestamps are added by the logging provider. The deployer sets up
+    # CloudWatch Logs (which adds timestamps) for this project, so we
+    # set this to false here.
+    include_timestamps_in_log: false
 
     # # This data is sent back from the wrapper to CloudReactor when it starts.
     # # It may be used to identify properties about instance of the task that is
