@@ -1,12 +1,9 @@
 ---
 {% set task_name=item %}{# from 'with_items' in the calling task #}
-{% set common_task_config=default_task_config | default({}) | combine(task_name_to_config[task_name] | default({}), recursive=True) %}
-{% set env_task_config=default_env_task_config | default({}) | combine(task_name_to_env_config[task_name] | default({}), recursive=True) %}
-{% set task_config=common_task_config | combine(env_task_config, recursive=True) %}
-{% set service_instance_count=task_config.service_instance_count | default('__unset__') %}
+{% set service_instance_count=resolved_task_config.service_instance_count | default('__unset__') %}
 
-{% if task_config.is_service is defined %}
-  {% set is_service=task_config.is_service %}
+{% if resolved_task_config.is_service is defined %}
+  {% set is_service=resolved_task_config.is_service %}
 {% else %}
   {% if service_instance_count is number %}
     {% set is_service=service_instance_count > 0 %}
@@ -15,9 +12,9 @@
   {% endif %}
 {% endif %}
 
-{% set max_concurrency=task_config.max_concurrency | default(1) %}
-{% set wrapper=task_config.wrapper | default({}) %}
-{% set task_ecs=task_config.ecs | default({}) %}
+{% set max_concurrency=resolved_task_config.max_concurrency | default(1) %}
+{% set wrapper=resolved_task_config.wrapper | default({}) %}
+{% set task_ecs=resolved_task_config.ecs | default({}) %}
 {% set project_ecs=project_aws.ecs | default({}) %}
 {% set project_task_ecs=project_ecs | combine(task_ecs, recursive=True) %}
 {% set cpu_units=project_task_ecs.cpu_units | default(256) %}
@@ -48,10 +45,10 @@
 {% set project_aws_security_groups=project_aws.security_groups | default('__unset__') %}
 {% set security_groups=project_task_ecs.task.network.security_groups | default(project_aws_security_groups) %}
 
-{% set alert_methods=task_config.alert_methods | default('__unset__') %}
+{% set alert_methods=resolved_task_config.alert_methods | default('__unset__') %}
 
-{% if task_config.links is defined %}
-  {% set links=task_config.links | json_query('[?((@.included == undefined) || (to_string(@.included) == to_string(`true`)) || (to_string(@.included) == `True`))]')  %}
+{% if resolved_task_config.links is defined %}
+  {% set links=resolved_task_config.links | json_query('[?((@.included == undefined) || (to_string(@.included) == to_string(`true`)) || (to_string(@.included) == `True`))]')  %}
 {% else %}
   {% set links='__unset__' %}
 {% endif %}
@@ -71,7 +68,7 @@
 {%- endmacro %}
 
 # For debugging
-# task_config: {{ task_config | to_json }}
+# resolved_task_config: {{ resolved_task_config | to_json }}
 # Project ECS: {{ project_ecs | to_json }}
 # Task ECS: {{ task_ecs | to_json }}
 # Project Task ECS: {{ project_task_ecs | to_json }}
@@ -83,7 +80,7 @@
 name: "{{project_name}}_{{task_name}}_{{env}}"
 
 {% for prop_name in task_property_names %}
-{{ prop_def(task_config, prop_name) }}
+{{ prop_def(resolved_task_config, prop_name) }}
 {% endfor %}
 
 {% if project_url is defined %}
@@ -98,7 +95,7 @@ api_heartbeat_interval_seconds: 30
 api_heartbeat_interval_seconds: 600
 {% endif %}
 
-{% if task_config.max_concurrency is defined %}
+{% if resolved_task_config.max_concurrency is defined %}
 max_concurrency: {% if max_concurrency is number %}{{ max_concurrency }}{% else %}null{% endif %}
 {% endif %}
 
@@ -108,10 +105,10 @@ is_service: {{is_service}}
 service_instance_count: {{service_instance_count}}
 {% endif %}
 
-max_age_seconds: {% if service_instance_count == '__unset__' %}{{task_config.max_age_seconds | default('3600') }}{% else %}null{% endif %}
+max_age_seconds: {% if service_instance_count == '__unset__' %}{{resolved_task_config.max_age_seconds | default('3600') }}{% else %}null{% endif %}
 
 run_environment:
-  name: "{{ task_config.run_environment | default(run_environment_name) }}"
+  name: "{{ resolved_task_config.run_environment | default(run_environment_name) }}"
 
 execution_method_capability:
   type: AWS ECS

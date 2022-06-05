@@ -31,7 +31,7 @@
         "PlatformVersion": "{{ resolved_ecs.platform_version }}",
         {% endif %}
         "TaskDefinitionArn": {{ task_definition_arn | to_json }},
-        "TaskCount": {{ resolved_task.scheduled_instance_count | default(1) }}
+        "TaskCount": {{ resolved_task_config.scheduled_instance_count | default(1) }}
       }
     }
   ]
