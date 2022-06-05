@@ -42,7 +42,7 @@ RUN mkdir scratch
 # Use the standalone executable for x64/AMD64 Linux.
 # Unfortunately, it is an AppImage that needs to be extracted to
 # run in a container, since FUSE inside a container is problematic.
-RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/4.0/bin/nuitka/linux-amd64/4.0.0/proc_wrapper.bin -O proc_wrapper_app_image \
+RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/4.0/bin/nuitka/linux-amd64/4.0.1/proc_wrapper.bin -O proc_wrapper_app_image \
   && chmod +x proc_wrapper_app_image \
   && ./proc_wrapper_app_image --appimage-extract \
   && rm ./proc_wrapper_app_image
