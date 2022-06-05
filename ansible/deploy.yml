@@ -26,7 +26,7 @@
     cloudreactor_deploy_api_key: "{{ lookup('env', 'CLOUDREACTOR_DEPLOY_API_KEY') | default(resolved_cloudreactor.deploy_api_key, true) }}"
     env_task_name_to_config: "{{ task_name_to_env_config | default({}) }}"
     resolved_task_name_to_config: "{{ task_name_to_config | combine(env_task_name_to_config, recursive=True) }}"
-    resolved_task_names: "{{ (resolved_task_name_to_config | dict2items | json_query('[?(value.deployed==undefined) || (value.deployed==true)].key')) if (task_names | upper) == 'ALL' else task_names.split(',') }}"
+    resolved_task_names: "{{ (resolved_task_name_to_config | dict2items | json_query('[?((value.deployed==undefined)||(to_string(value.deployed)==to_string(`true`)) || (to_string(value.deployed)==`True`))].key')) if (task_names | upper) == 'ALL' else task_names.split(',') }}"
     task_version_signature: "{{ lookup('env','CLOUDREACTOR_TASK_VERSION_SIGNATURE') | default(ansible_date_time.iso8601_basic, true) }}"
     docker_image_name: "{{project_name}}:{{env}}_{{task_version_signature}}"
     run_environment_name: "{{ resolved_cloudreactor.run_environment | default(env) }}"
