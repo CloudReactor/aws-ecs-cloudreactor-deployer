@@ -49,10 +49,12 @@
 {% set security_groups=project_task_ecs.task.network.security_groups | default(project_aws_security_groups) %}
 
 {% set alert_methods=task_config.alert_methods | default('__unset__') %}
-{% set links=task_config.links | default('__unset__') %}
 
-{# This should be the awslogs-group in ecs_task_definition.json #}
-{% set log_query="/aws/fargate/" + project_name + "-" + env + "-" + task_name %}
+{% if task_config.links is defined %}
+  {% set links=task_config.links | json_query('[?((@.included == undefined) || (to_string(@.included) == to_string(`true`)) || (to_string(@.included) == `True`))]')  %}
+{% else %}
+  {% set links='__unset__' %}
+{% endif %}
 
 {% macro prop_def(obj, name, prop_name='') -%}
   {%- if (obj[name] is defined) and (obj[name] != '__unset__') -%}
