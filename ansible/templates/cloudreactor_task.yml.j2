@@ -45,13 +45,26 @@
 {% set project_aws_security_groups=project_aws.security_groups | default('__unset__') %}
 {% set security_groups=project_task_ecs.task.network.security_groups | default(project_aws_security_groups) %}
 
-{% set alert_methods=resolved_task_config.alert_methods | default('__unset__') %}
+{% macro filtered_array_prop_def(arr, prop_name) -%}
+  {% if (arr is defined) and (arr != '__unset__') %}
+    {% set filtered_arr=arr | json_query('[?((@.included == undefined) || (to_string(@.included) == to_string(`true`)) || (to_string(@.included) == `True`))]')  %}
+  {% else %}
+    {% set filtered_arr = '__unset__' %}
+  {% endif %}
 
-{% if resolved_task_config.links is defined %}
-  {% set links=resolved_task_config.links | json_query('[?((@.included == undefined) || (to_string(@.included) == to_string(`true`)) || (to_string(@.included) == `True`))]')  %}
-{% else %}
-  {% set links='__unset__' %}
-{% endif %}
+  {% if filtered_arr != '__unset__' %}
+    {% if filtered_arr is none -%}
+  "{{- prop_name}}": null
+    {% elif filtered_arr[0] is defined -%}
+  "{{- prop_name}}":
+    {% for element in filtered_arr %}
+      {{- caller(element) }}
+    {% endfor %}
+    {% else %}
+  "{{- prop_name}}": []
+    {% endif %}
+  {% endif %}
+{%- endmacro %}
 
 {% macro prop_def(obj, name, prop_name='') -%}
   {%- if (obj[name] is defined) and (obj[name] != '__unset__') -%}
@@ -192,31 +205,13 @@ execution_method_capability:
 
 log_query: "{{log_query}}"
 
-{% if alert_methods != '__unset__' %}
-  {% if alert_methods is none %}
-alert_methods: null
-  {% elif alert_methods[0] is defined %}
-alert_methods:
-    {% for alert_method in alert_methods %}
-  - name: "{{alert_method}}"
-    {% endfor %}
-  {% else %}
-alert_methods: []
-  {% endif %}
-{% endif %}
+{% call(alert_method) filtered_array_prop_def(resolved_task_config.alert_methods, 'alert_methods') %}
+  - name: "{{ alert_method.name }}"
+{% endcall %}
 
-{% if links != '__unset__' %}
-  {% if links is none %}
-links: null
-  {% elif links[0] is defined %}
-links:
-    {% for link in links %}
+{% call(link) filtered_array_prop_def(resolved_task_config.links, 'links') %}
   - name: "{{link.name}}"
     {{ prop_def(link, 'link_url_template') }}
     {{ prop_def(link, 'icon_url') }}
     {{ prop_def(link, 'description') }}
-    {% endfor %}
-  {% else %}
-links: []
-  {% endif %}
-{% endif %}
+{% endcall %}

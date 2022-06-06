@@ -107,10 +107,12 @@ default_task_config:
     DEPLOYMENT: "{{env}}"
 
   # alert_methods:
-  #   - Alert Method 1
+  #   - name: Alert Method 1
+  #   - name: Alert Method 2
+  #     included: false
   # links:
   #  - name: Rollbar
-  #    link_url_template: "https://rollbar.com/YourCompanyName/YourProject/"
+  #    link_url_template: "https://rollbar.com/YourCompanyName/{{ project_name}}/"
   #    icon_url: "https://cdn.rollbar.com/static/img/favicon.ico"
   #  - name: SumoLogic
   #    # We have to do some tricks because this file is parsed as Jinja2, then re-parsed on upload.
@@ -118,6 +120,7 @@ default_task_config:
   #    # Unfortunately, this icon does not show up, probably due to some cross-site inclusion limitations.
   #    icon_url: "https://www.sumologic.com/favicon.ico"
   #    description: "{{log_query}}"
+  #    included: "{{ env == 'staging' }}"
 
   ecs:
     # # See https://aws.amazon.com/fargate/pricing/
