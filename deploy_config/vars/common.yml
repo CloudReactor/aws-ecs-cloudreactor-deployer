@@ -49,7 +49,7 @@ default_cloudreactor:
 default_task_config:
   # # Set to false to skip this Task's deployment. This is usually set per-Task
   # # in task_name_to_config[task_name].deployed
-  # deployed: false
+ #deployed: "{{ env == 'staging' }}"
 
   # # Set to false to disable the Tasks's schedule/service in CloudReactor.
   # # Usually you should leave this unset and manage the setting in the
@@ -442,26 +442,62 @@ task_name_to_config:
             host: {}
     env:
       TEMP_FILE_DIR: "/home/appuser/scratch"
-#  web_server:
-#    description: Template for a web server
-#    command: python3 -m http.server
-#    ecs:
-#      task:
-#        network:
-#          assign_public_ip: true
-#      service:
-#        deployment_configuration:
-#           force_new_deployment: false
-#           minimum_healthy_percent: 100
-#           maximum_percent: 200
-#           enable_circuit_breaker: true
-#           rollback_on_failure: true
-#        enable_ecs_managed_tags: true
-#        propagate_tags: SERVICE # Or "TASK_EXECUTION"
-#        tags:
-#          IS_SERVICE: TRUE
-#      extra_main_container_properties:
-#        portMappings:
-#          - hostPort: 7070
-#            containerPort: 7070
-#            protocol: tcp
+
+  # Set deployed = true to enable web server -- requires an IP target group and
+  # load balancer setup in AWS
+  web_server:
+    deployed: false
+    description: Template for a web server
+    command: "python3 -m http.server"
+    ecs:
+      task:
+        network:
+          assign_public_ip: true
+      service:
+        deployment_configuration:
+           force_new_deployment: false
+           minimum_healthy_percent: 100
+           maximum_percent: 200
+           enable_circuit_breaker: true
+           rollback_on_failure: true
+        enable_ecs_managed_tags: true
+        propagate_tags: SERVICE # Or "TASK_EXECUTION"
+        tags:
+          IS_SERVICE: TRUE
+      extra_main_container_properties:
+        portMappings:
+          - hostPort: 7070
+            containerPort: 7070
+            protocol: tcp
+
+env_to_task_name_to_config:
+  staging:
+    smoke:
+      schedule: cron(9 0 * * ? *)
+
+  production:
+    smoke:
+      schedule: cron(12 0 * * ? *)
+
+    # # Uncomment to set non-secret properties web server in production.
+    #  web_server:
+    #    deployed: true
+    #    service_instance_count: 2
+    #    ecs:
+    #      task:
+    #        network:
+    #         security_groups:
+    #           - sg-1
+    #           - sg-2
+    #         subnets:
+    #           - subnet-public-1
+    #           - subnet-public-2
+    #        role_arn: arn:aws:iam::12345678901:role/myrole
+    #      service:
+    #        load_balancers:
+    #          - target_group_arn: arn:aws:elasticloadbalancing:us-west-1:xxx:targetgroup/example-web/xxx
+    #            container_port: 7070
+    #    links:
+    #      - name: Web Server
+    #        link_url_template: "http://flask-example-xxx.us-west-1.elb.amazonaws.com/"
+    #        description: Main web page

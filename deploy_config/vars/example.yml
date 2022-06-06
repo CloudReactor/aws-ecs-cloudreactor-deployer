@@ -68,23 +68,6 @@ default_env_task_config:
   #  DATABASE_USERNAME_FOR_PROC_WRAPPER_TO_RESOLVE: arn:aws:secretsmanager:us-west-2:123456789012:secret:app/example/db|JP:$.username
   #  DATABASE_PASWORD_FOR_PROC_WRAPPER_TO_RESOLVE: arn:aws:secretsmanager:us-west-2:123456789012:secret:app/example/db|JP:$.password
   ecs:
-    # extra_main_container_properties:
-    # # Note that when ECS injects secrets into the environment, it uses the
-    # # permissions of the Task Execution role (ecs.execution_role_arn),
-    # # NOT the permissions of the Task Role (ecs.task.role_arn).
-    # # The CloudReactor permissions CloudFormation template gives access to the default
-    # # Task Execution role of Run Environments to secrets with names starting with:
-    # #
-    # # CloudReactor/[deployment_environment]/common/
-    # #
-    # # (where deployment_environment was chosen when you installed the template /
-    # # ran the AWS ECS Setup Wizard from CloudReactor).
-    # #
-    # # You can put secrets there to be shared with all Tasks in the Run Environment.
-    # secrets:
-    #   - name: PROC_WRAPPER_API_KEY
-    #     valueFrom: "arn:aws:secretsmanager:[aws_region]:[aws_account_id]:secret:CloudReactor/example/common/cloudreactor_api_key-xxx"
-
     # execution_role_arn: arn:aws:iam::12345678901:role/myrole
     # task:
     #   network:
@@ -109,22 +92,14 @@ default_env_task_config:
 #       volumes:
 #          - name: "more_storage"
 #            host: {}
-#
-#   alert_methods:
-#     - Some Alert Method
 
-# For any tasks that require overrides vs. common.yml, enter those overrides here.
-# For example, the schedule for task_1 in this deployment differs from the
-# schedule in common.yml.
+# For any Tasks that require overrides vs. common.yml, enter those overrides here.
 task_name_to_env_config:
-  task_1:
-    # deployed: false # Set to false to skip deployment
-    schedule: cron(9 0 * * ? *)
-    # scheduled_instance_count: 1
+  smoke:
+
 # # Uncomment to enable web server -- requires an IP target group and
 # # load balancer setup in AWS
 #  web_server:
-#    service_instance_count: 2
 #    ecs:
 #      task:
 #        network:
@@ -139,7 +114,3 @@ task_name_to_env_config:
 #        load_balancers:
 #          - target_group_arn: arn:aws:elasticloadbalancing:us-west-1:xxx:targetgroup/example-web/xxx
 #            container_port: 7070
-#    links:
-#      - name: Web Server
-#        link_url_template: "http://flask-example-xxx.us-west-1.elb.amazonaws.com/"
-#        description: Main web page
