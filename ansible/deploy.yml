@@ -20,7 +20,7 @@
     extra_docker_tag_args: "{{ lookup('env', 'EXTRA_DOCKER_TAG_ARGS') | default(build_options.extra_docker_tag_args | default(''), true) }}"
     docker_push_general_options: "{{ lookup('env', 'DOCKER_PUSH_GENERAL_OPTIONS') | default(build_options.docker_push_general_options | default(''), true) }}"
     extra_docker_push_args: "{{ lookup('env', 'EXTRA_DOCKER_PUSH_ARGS') | default(build_options.extra_docker_push_args | default(''), true) }}"
-    resolved_cloudreactor: "{{ default_cloudreactor | default({}) | combine(cloudreactor | default({})) }}"
+    resolved_cloudreactor: "{{ default_cloudreactor | default({}) | combine(cloudreactor | default({}), recursive=True) }}"
     cloudreactor_enabled: "{{ resolved_cloudreactor.enabled | default(true) }}"
     cloudreactor_api_base_url: "{{ lookup('env', 'CLOUDREACTOR_API_BASE_URL') | default(resolved_cloudreactor.api_base_url | default('https://api.cloudreactor.io', true), true) }}"
     cloudreactor_deploy_api_key: "{{ lookup('env', 'CLOUDREACTOR_DEPLOY_API_KEY') | default(resolved_cloudreactor.deploy_api_key, true) }}"

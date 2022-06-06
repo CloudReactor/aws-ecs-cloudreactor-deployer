@@ -101,7 +101,7 @@ project_url: "{{project_url}}"
 {% endif %}
 
 {% if wrapper.api_heartbeat_interval_seconds is defined %}
-api_heartbeat_interval_seconds: {{ wrapper.api_heartbeat_interval_seconds }}
+{{ prop_def(wrapper, 'api_heartbeat_interval_seconds') }}
 {% elif (max_concurrency is not none) and (max_concurrency >= 1) %}
 api_heartbeat_interval_seconds: 30
 {% else %}

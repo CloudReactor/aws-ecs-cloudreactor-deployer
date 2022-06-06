@@ -56,7 +56,7 @@ cloudreactor:
   # # deploy.
   # run_environment: Your Staging
 
-# Add task settings that apply to all tasks running in this deployment.
+# Add Task settings that apply to all Tasks running in this deployment.
 # They will override the settings in common.yml.
 default_env_task_config:
   #env:
