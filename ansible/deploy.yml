@@ -76,8 +76,8 @@
       url: "{{ cloudreactor_api_base_url }}/api/v1/run_environments/?name={{ run_environment_name | urlencode }}"
       headers:
         Accept: "application/json"
-        Authorization: "Token {{cloudreactor_deploy_api_key}}"
-      return_content: yes
+        Authorization: "Bearer {{cloudreactor_deploy_api_key}}"
+      return_content: True
     register: run_environment_result
     when: cloudreactor_enabled
     tags:

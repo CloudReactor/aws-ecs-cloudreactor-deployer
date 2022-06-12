@@ -70,8 +70,8 @@
     url: "{{ cloudreactor_api_base_url }}/api/v1/tasks/"
     method: POST
     headers:
-      Authorization: "Token {{cloudreactor_deploy_api_key}}"
-    return_content: yes
+      Authorization: "Bearer {{cloudreactor_deploy_api_key}}"
+    return_content: True
     body: "{{ cloudreactor_task | to_json }}"
     body_format: json
     status_code:
