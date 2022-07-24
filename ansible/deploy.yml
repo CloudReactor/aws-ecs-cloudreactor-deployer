@@ -67,6 +67,8 @@
     task_definition_arn: "{{ (register_ecs_task_result.stdout | from_json).taskDefinition.taskDefinitionArn }}"
     task_build_dir: "build/{{env}}/{{item}}"
     saved_cloudreactor_task: "{{ create_cloudreactor_task_result.json }}"
+
+    # TODO make configurable and rename to log_group
     # This should be the awslogs-group in ecs_task_definition.json
     log_query: "{{ '/aws/fargate/' + project_name + '-' + env + '-' + item }}"
 
@@ -148,8 +150,18 @@
     tags:
       - build
 
+
+  - name: Check if pre-build hook file exists
+    stat:
+      path: "{{deploy_config_dir}}/hooks/pre_build.yml"
+    register: pre_build_hook_file_stat
+    tags:
+      - build
+
   # Hook to perform steps before building the Docker image
-  - include_tasks: "{{deploy_config_dir}}/hooks/pre_build.yml"
+  - name: Pre-build hook
+    include_tasks: "{{deploy_config_dir}}/hooks/pre_build.yml"
+    when: pre_build_hook_file_stat.stat.exists
     tags:
       - build
 
@@ -192,9 +204,18 @@
     tags:
       - upload
 
+  - name: Check if post-build hook file exists
+    stat:
+      path: "{{deploy_config_dir}}/hooks/pre_build.yml"
+    register: post_build_hook_file_stat
+    tags:
+      - build
+
     # Hook to perform steps before after building the Docker image,
     # but before creating the Task in ECS and CloudReactor
-  - include_tasks: "{{deploy_config_dir}}/hooks/post_build.yml"
+  - name: Post-build hook
+    include_tasks: "{{deploy_config_dir}}/hooks/post_build.yml"
+    when: post_build_hook_file_stat.stat.exists
     tags:
       - build
 

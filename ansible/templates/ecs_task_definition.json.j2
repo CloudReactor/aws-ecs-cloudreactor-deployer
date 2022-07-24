@@ -147,8 +147,10 @@
                        See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_cloudwatch_logs.html
                     #}
                     "awslogs-create-group": "true",
-                    "awslogs-group": {{ ('/aws/fargate/' + project_name + '-' + env + '-' + task_name) | to_json }},
+                    "awslogs-group": {{ log_query | to_json }},
                     "awslogs-region": {{ aws_region | to_json }},
+
+                    {# TODO make configurable #}
                     "awslogs-stream-prefix": {{ (project_name + '-' + env) | to_json }}
                 }
             },

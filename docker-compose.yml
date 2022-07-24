@@ -8,7 +8,7 @@ x-sample-base: &sample-base
     context: ./sample_docker_context/
   volumes:
     - ./sample_docker_context/src:/home/appuser/src
-    - ./deploy_config/files/.env.dev:/home/appuser/.env
+    - ./deploy_config/env/.env.dev:/home/appuser/.env
   environment: &sample-env-base
     PROC_WRAPPER_OFFLINE_MODE: "TRUE"
     PROC_WRAPPER_LOG_LEVEL: DEBUG
