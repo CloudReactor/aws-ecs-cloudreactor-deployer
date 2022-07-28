@@ -3,7 +3,7 @@ awscli>=1.24.10,<2
 boto3>=1.23.5,<2
 docker>=5.0.2,<6
 PyYAML==5.4.1,<6
-cloudreactor_procwrapper>=4.0.1,<5
+cloudreactor_procwrapper>=5.0.0,<6
 jsonpath-ng>=1.5.0,<2
 mergedeep>=1.3.4,<2
 python-dotenv>=0.17.1

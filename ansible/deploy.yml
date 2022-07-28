@@ -150,7 +150,6 @@
     tags:
       - build
 
-
   - name: Check if pre-build hook file exists
     stat:
       path: "{{deploy_config_dir}}/hooks/pre_build.yml"

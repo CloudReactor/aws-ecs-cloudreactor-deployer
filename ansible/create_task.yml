@@ -65,7 +65,7 @@
   tags:
   - always
 
-- name: Create/update task in CloudReactor
+- name: Create/update Task in CloudReactor
   uri:
     url: "{{ cloudreactor_api_base_url }}/api/v1/tasks/"
     method: POST
@@ -159,8 +159,7 @@
   tags:
     - build
 
-# Hook to perform steps before after building the Docker image,
-# but before creating the Task in ECS and CloudReactor
+# Hook to perform steps after creating the Task in ECS and CloudReactor
 - name: Post-Task creation hook
   include_tasks: "{{deploy_config_dir}}/hooks/post_task_creation.yml"
   when: deployed and post_task_creation_hook_file_stat.stat.exists
