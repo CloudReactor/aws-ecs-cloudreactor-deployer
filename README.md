@@ -416,7 +416,7 @@ the master branch:
         steps:
         - uses: actions/checkout@v3
         - name: Deploy to AWS ECS and CloudReactor
-          uses: CloudReactor/aws-ecs-cloudreactor-deployer@v2.0.1
+          uses: CloudReactor/aws-ecs-cloudreactor-deployer@v3.1.0
           with:
             aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
             aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
