@@ -131,6 +131,20 @@
       - upload
       - create_tasks
 
+  - name: Check if pre-build hook file exists
+    stat:
+      path: "{{deploy_config_dir}}/hooks/pre_build.yml"
+    register: pre_build_hook_file_stat
+    tags:
+      - build
+
+  # Hook to perform steps before building the Docker image
+  - name: Pre-build hook
+    include_tasks: "{{deploy_config_dir}}/hooks/pre_build.yml"
+    when: pre_build_hook_file_stat.stat.exists
+    tags:
+      - build
+
   - debug: msg="Task version signature = {{task_version_signature}}, resolved task names = {{resolved_task_names}}"
     tags:
       - version
@@ -147,20 +161,6 @@
     file:
       path: "build/{{env}}"
       state: directory
-    tags:
-      - build
-
-  - name: Check if pre-build hook file exists
-    stat:
-      path: "{{deploy_config_dir}}/hooks/pre_build.yml"
-    register: pre_build_hook_file_stat
-    tags:
-      - build
-
-  # Hook to perform steps before building the Docker image
-  - name: Pre-build hook
-    include_tasks: "{{deploy_config_dir}}/hooks/pre_build.yml"
-    when: pre_build_hook_file_stat.stat.exists
     tags:
       - build
 
@@ -205,7 +205,7 @@
 
   - name: Check if post-build hook file exists
     stat:
-      path: "{{deploy_config_dir}}/hooks/pre_build.yml"
+      path: "{{deploy_config_dir}}/hooks/post_build.yml"
     register: post_build_hook_file_stat
     tags:
       - build
