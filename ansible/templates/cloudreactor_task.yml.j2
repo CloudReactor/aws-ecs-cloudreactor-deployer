@@ -13,6 +13,7 @@
 {% endif %}
 
 {% set max_concurrency=resolved_task_config.max_concurrency | default(1) %}
+{% set max_age_seconds=resolved_task_config.max_age_seconds | default('__unset__') %}
 {% set wrapper=resolved_task_config.wrapper | default({}) %}
 {% set task_ecs=resolved_task_config.ecs | default({}) %}
 {% set project_ecs=project_aws.ecs | default({}) %}
@@ -102,8 +103,6 @@ project_url: "{{project_url}}"
 
 {% if wrapper.api_heartbeat_interval_seconds is defined %}
 {{ prop_def(wrapper, 'api_heartbeat_interval_seconds', prop_name='heartbeat_interval_seconds') }}
-{% elif (max_concurrency is not none) and (max_concurrency >= 1) %}
-heartbeat_interval_seconds: 30
 {% else %}
 heartbeat_interval_seconds: 600
 {% endif %}
@@ -118,7 +117,9 @@ is_service: {{is_service}}
 service_instance_count: {{service_instance_count}}
 {% endif %}
 
-max_age_seconds: {% if service_instance_count == '__unset__' %}{{resolved_task_config.max_age_seconds | default('3600') }}{% else %}null{% endif %}
+{% if max_age_seconds != '__unset__' %}
+max_age_seconds: {% if is_service %}null{% else %}{{ resolved_task_config.max_age_seconds | default('null') }}{% endif %}
+{% endif %}
 
 run_environment:
   name: "{{ resolved_task_config.run_environment | default(run_environment_name) }}"
