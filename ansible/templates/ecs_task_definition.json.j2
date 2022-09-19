@@ -146,12 +146,10 @@
                        set this to "false".
                        See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_cloudwatch_logs.html
                     #}
-                    "awslogs-create-group": "true",
-                    "awslogs-group": {{ log_query | to_json }},
-                    "awslogs-region": {{ aws_region | to_json }},
-
-                    {# TODO make configurable #}
-                    "awslogs-stream-prefix": {{ (project_name + '-' + env) | to_json }}
+                    "awslogs-create-group": "{{ resolved_ecs_task_awslogs.create_group | default(true) }}",
+                    "awslogs-group": {{ awslogs_group | to_json }},
+                    "awslogs-region": {{ resolved_ecs_task_awslogs.region | default(aws_region) | to_json }},
+                    "awslogs-stream-prefix": {{ resolved_ecs_task_awslogs.stream_prefix | default(project_name + '-' + env) | to_json }}
                 }
             },
             "environment": [

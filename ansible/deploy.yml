@@ -63,14 +63,14 @@
     resolved_ecs: "{{ aws.ecs | default({}) | combine(resolved_task_config.ecs | default({}), recursive=True) }}"
     resolved_ecs_task: "{{ resolved_ecs.task | default({}) }}"
     resolved_ecs_task_network: "{{ resolved_ecs_task.network | default({}) }}"
+    resolved_ecs_task_logging: "{{ resolved_ecs_task.logging | default({}) }}"
+    resolved_ecs_task_awslogs: "{{ resolved_ecs_task_logging.awslogs | default({}) }}"
     resolved_ecs_service: "{{ resolved_ecs.service | default({}) }}"
     task_definition_arn: "{{ (register_ecs_task_result.stdout | from_json).taskDefinition.taskDefinitionArn }}"
     task_build_dir: "build/{{env}}/{{item}}"
     saved_cloudreactor_task: "{{ create_cloudreactor_task_result.json }}"
-
-    # TODO make configurable and rename to log_group
-    # This should be the awslogs-group in ecs_task_definition.json
-    log_query: "{{ '/aws/fargate/' + project_name + '-' + env + '-' + item }}"
+    awslogs_group: "{{ resolved_ecs_task_logging.log_group | default('/aws/fargate/' + project_name + '-' + env + '-' + item) }}"
+    log_query: "{{ awslogs_group }}"
 
   tasks:
   - name: Get configuration from CloudReactor Run Environment

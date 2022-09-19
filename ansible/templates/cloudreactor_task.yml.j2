@@ -204,7 +204,7 @@ execution_method_capability:
     {% endif %}
   {% endif %}
 
-log_query: "{{log_query}}"
+log_query: "{{ log_query }}"
 
 {% call(alert_method) filtered_array_prop_def(resolved_task_config.alert_methods, 'alert_methods') %}
   - name: "{{ alert_method.name }}"
