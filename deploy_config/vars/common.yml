@@ -145,6 +145,12 @@ default_task_config:
       #     - sg_1
       #     - sg_2
       #   assign_public_ip: true
+      # logging:
+      #   awslogs:
+      #     create_group: true
+      #     group: "/aws/fargate/{{ project_name }}-{{ env }}-{{ item }}"
+      #     stream_prefix: "{{ project_name }}-{{ env }}"
+      #     region: "us-west-1"
       tags:
         ManagedBy: CloudReactor
         Application: "{{ project_name }}"
@@ -172,7 +178,7 @@ default_task_config:
     #     - name: "database_scratch"
     #       host: {}
 
-    # # To add extra containers to the task:
+    # # To add extra containers to the Task:
     # # Extra CPU/memory allocated to the extra containers,
     # # will be taken away from the total cpu_units and memory_mb
     # # allocated for the entire task.
@@ -183,7 +189,7 @@ default_task_config:
     # # The following example uses nginx as a reverse proxy. It assumed that a Docker image
     # # based on nginx, with configuration, is available in ECR already.
     # # See https://medium.com/@stefanofrancavilla/deploy-web-apps-nginx-to-ecs-with-docker-580c6af827e8
-    # # except ECS cluster configuration is not needed since we're using Fargate.
+    # # except the ECS cluster configuration is not needed since we're using Fargate.
     # # additional_container_definitions:
     #  - name: Some Container Name
     #    image: XXXXXXXXXX.dkr.ecr.us-west-2.amazonaws.com/configured-nginx
@@ -470,6 +476,19 @@ task_name_to_config:
             containerPort: 7070
             protocol: tcp
 
+# env_to_default_task_config is a mapping from deployment environment name to
+# non-secret Task settings common to all Tasks.
+env_to_default_task_config:
+  staging:
+    env:
+      FEATURE_A_ENABLED: "TRUE"
+
+  production:
+    env:
+      FEATURE_A_ENABLED: "FALSE"
+
+# env_to_task_name_to_config is a mapping from deployment environment name to
+# another mapping from Task name to non-secret Task settings.
 env_to_task_name_to_config:
   staging:
     smoke:

@@ -33,14 +33,17 @@ package. Your Dockerfile should call proc_wrapper as its entrypoint. If using
 a standalone Linux executable:
 
 ```
-ENTRYPOINT ./proc_wrapper $TASK_COMMAND
+ENTRYPOINT ./proc_wrapper
 ```
 
 If using the python package:
 
 ```
-ENTRYPOINT python -m proc_wrapper $TASK_COMMAND
+ENTRYPOINT python -m proc_wrapper
 ```
+
+proc_wrapper will use the environment variable `PROC_WRAPPER_TASK_COMMAND` to
+determine what command to wrapper.
 
 ### Create a CloudReactor account
 
@@ -146,7 +149,7 @@ If you only plan on deploying via GitHub, you can leave this setting blank,
 but populate the GitHub secret
 `CLOUDREACTOR_DEPLOY_API_KEY` with the value of your `Deployment API key`.
 
-Unless you have very stringent security requirements, you can also populate
+If you don't have strict security requirements, you can also populate
 the `Task API key` in the same file:
 
     cloudreactor:
@@ -177,7 +180,38 @@ safe to commit the file to source control. You may store the password in
 an external file if deploying by command-line, or in a GitHub secret if
 deploying by GitHub Action.
 
-### Custom build steps
+### ECS Task Definition settings
+
+* You can add additional properties to the main container running each Task,
+such as `mountPoints` and `portMappings`  by setting
+`extra_main_container_properties` in common.yml or `deploy_config/vars/<environment>.yml`.
+See the `file_io` Task for an example of this.
+* You can add AWS ECS task properties, such as `volumes` and `secrets`,
+by setting `extra_task_definition_properties` in the `ecs` property of each task
+configuration. See the `file_io` Task for an example of this.
+* You can add additional containers to the Task by setting `extra_container_definitions`
+in `deploy_config/vars/common.yml` or `deploy_config/vars/<environment>.yml`.
+
+### Configuration hierarchy
+
+The settings are all (deeply) merged together with Ansible's Jinja2
+[combine](https://docs.ansible.com/ansible/latest/user_guide/playbooks_filters.html#combining-hashes-dictionaries)
+filter. The precedence of settings, from lowest to highest is:
+
+1. Settings found in your Run Environment that you set via the CloudReactor dashboard
+2. Deployment environment AWS settings -- found in `project_aws` in `deploy_config/vars/<environment>.yml`
+3. Default Task settings -- found in `default_task_config` in `deploy_config/vars/common.yml`,
+defines default settings for all Tasks
+4. Per environment settings -- found in `env_to_default_task_config.<environment>` in
+`deploy_config/vars/common.yml` defines per environment settings for all Tasks
+5. Per Task settings -- found in `task_name_to_config.<task_name>` in `deploy_config/vars/common.yml`
+6. Per environment, per Task settings -- found in `env_to_task_name_to_config.<environment>.<task_name>` in `deploy_config/vars/common.yml`)
+7. Secret per environment settings -- found in `default_env_task_config` in `deploy_config/vars/<environment>.yml` overrides per environment settings for all Tasks.
+See `deploy_config/vars/example.yml` an example.
+8. Secret per environment, per Task -- found in `task_name_to_env_config.<task_name>` in `deploy_config/vars/<environment>.yml` overrides per
+environment, per Task settings
+
+## Custom build steps
 
 You can run custom build steps by adding steps to the following files in
 `deploy_config/hooks`:

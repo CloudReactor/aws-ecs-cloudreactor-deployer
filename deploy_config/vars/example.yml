@@ -59,9 +59,8 @@ cloudreactor:
 # Add Task settings that apply to all Tasks running in this deployment.
 # They will override the settings in common.yml.
 default_env_task_config:
-  #env:
-  #  Environment: example
-  #  VAR_1: FOO
+  env:
+    SECRET_VAR_1: FOO
   # #  These will be resolved to DATABASE_USERNAME and DATABASE_PASSWORD by
   # #  proc_wrapper, assuming you set a Task Role that has access to read the
   # #  secret.
@@ -96,21 +95,5 @@ default_env_task_config:
 # For any Tasks that require overrides vs. common.yml, enter those overrides here.
 task_name_to_env_config:
   smoke:
-
-# # Uncomment to enable web server -- requires an IP target group and
-# # load balancer setup in AWS
-#  web_server:
-#    ecs:
-#      task:
-#        network:
-#         security_groups:
-#           - sg-1
-#           - sg-2
-#          subnets:
-#            - subnet-public-1
-#            - subnet-public-2
-#        role_arn: arn:aws:iam::12345678901:role/myrole
-#      service:
-#        load_balancers:
-#          - target_group_arn: arn:aws:elasticloadbalancing:us-west-1:xxx:targetgroup/example-web/xxx
-#            container_port: 7070
+    env:
+      SMOKE_SECRET_KEY: "xyz"
