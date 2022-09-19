@@ -25,14 +25,14 @@ ENV ANSIBLE_CONFIG /home/appuser/work/ansible.cfg
 RUN apt-get update \
   && apt-get upgrade -y \
   && apt-get install -y --no-install-recommends \
-    binutils=2.31.1-16 \
-    libproj-dev=5.2.0-1 \
-    gdal-bin=2.4.0+dfsg-1+b1 \
-    apt-transport-https=1.8.2.2 \
-    ca-certificates=20200601~deb10u2 \
-    curl=7.64.0-4+deb10u2 \
-    gnupg2=2.2.12-1+deb10u1 \
-    software-properties-common=0.96.20.2-2 \
+    binutils \
+    libproj-dev \
+    gdal-bin \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg2 \
+    software-properties-common \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
 
