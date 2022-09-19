@@ -37,7 +37,15 @@
   'max_postponed_missing_execution_count',
   'min_missing_execution_delay_seconds',
   'should_clear_failure_alerts_on_success',
-  'should_clear_timeout_alerts_on_success'
+  'should_clear_timeout_alerts_on_success',
+  'is_scheduling_managed',
+  'is_service_managed',
+  'default_input_value',
+  'input_value_schema',
+  'output_value_schema',
+  'managed_probability',
+  'failure_report_probability',
+  'timeout_report_probability',
 ] %}
 
 {% set project_aws_subnets=project_aws.subnets | default('__unset__') %}
@@ -75,6 +83,10 @@
     {%- set v = obj[name] -%}
     {%- if v is none -%}
       "{{ prop_name }}": null
+    {%- elif v is number -%}
+      "{{ prop_name }}": {{ v }}
+    {%- elif v is mapping -%}
+      "{{ prop_name }}": {{ v | to_yaml(width=2147483647) }}
     {%- else -%}
       "{{ prop_name }}": "{{ v }}"
     {%- endif -%}
