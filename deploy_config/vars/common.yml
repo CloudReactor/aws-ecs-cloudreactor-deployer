@@ -37,7 +37,7 @@ default_cloudreactor:
   # # Set to false to disable monitoring and management in CloudReactor.
   enabled: true
 
-# These settings will apply by default to all tasks and in all deployments.
+# These settings will apply by default to all Tasks and in all deployments.
 # They override the settings in your Run Environment.
 # To manage a setting in the CloudReactor UI, omit the property name and value.
 # To clear a property name and value, using the default value in the
@@ -428,10 +428,10 @@ default_task_config:
     # # Timeout for contacting Rollbar server, in seconds.
     # rollbar_timeout_seconds: 30
 
-# These are per-task settings that will inherit and override the settings in
+# These are per-Task settings that will inherit and override the settings in
 # default_task_config, in all environments.
-# To add a task, add a property to task_name_to_config (e.g. task_1, file_io)
-# Each task must at a minimum define which command to run i.e.
+# To add a Task, add a property to task_name_to_config (e.g. task_1, file_io)
+# Each Task must at a minimum define which command to run i.e.
 # `command: python main.py`
 task_name_to_config:
   smoke:
@@ -477,7 +477,8 @@ task_name_to_config:
         enable_ecs_managed_tags: true
         propagate_tags: SERVICE # Or "TASK_EXECUTION"
         tags:
-          IS_SERVICE: TRUE
+          Environment: "{{env}}"
+          TaskType: Service
       extra_main_container_properties:
         portMappings:
           - hostPort: 7070
@@ -511,6 +512,7 @@ env_to_task_name_to_config:
     #    deployed: true
     #    service_instance_count: 2
     #    ecs:
+    #      execution_role_arn: arn:aws:iam::12345678901:role/myrole
     #      task:
     #        network:
     #         security_groups:

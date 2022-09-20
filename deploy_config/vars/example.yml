@@ -60,37 +60,12 @@ cloudreactor:
 # They will override the settings in common.yml.
 default_env_task_config:
   env:
-    SECRET_VAR_1: FOO
+    SOME_SECRET_KEY_FOR_ALL_TASKS: "FOO"
   # #  These will be resolved to DATABASE_USERNAME and DATABASE_PASSWORD by
   # #  proc_wrapper, assuming you set a Task Role that has access to read the
   # #  secret.
   #  DATABASE_USERNAME_FOR_PROC_WRAPPER_TO_RESOLVE: arn:aws:secretsmanager:us-west-2:123456789012:secret:app/example/db|JP:$.username
   #  DATABASE_PASWORD_FOR_PROC_WRAPPER_TO_RESOLVE: arn:aws:secretsmanager:us-west-2:123456789012:secret:app/example/db|JP:$.password
-  ecs:
-    # execution_role_arn: arn:aws:iam::12345678901:role/myrole
-    # task:
-    #   network:
-    #     security_groups:
-    #      - sg-1
-    #      - sg-2
-    #     subnets:
-    #      - subnet-private-1
-    #      - subnet-private-2
-    #     assign_public_ip: true
-    # # ARN of ECS Task Role that can give the task access to your AWS resources,
-    # # for example, so that your task can read or write to files in S3.
-    # # See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html
-    # # for instructions on how to create a ECS Task Role.
-    #  role_arn: arn:aws:iam::12345678901:role/myrole
-    #  tags:
-    #    Environment: example
-
-# # These properties go in the main container definition for the task
-# # (containerDefinitions[0])
-#     extra_main_container_properties:
-#       volumes:
-#          - name: "more_storage"
-#            host: {}
 
 # For any Tasks that require overrides vs. common.yml, enter those overrides here.
 task_name_to_env_config:
