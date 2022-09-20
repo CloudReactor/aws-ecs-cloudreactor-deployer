@@ -206,10 +206,11 @@ defines default settings for all Tasks
 `deploy_config/vars/common.yml` defines per environment settings for all Tasks
 5. Per Task settings -- found in `task_name_to_config.<task_name>` in `deploy_config/vars/common.yml`
 6. Per environment, per Task settings -- found in `env_to_task_name_to_config.<environment>.<task_name>` in `deploy_config/vars/common.yml`)
-7. Secret per environment settings -- found in `default_env_task_config` in `deploy_config/vars/<environment>.yml` overrides per environment settings for all Tasks.
+7. Secret per environment settings -- found in `default_env_task_config` in `deploy_config/vars/<environment>.yml`, overrides per environment settings for
+all Tasks.
 See `deploy_config/vars/example.yml` an example.
-8. Secret per environment, per Task -- found in `task_name_to_env_config.<task_name>` in `deploy_config/vars/<environment>.yml` overrides per
-environment, per Task settings
+8. Secret per environment, per Task settings -- found in
+`task_name_to_env_config.<task_name>` in `deploy_config/vars/<environment>.yml` overrides per environment, per Task settings
 
 ## Custom build steps
 
