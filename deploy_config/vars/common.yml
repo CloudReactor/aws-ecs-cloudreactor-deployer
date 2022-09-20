@@ -1,5 +1,5 @@
 project_name: "aws-ecs-cloudreactor-deployer-sample"
-project_version_text: 3.2.0
+project_version_text: 3.2.1
 # # Optionally, provide a steadily increasing whole number to indicate which
 # # build is more updated than another.
 # # project_version_number: 1
