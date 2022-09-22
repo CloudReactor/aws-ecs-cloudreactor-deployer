@@ -46,4 +46,4 @@ RUN chmod +x proc_wrapper.bin
 COPY --chown=appuser:appuser src .
 RUN chmod +x write_file.sh
 
-ENTRYPOINT ["proc_wrapper.bin"]
+ENTRYPOINT ["./proc_wrapper.bin"]
