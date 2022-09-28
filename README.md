@@ -43,7 +43,7 @@ ENTRYPOINT python -m proc_wrapper
 ```
 
 proc_wrapper will use the environment variable `PROC_WRAPPER_TASK_COMMAND` to
-determine what command to wrapper.
+determine what command to wrap.
 
 ### Create a CloudReactor account
 
