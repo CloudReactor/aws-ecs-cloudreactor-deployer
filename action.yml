@@ -55,7 +55,7 @@ inputs:
     default: INFO
 runs:
   using: docker
-  image: docker://cloudreactor/aws-ecs-cloudreactor-deployer:3.2.1
+  image: docker://cloudreactor/aws-ecs-cloudreactor-deployer:3.2.2
   env:
     AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
     AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
