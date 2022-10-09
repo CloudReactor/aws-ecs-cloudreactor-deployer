@@ -21,6 +21,6 @@ jobs:
         aws-region: ${{ secrets.AWS_REGION }}
         cloudreactor-deploy-api-key: ${{ secrets.CLOUDREACTOR_DEPLOY_API_KEY }}
         ansible-vault-password: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
-        deployment-environment: staging
+        deployment-environment: production
         docker-context-dir: sample_docker_context
         log-level: DEBUG
