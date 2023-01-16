@@ -5,6 +5,16 @@ project_version_text: 3.2.2
 # # project_version_number: 1
 project_url: "https://github.com/CloudReactor/aws-ecs-cloudreactor-deployer"
 
+# Uncomment this line to use an IAM role for the Task Role.
+# task_role_name: "{{ project_name }}_task_{{env}}"
+use_task_role: "{{ (task_role_name is defined) and task_role_name }}"
+
+# Uncomment this line to push environment variables to Secrets Manager during
+# deployment, and have the proc_wrapper read them during runtime.
+# secrets_manager_env_path: "{{ project_name | replace('-', '_') }}/{{env}}/tasks/env"
+
+use_secrets_manager: "{{ (secrets_manager_env_path is defined) and secrets_manager_env_path }}"
+
 default_build_options:
   # dockerfile_path: "{{ docker_context_dir }}/Dockerfile"
 
@@ -145,6 +155,7 @@ default_task_config:
     # enable_ecs_managed_tags: true
 
     task:
+      role_arn: "{{ ('arn:aws:iam::' + aws.account_id + ':role/' + task_role_name) if use_task_role else '' }}"
       # network:
       #   subnets:
       #     - subnet_1
@@ -258,10 +269,12 @@ default_task_config:
 
     # # Top-level .env secret locations. The values in later locations take
     # # precedence over those in earlier locations.
-    # env_locations:
-    #   - arn:aws:secretsmanager:{{aws_region}}:{{aws.account_id}}:secret:app/{{env}}/env
-    #   - arn:aws:s3:::examplebucket/{{env}}/app/config.json
-    #   - file:///home/appuser/.env
+    env_locations:
+      - "{{ ('arn:aws:secretsmanager:' + aws_region + ':' + aws.account_id + ':secret:' + secrets_manager_env_path) if use_secrets_manager else '' }}"
+
+      # # Other examples
+      # - arn:aws:s3:::examplebucket/{{env}}/app/config.json
+      # - file:///home/appuser/.env
 
     # # proc_wrapper can also load a configuration dictionary, merged from
     # # the sources below.
