@@ -198,7 +198,8 @@ The settings are all (deeply) merged together with Ansible's Jinja2
 [combine](https://docs.ansible.com/ansible/latest/user_guide/playbooks_filters.html#combining-hashes-dictionaries)
 filter. The precedence of settings, from lowest to highest is:
 
-1. Settings found in your Run Environment that you set via the CloudReactor dashboard
+1. Settings found in your Run Environment that you set via the
+[CloudReactor AWS Setup Wizard](https://github.com/CloudReactor/cloudreactor-aws-setup-wizard) or the CloudReactor dashboard
 2. Deployment environment AWS settings -- found in `project_aws` in `deploy_config/vars/<environment>.yml`
 3. Default Task settings -- found in `default_task_config` in `deploy_config/vars/common.yml`,
 defines default settings for all Tasks
@@ -253,7 +254,7 @@ host machine's docker service.
 3) Use build tools installed in a custom deployer image. In this case, you'll
 want to create a new image based on `cloudreactor/aws-ecs-cloudreactor-deployer`:
 
-        FROM cloudreactor/aws-ecs-cloudreactor-deployer:3.2.2
+        FROM cloudreactor/aws-ecs-cloudreactor-deployer:3.2.3
         # Example: get the JDK to build JAR files
         RUN apt-get update && \
           apt-get -t stretch-backports install openjdk-11-jdk
