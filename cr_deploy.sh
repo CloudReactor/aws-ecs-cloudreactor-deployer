@@ -165,6 +165,9 @@ fi
 # use the image in GitHub Packages to workaround rate limits from DockerHub by
 # setting
 # DOCKER_IMAGE_NAME=ghcr.io/cloudreactor/aws-ecs-cloudreactor-deployer
+#
+# Or, if deploying from within AWS, use the image in AWS ECR Public:
+# DOCKER_IMAGE_NAME=public.ecr.aws/x2w9p9b7/aws_ecs_cloudreactor_deployer
 if [ -z "$DOCKER_IMAGE_NAME" ]
   then
     DOCKER_IMAGE_NAME="cloudreactor/aws-ecs-cloudreactor-deployer"
