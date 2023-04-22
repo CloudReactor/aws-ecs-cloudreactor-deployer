@@ -160,6 +160,11 @@ if [ -n "$DOCKERFILE_PATH" ]
     EXTRA_DOCKER_RUN_OPTIONS="$EXTRA_DOCKER_RUN_OPTIONS -e DOCKERFILE_PATH=$DOCKERFILE_PATH"
 fi
 
+# The default Docker image name is "cloudreactor/aws-ecs-cloudreactor-deployer",
+# but if you have made a custom image, you may change it here. You can also
+# use the image in GitHub Packages to workaround rate limits from DockerHub by
+# setting
+# DOCKER_IMAGE_NAME=ghcr.io/cloudreactor/aws-ecs-cloudreactor-deployer
 if [ -z "$DOCKER_IMAGE_NAME" ]
   then
     DOCKER_IMAGE_NAME="cloudreactor/aws-ecs-cloudreactor-deployer"
