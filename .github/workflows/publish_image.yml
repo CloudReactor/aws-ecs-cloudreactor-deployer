@@ -53,7 +53,7 @@ jobs:
           images: |
             cloudreactor/aws-ecs-cloudreactor-deployer
             ghcr.io/${{ github.repository }}
-            public.ecr.aws/x2w9p9b7/aws_ecs_cloudreactor_deployer/aws-ecs-cloudreactor-deployer
+            public.ecr.aws/x2w9p9b7/aws_ecs_cloudreactor_deployer
 
           tags: |
             type=semver,pattern={{version}}
