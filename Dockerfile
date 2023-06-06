@@ -1,4 +1,4 @@
-FROM python:3.9.13-buster
+FROM public.ecr.aws/docker/library/python:3.11.3-slim-bullseye
 
 # See https://github.com/hadolint/hadolint/wiki/DL4006
 # Needed since we use pipes in the curl command
@@ -28,11 +28,13 @@ RUN apt-get update \
     binutils \
     libproj-dev \
     gdal-bin \
+    git \
     apt-transport-https \
     ca-certificates \
     curl \
     gnupg2 \
     software-properties-common \
+    unzip \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
 
@@ -42,11 +44,14 @@ RUN curl -fsSL https://download.docker.com/linux/debian/gpg | APT_KEY_DONT_WARN_
 
 RUN apt-get update && \
   apt-get -y --no-install-recommends install \
-    docker-ce=5:20.10.5~3-0~debian-buster \
+    docker-ce=5:24.0.1-1~debian.11~bullseye \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --upgrade pip==22.0.4
-RUN pip install pip-tools==6.6.1 MarkupSafe==1.1.1 requests==2.27.1
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip
+RUN ./aws/install
+
+RUN pip install --upgrade pip==23.1.2
+RUN pip install pip-tools==6.13.0 requests==2.31.0
 
 COPY deploy-requirements.in /tmp/deploy-requirements.in
 
@@ -56,10 +61,10 @@ RUN pip-compile --allow-unsafe --generate-hashes \
 # Install dependencies
 RUN pip install -r /tmp/deploy-requirements.txt
 
-RUN ansible-galaxy collection install community.docker:==2.6.0
-RUN ansible-galaxy collection install community.aws:==3.2.1
+RUN ansible-galaxy collection install community.docker:==3.4.6
+RUN ansible-galaxy collection install community.aws:==6.0.0
 
-# Can't do this because GitHub actions must be run as root
+# Can't do this because GitHub Actions must be run as root
 # Run as non-root user for better security
 # RUN groupadd appuser && useradd -g appuser --create-home appuser
 # RUN usermod -a -G docker appuser
