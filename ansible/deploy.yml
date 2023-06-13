@@ -65,17 +65,19 @@
     run_environment_exec_method: "{{ run_environment.execution_method_capabilities | selectattr('type', 'equalto', 'AWS ECS') | first }}"
     aws: "{{ run_environment_aws | default({}) | combine(project_aws | default({}), recursive=True) }}"
     aws_region: "{{ aws.region | default(lookup('env', 'AWS_DEFAULT_REGION')) }}"
+    resolved_aws: "{{ aws | combine(resolved_task_config.aws | default({})) }}"
     ecr_hostname: "{{ aws.account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com"
-    resolved_ecs: "{{ aws.ecs | default({}) | combine(resolved_task_config.ecs | default({}), recursive=True) }}"
-    resolved_ecs_task: "{{ resolved_ecs.task | default({}) }}"
-    resolved_ecs_task_network: "{{ resolved_ecs_task.network | default({}) }}"
-    resolved_ecs_task_logging: "{{ resolved_ecs_task.logging | default({}) }}"
-    resolved_ecs_task_awslogs: "{{ resolved_ecs_task_logging.awslogs | default({}) }}"
+    resolved_ecs: "{{ run_environment_ecs | default({}) | combine(resolved_task_config.ecs | default({}), recursive=True) }}"
+    resolved_aws_network: "{{ resolved_aws.network | default({}) }}"
+    resolved_aws_logging: "{{ resolved_aws.logging | default({}) }}"
+    resolved_aws_awslogs: "{{ resolved_aws_logging.awslogs | default({}) }}"
     resolved_ecs_service: "{{ resolved_ecs.service | default({}) }}"
-    task_definition_arn: "{{ (register_ecs_task_result.stdout | from_json).taskDefinition.taskDefinitionArn }}"
+    project_ecs_safe: "{{ project_ecs | default({}) }}"
+    task_definition_arn: "{{ (register_ecs_task_result.stdout | from_json).taskDefinition.taskDefinitionArn if register_ecs_task_result.stdout is defined else project_ecs_safe.task_definition_arn }}"
     task_build_dir: "build/{{env}}/{{item}}"
     saved_cloudreactor_task: "{{ create_cloudreactor_task_result.json }}"
-    awslogs_group: "{{ resolved_ecs_task_logging.log_group | default('/aws/fargate/' + project_name + '-' + env + '-' + item) }}"
+    awslogs_stream_prefix: "{{ resolved_aws_awslogs.stream_prefix | default(project_name + '-' + env) }}"
+    awslogs_group: "{{ resolved_aws_awslogs.log_group | default('/aws/fargate/' + awslogs_stream_prefix + '-' + item) }}"
     log_query: "{{ awslogs_group }}"
 
   tasks:
@@ -115,15 +117,14 @@
       run_environment_aws:
         account_id: "{{ run_environment.aws_account_id }}"
         region: "{{ run_environment.aws_default_region }}"
-        ecs:
-          cluster_name: "{{ run_environment_exec_method.default_cluster_arn }}"
-          execution_role_arn: "{{ run_environment_exec_method.default_execution_role }}"
-          task:
-            network:
-              security_groups: "{{ run_environment_exec_method.default_security_groups }}"
-              subnets: "{{ run_environment_exec_method.default_subnets }}"
-              assign_public_ip: "{{ run_environment_exec_method.default_assign_public_ip }}"
-            role_arn: "{{ run_environment_exec_method.task_execution_role | default(run_environment_exec_method.default_execution_role) }}"
+        network:
+          security_groups: "{{ run_environment_exec_method.default_security_groups }}"
+          subnets: "{{ run_environment_exec_method.default_subnets }}"
+          assign_public_ip: "{{ run_environment_exec_method.default_assign_public_ip }}"
+      run_environment_ecs:
+        cluster_name: "{{ run_environment_exec_method.default_cluster_arn }}"
+        execution_role_arn: "{{ run_environment_exec_method.default_execution_role }}"
+        task_role_arn: "{{ run_environment_exec_method.task_execution_role | default(run_environment_exec_method.default_execution_role) }}"
     when: cloudreactor_enabled
     tags:
       - upload
@@ -131,7 +132,7 @@
 
   - name: Output AWS settings
     debug:
-      msg: "Default AWS is {{ aws }}"
+      msg: "AWS settings: {{ aws }}"
       verbosity: 1
     tags:
       - upload
@@ -160,6 +161,7 @@
 
   - name: Login to ECR
     shell: "aws ecr get-login-password --region {{aws.region | quote}} | docker {{docker_common_general_options}} login --username AWS --password-stdin {{ecr_hostname}}"
+    when: project_ecs_safe.task_definition_arn is not defined
     tags:
       - upload
 
@@ -167,6 +169,7 @@
     file:
       path: "build/{{env}}"
       state: directory
+    when: project_ecs_safe.task_definition_arn is not defined
     tags:
       - build
 
@@ -174,6 +177,7 @@
     debug:
       msg: "Docker build options: {{build_options}}"
       verbosity: 1
+    when: project_ecs_safe.task_definition_arn is not defined
     tags:
       - build
 
@@ -181,6 +185,7 @@
     debug:
       msg: "Docker build command: 'docker {{docker_common_general_options}} {{docker_build_general_options}} build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} .'"
       verbosity: 1
+    when: project_ecs_safe.task_definition_arn is not defined
     tags:
       - build
 
@@ -188,6 +193,7 @@
     command: "docker {{docker_common_general_options}} {{docker_build_general_options}} build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} ."
     args:
       chdir: "{{ docker_context_dir }}"
+    when: project_ecs_safe.task_definition_arn is not defined
     tags:
       - build
 
@@ -195,17 +201,20 @@
     ecs_ecr:
       name: "{{project_name}}"
       region: "{{aws_region}}"
+    when: project_ecs_safe.task_definition_arn is not defined
     tags:
       - upload
       - create_ecr_repo
 
   - name: Tag Docker image
     command: "docker {{docker_common_general_options}} {{docker_tag_general_options}} tag {{docker_image_name}} {{ecr_hostname}}/{{docker_image_name}} {{extra_docker_tag_args}}"
+    when: project_ecs_safe.task_definition_arn is not defined
     tags:
       - upload
 
   - name: Push Docker image
     command: "docker {{docker_common_general_options}} {{docker_push_general_options}} push {{ecr_hostname}}/{{docker_image_name}} {{extra_docker_push_args}}"
+    when: project_ecs_safe.task_definition_arn is not defined
     tags:
       - upload
 
@@ -231,5 +240,6 @@
 
   - name: Logout of ECR
     command: "docker {{docker_common_general_options}} logout {{ecr_hostname}}"
+    when: project_ecs_safe.task_definition_arn is not defined
     tags:
       - upload

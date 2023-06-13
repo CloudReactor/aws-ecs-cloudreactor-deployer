@@ -16,8 +16,12 @@
 {% set max_age_seconds=resolved_task_config.max_age_seconds | default('__unset__') %}
 {% set wrapper=resolved_task_config.wrapper | default({}) %}
 {% set task_ecs=resolved_task_config.ecs | default({}) %}
-{% set project_ecs=project_aws.ecs | default({}) %}
-{% set project_task_ecs=project_ecs | combine(task_ecs, recursive=True) %}
+{% set project_task_ecs=project_ecs_safe | combine(task_ecs, recursive=True) %}
+{% set task_aws=resolved_task_config.aws | default({}) %}
+{% set project_aws_safe=project_aws | default({}) %}
+{% set project_task_aws=project_aws_safe | combine(task_aws, recursive=True) %}
+{% set project_task_aws_network=project_task_aws.network | default({}) %}
+
 {% set cpu_units=project_task_ecs.cpu_units | default(256) %}
 {% set memory_mb=project_task_ecs.memory_mb | default(512) %}
 
@@ -48,12 +52,6 @@
   'timeout_report_probability',
 ] %}
 
-{% set project_aws_subnets=project_aws.subnets | default('__unset__') %}
-{% set subnets=project_task_ecs.task.network.subnets | default(project_aws_subnets) %}
-
-{% set project_aws_security_groups=project_aws.security_groups | default('__unset__') %}
-{% set security_groups=project_task_ecs.task.network.security_groups | default(project_aws_security_groups) %}
-
 {% macro filtered_array_prop_def(arr, prop_name) -%}
   {% if (arr is defined) and (arr != '__unset__') %}
     {% set filtered_arr=arr | json_query('[?((@.included == undefined) || (to_string(@.included) == to_string(`true`)) || (to_string(@.included) == `True`))]')  %}
@@ -75,29 +73,41 @@
   {% endif %}
 {%- endmacro %}
 
-{% macro prop_def(obj, name, prop_name='') -%}
-  {%- if (obj[name] is defined) and (obj[name] != '__unset__') -%}
+{% macro prop_value(v) -%}
+{%- if v is none -%}
+null
+{%- elif v is number -%}
+{{- v }}
+{%- elif v is boolean -%}
+{{- v | string | lower }}
+{%- elif v is mapping -%}
+{{- v | to_yaml(width=2147483647) }}
+{%- else -%}
+"{{- v }}"
+{%- endif -%}
+{%- endmacro %}
+
+{% macro prop_def(obj, name, prop_name='', default_value='__unset__') -%}
+  {%- set v = obj[name] | default(default_value) -%}
+  {%- if v != '__unset__' -%}
     {%- if prop_name == '' -%}
       {%- set prop_name = name %}
     {%- endif -%}
-    {%- set v = obj[name] -%}
-    {%- if v is none -%}
-      "{{ prop_name }}": null
-    {%- elif v is number -%}
-      "{{ prop_name }}": {{ v }}
-    {%- elif v is mapping -%}
-      "{{ prop_name }}": {{ v | to_yaml(width=2147483647) }}
-    {%- else -%}
-      "{{ prop_name }}": "{{ v }}"
-    {%- endif -%}
+  {{- prop_name }}: {{ (v | string | lower) if v is boolean else prop_value(v) }}
   {%- endif -%}
 {%- endmacro %}
 
+{% set subnets=project_task_aws_network.subnets | default('__unset__') %}
+{% set security_groups=project_task_aws_network.security_groups | default('__unset__') %}
+
 # For debugging
 # resolved_task_config: {{ resolved_task_config | to_json }}
-# Project ECS: {{ project_ecs | to_json }}
+# Project ECS: {{ project_ecs_safe | to_json }}
 # Task ECS: {{ task_ecs | to_json }}
 # Project Task ECS: {{ project_task_ecs | to_json }}
+# Project AWS: {{ project_aws_safe | to_json }}
+# Task AWS: {{ task_aws | to_json }}
+# Project Task AWS: {{ project_task_aws | to_json }}
 # wrapper: {{ wrapper | to_json }}
 # subnets: {{ subnets | to_json }}
 # security groups: {{ security_groups | to_json }}
@@ -119,7 +129,7 @@ project_url: "{{project_url}}"
 heartbeat_interval_seconds: 600
 {% endif %}
 
-{% if resolved_task_config.max_concurrency is defined %}
+{% if (resolved_task_config.max_concurrency is defined) and (resolved_task_config.max_concurrency != '__unset__') %}
 max_concurrency: {% if max_concurrency is number %}{{ max_concurrency }}{% else %}null{% endif %}
 {% endif %}
 
@@ -136,85 +146,107 @@ max_age_seconds: {% if is_service %}null{% else %}{{ resolved_task_config.max_ag
 run_environment:
   name: "{{ resolved_task_config.run_environment | default(run_environment_name) }}"
 
-execution_method_capability:
-  type: AWS ECS
+allocated_cpu_units: {{cpu_units}}
+allocated_memory_mb: {{memory_mb}}
+
+execution_method_type: AWS ECS
+execution_method_capability_details:
   task_definition_arn: {{ task_definition_arn }}
-  default_launch_type: FARGATE
+  launch_type: FARGATE
   supported_launch_types:
     - FARGATE
 
-  {{ prop_def(project_task_ecs, 'cluster_name', 'default_cluster_name') }}
-  {{ prop_def(project_task_ecs, 'platform_version', 'default_platform_version') }}
+  {{ prop_def(project_task_ecs, 'cluster_name', 'cluster_arn') }}
 
-  {% if subnets is none %}
-  default_subnets: null
-  {% else %}
-  {% if subnets != '__unset__' %}
-  default_subnets:
-  {% for subnet in subnets %}
-    - "{{ subnet }}"
-  {% endfor %}
-  {% endif %}
-  {% endif %}
-
-  {% if security_groups is none %}
-  default_security_groups: null
-  {% else %}
-  {% if security_groups != '__unset__' %}
-  default_security_groups:
-  {% for security_group in security_groups %}
-    - "{{ security_group }}"
-  {% endfor %}
-  {% endif %}
-  {% endif %}
-
-  {% if project_task_ecs.task.tags is defined %}
-  tags: {{ project_task_ecs.task.tags | to_yaml(width=2147483647) }}
-  {% endif %}
-
-  {{ prop_def(project_task_ecs.task.network, 'assign_public_ip', 'default_assign_public_ip') }}
-
-  {{ prop_def(project_task_ecs, 'execution_role_arn', 'default_execution_role') }}
-  {{ prop_def(project_task_ecs.task, 'role_arn', 'default_task_role') }}
-
-  allocated_cpu_units: {{cpu_units}}
-  allocated_memory_mb: {{memory_mb}}
   main_container_name: "{{project_name}}_{{task_name}}_{{env}}"
 
+  {{ prop_def(project_task_ecs, 'execution_role_arn') }}
+  {{ prop_def(project_task_ecs, 'task_role_arn') }}
+  {{ prop_def(project_task_ecs, 'platform_version') }}
   {{ prop_def(project_task_ecs, 'enable_ecs_managed_tags') }}
+  {{ prop_def(project_task_ecs, 'enable_execute_command') }}
 
-  {% if project_task_ecs.service is defined %}
-  service_options:
-    {% if project_task_ecs.service.load_balancers is defined %}
-    {% if project_task_ecs.service.load_balancers[0] is defined %}
+infrastructure_type: AWS
+infrastructure_settings:
+  network:
+    region: "{{aws_region}}"
+
+    {% if subnets is none %}
+    subnets: null
+    {% elif subnets != '__unset__' %}
+    subnets:
+    {% for subnet in subnets %}
+      - "{{ subnet }}"
+    {% endfor %}
+    {% endif %}
+
+    {% if security_groups is none %}
+    security_groups: null
+    {% elif security_groups != '__unset__' %}
+    security_groups:
+    {% for security_group in security_groups %}
+      - "{{ security_group }}"
+    {% endfor %}
+    {% endif %}
+
+    {{ prop_def(project_task_aws_network, 'assign_public_ip') }}
+
+  {% if project_task_aws.log_configuration is defined %}
+  logging:
+    driver: "{{ project_task_aws.log_configuration.logDriver }}"
+    options: {{ project_task_aws.log_configuration.options | default({}) | to_yaml(width=2147483647) }}
+  {% else %}
+  logging:
+    driver: awslogs
+    options:
+      {{ prop_def(resolved_aws_awslogs, 'create_group', '', 'true') }}
+      group: "{{ awslogs_group }}"
+      stream_prefix: "{{ awslogs_stream_prefix }}"
+      region: "{{ resolved_aws_awslogs.region | default(aws_region) }}"
+  {% endif %}
+
+  {% if (project_task_aws.tags is defined) and (project_task_aws.tags != '__unset__') %}
+  tags: {{  project_task_aws.tags | to_yaml(width=2147483647) }}
+  {% endif %}
+
+{% if resolved_ecs.service is defined %}
+service_provider_type: AWS ECS
+service_settings:
+  {{ prop_def(resolved_ecs_service, 'force_new_deployment') }}
+  {{ prop_def(resolved_ecs_service, 'enable_ecs_managed_tags') }}
+  {{ prop_def(resolved_ecs_service, 'propagate_tags') }}
+  {% if (resolved_ecs_service.tags is defined) and (resolved_ecs_service.tags != '__unset__') %}
+  tags: {{ resolved_ecs_service.tags | to_yaml(width=2147483647) }}
+  {% endif %}
+
+  {% if resolved_ecs_service.load_balancer_settings is defined %}
+  load_balancer_settings:
+    {{ prop_def(resolved_ecs_service.load_balancer_settings, 'health_check_grace_period_seconds') }}
+
+    {% if resolved_ecs_service.load_balancer_settings.load_balancers[0] is defined %}
     load_balancers:
-      {% for load_balancer in project_task_ecs.service.load_balancers %}
+      {% for load_balancer in resolved_ecs_service.load_balancer_settings.load_balancers %}
       - target_group_arn: "{{load_balancer.target_group_arn}}"
         container_name:  "{{project_name}}_{{task_name}}_{{env}}"
         container_port: {{load_balancer.container_port}}
       {% endfor %}
-    {% if project_task_ecs.service.load_balancer_health_check_grace_period_seconds is defined %}
-    load_balancer_health_check_grace_period_seconds: {{ project_task_ecs.service.load_balancer_health_check_grace_period_seconds }}
-    {% endif %}
     {% else %}
-    load_balancers: []
-    {% endif %}
-    {% endif %}
-    {% if project_task_ecs.service.deployment_configuration is defined %}
-    force_new_deployment: {{ project_task_ecs.service.deployment_configuration.force_new_deployment | default(false) }}
-    deploy_minimum_healthy_percent: {{ project_task_ecs.service.deployment_configuration.minimum_healthy_percent | default(100) }}
-    deploy_maximum_percent: {{ project_task_ecs.service.deployment_configuration.maximum_percent | default(200) }}
-    deploy_enable_circuit_breaker: {{ project_task_ecs.service.deployment_configuration.enable_circuit_breaker | default(true) }}
-    deploy_rollback_on_failure: {{ project_task_ecs.service.deployment_configuration.rollback_on_failure | default(true) }}
-    {% endif %}
-
-    {{ prop_def(project_task_ecs.service, 'enable_ecs_managed_tags') }}
-    {{ prop_def(project_task_ecs.service, 'propagate_tags') }}
-
-    {% if project_task_ecs.service.tags is defined %}
-    tags: {{ project_task_ecs.service.tags | to_yaml(width=2147483647) }}
+      load_balancers: []
     {% endif %}
   {% endif %}
+
+  {% if resolved_ecs_service.deployment_configuration is defined %}
+  deployment_configuration:
+    minimum_healthy_percent: {{ resolved_ecs_service.deployment_configuration.minimum_healthy_percent | default(100) }}
+    maximum_percent: {{ resolved_ecs_service.deployment_configuration.maximum_percent | default(200) }}
+    {% if resolved_ecs_service.deployment_configuration.deployment_circuit_breaker is defined %}
+    deployment_circuit_breaker:
+      enable: {{ resolved_ecs_service.deployment_configuration.enable_circuit_breaker | default(true) }}
+      {{ prop_def(resolved_ecs_service.deployment_configuration.deployment_circuit_breaker, 'rollback_on_failure') }}
+    {% endif %}
+  {% endif %}
+{% endif %}
+
 
 log_query: "{{ log_query }}"
 

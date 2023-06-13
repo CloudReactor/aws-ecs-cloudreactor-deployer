@@ -70,14 +70,11 @@
 {% set global_task_version_text=project_version_text | default('__unset__') %}
 {% set task_version_text=resolved_task_config.task_version_text | default(global_task_version_text) %}
 {% set wrapper=resolved_task_config.wrapper | default({}) %}
-{% set aws_ecs=aws.ecs | default({}) %}
-{% set task_ecs=resolved_task_config.ecs | default({}) %}
-{% set ecs=aws_ecs | combine(task_ecs, recursive=True) %}
-{% set cpu_units=ecs.cpu_units | default(256) %}
-{% set memory_mb=ecs.memory_mb | default(512) %}
-{% set extra_container_cpu_units=ecs.extra_container_cpu_units | default(0) %}
-{% set extra_container_memory_mb=ecs.extra_container_memory_mb | default(0) %}
-{% set use_default_linux_parameters=ecs.use_default_linux_parameters | default(true) %}
+{% set cpu_units=resolved_ecs.cpu_units | default(256) %}
+{% set memory_mb=resolved_ecs.memory_mb | default(512) %}
+{% set extra_container_cpu_units=resolved_ecs.extra_container_cpu_units | default(0) %}
+{% set extra_container_memory_mb=resolved_ecs.extra_container_memory_mb | default(0) %}
+{% set use_default_linux_parameters=resolved_ecs.use_default_linux_parameters | default(true) %}
 {% set environment_variables=resolved_task_config.env | default({}) %}
 
 {% set resolvable_env_var_name_prefix = wrapper.resolvable_env_var_name_prefix | default('') %}
@@ -113,16 +110,16 @@
     ],
     "family": {{ (project_name + '_' +  task_name + '_' + env) | to_json }},
     "networkMode": "awsvpc",
-    "executionRoleArn": {{ ecs.execution_role_arn | to_json }},
-    {% if ecs.task.role_arn is defined %}
-    "taskRoleArn": {{ ecs.task.role_arn | to_json }},
+    "executionRoleArn": {{ resolved_ecs.execution_role_arn | to_json }},
+    {% if (resolved_ecs.task_role_arn is defined) and (resolved_ecs.task_role_arn != '__unset__') %}
+    "taskRoleArn": {{ resolved_ecs.task_role_arn | to_json }},
     {% endif %}
     "cpu": "{{cpu_units}}",
     "memory": "{{memory_mb}}",
 
-    {% if ecs.task.tags is defined %}
+    {% if resolved_aws.tags is defined %}
     "tags": [
-      {% for name, value in ecs.task.tags.items() %}
+      {% for name, value in resolved_aws.tags.items() %}
       {
           "key" : {{ name | string | to_json }},
           "value" : {{ value | string | to_json }}
@@ -138,7 +135,11 @@
             "cpu": {{ cpu_units - extra_container_cpu_units }},
             "memory": {{ memory_mb - extra_container_memory_mb }},
             "essential": true,
-            "logConfiguration": {
+            "logConfiguration":
+            {% if resolved_aws.log_configuration is defined %}
+                {{ resolved_aws.log_configuration | to_json }}
+            {% else %}
+            {
                 "logDriver": "awslogs",
                 "options": {
                     {# Note: the ECS-CloudWatchLogs policy must be attached to your ecsTaskExecutionRole so that
@@ -146,12 +147,14 @@
                        set this to "false".
                        See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_cloudwatch_logs.html
                     #}
-                    "awslogs-create-group": "{{ resolved_ecs_task_awslogs.create_group | default(true) }}",
+                    "awslogs-create-group": "{{ resolved_aws_awslogs.create_group | default('true') }}",
                     "awslogs-group": {{ awslogs_group | to_json }},
-                    "awslogs-region": {{ resolved_ecs_task_awslogs.region | default(aws_region) | to_json }},
-                    "awslogs-stream-prefix": {{ resolved_ecs_task_awslogs.stream_prefix | default(project_name + '-' + env) | to_json }}
+                    "awslogs-region": {{ resolved_aws_awslogs.region | default(aws_region) | to_json }},
+                    "awslogs-stream-prefix": {{ resolved_aws_awslogs.stream_prefix | default(project_name + '-' + env) | to_json }}
                 }
             },
+            {% endif %}
+
             "environment": [
                 {% for name, value in environment_variables.items() %}
                 {
@@ -239,11 +242,6 @@
                    proc_wrapper module at runtime.
                 #}
                 {{ env_def(wrapper, 'rollbar_access_token', true) }}
-                {# Deprecated -- for python wrappers < 4.0.0 #}
-                {
-                    "name" : "TASK_COMMAND",
-                    "value" : {{ resolved_task_config.command | to_json }}
-                },
                 {# This is last because it is required so it definitely does not end with a comma #}
                 {
                     "name" : "PROC_WRAPPER_TASK_COMMAND",
@@ -256,23 +254,23 @@
               "initProcessEnabled": true
             }
             {% endif %}
-            {% if ecs.extra_main_container_properties is defined %}
+            {% if resolved_ecs.extra_main_container_properties is defined %}
             ,
-            {% for name, value in ecs.extra_main_container_properties.items() %}
+            {% for name, value in resolved_ecs.extra_main_container_properties.items() %}
             {{ name | to_json }}: {{ value | to_json }}{{ '' if loop.last else ',' }}
             {% endfor %}
             {% endif %}
         }
-        {% if ecs.extra_container_definitions[0] is defined %}
+        {% if resolved_ecs.extra_container_definitions[0] is defined %}
         ,
-        {% for container_definition in ecs.extra_container_definitions %}
+        {% for container_definition in resolved_ecs.extra_container_definitions %}
         {{ container_definition | to_json }}{{ '' if loop.last else ',' }}
         {% endfor %}
         {% endif %}
     ]
-    {% if ecs.extra_task_definition_properties is defined %}
+    {% if resolved_ecs.extra_task_definition_properties is defined %}
     ,
-    {% for name, value in ecs.extra_task_definition_properties.items() %}
+    {% for name, value in resolved_ecs.extra_task_definition_properties.items() %}
     {{ name | to_json }}: {{ value | to_json }}{{ '' if loop.last else ',' }}
     {% endfor %}
     {% endif %}

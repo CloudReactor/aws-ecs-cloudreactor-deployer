@@ -1,5 +1,6 @@
 project_name: "aws-ecs-cloudreactor-deployer-sample"
-project_version_text: 3.2.3
+project_version_text: 4.0.0
+
 # # Optionally, provide a steadily increasing whole number to indicate which
 # # build is more updated than another.
 # # project_version_number: 1
@@ -7,8 +8,9 @@ project_url: "https://github.com/CloudReactor/aws-ecs-cloudreactor-deployer"
 
 # Uncomment this line to use an IAM role for the Task Role.
 # task_role_name: "{{ project_name }}_task_{{env}}"
+task_role_name: null
 
-use_task_role: "{{ (task_role_name is defined) and task_role_name }}"
+use_task_role: "{{ (task_role_name is defined) and (task_role_name != '__unset__') }}"
 
 # Uncomment this line to push environment variables to Secrets Manager during
 # deployment, and have the proc_wrapper read them during runtime.
@@ -47,6 +49,10 @@ default_cloudreactor:
 
   # # Set to false to disable monitoring and management in CloudReactor.
   enabled: true
+
+# project_ecs:
+#   # Uncomment and change the value to deploy a pre-build ECS Task Definition
+#   task_definition_arn: "arn:aws:ecs:{{ aws_region }}:{{ aws.account_id }}:task-definition/aws-ecs-cloudreactor-deployer-sample_web_server_windows-dev:14"
 
 # These settings will apply by default to all Tasks and in all deployments.
 # They override the settings in your Run Environment.
@@ -123,7 +129,7 @@ default_task_config:
 
   # # Environment variables to set in the process environment
   env:
-    DEPLOYMENT: "{{env}}"
+    DEPLOYMENT: "{{env | to_yaml}}"
 
   # alert_methods:
   #   - name: Alert Method 1
@@ -131,14 +137,14 @@ default_task_config:
   #     included: false
   # links:
   #  - name: Rollbar
-  #    link_url_template: "https://rollbar.com/YourCompanyName/{{ project_name}}/"
+  #    link_url_template: "https://rollbar.com/YourCompanyName/{{ project_name | urlencode }}/"
   #    icon_url: "https://cdn.rollbar.com/static/img/favicon.ico"
   #  - name: SumoLogic
   #    # We have to do some tricks because this file is parsed as Jinja2, then re-parsed on upload.
   #    link_url_template: "https://service.us2.sumologic.com/ui/index.html#section/search/@{% raw %}{{ '{{' }}(current_timestamp * 1000) - 3600000{{ '}}' }},{{ '{{' }}current_timestamp * 1000{{ '}}' }}{% endraw %}@_sourceHost={{log_query | urlencode}}"
   #    # Unfortunately, this icon does not show up, probably due to some cross-site inclusion limitations.
   #    icon_url: "https://www.sumologic.com/favicon.ico"
-  #    description: "{{log_query}}"
+  #    description: "{{log_query | to_yaml }}"
   #    included: "{{ env == 'staging' }}"
 
   ecs:
@@ -153,27 +159,12 @@ default_task_config:
     # # Required when deploying a scheduled task without CloudReactor
     # execution_role_arn: arn:aws:iam::123456789012:role/ecsEventsRole
 
-    # enable_ecs_managed_tags: true
+    # Results in an empty string if task_role_arn is null, but that's ok.
+    task_role_arn: "{{ (('arn:aws:iam::' + aws.account_id + ':role/' + task_role_name) if use_task_role and (task_role_name is not none) else none) }}"
 
-    task:
-      role_arn: "{{ ('arn:aws:iam::' + aws.account_id + ':role/' + task_role_name) if use_task_role else '' }}"
-      # network:
-      #   subnets:
-      #     - subnet_1
-      #     - subnet_2
-      #   security_groups:
-      #     - sg_1
-      #     - sg_2
-      #   assign_public_ip: true
-      # logging:
-      #   awslogs:
-      #     create_group: true
-      #     group: "/aws/fargate/{{ project_name }}-{{ env }}-{{ item }}"
-      #     stream_prefix: "{{ project_name }}-{{ env }}"
-      #     region: "us-west-1"
-      tags:
-        ManagedBy: CloudReactor
-        Application: "{{ project_name }}"
+    # By default, run on the ECS cluster specified by the Run Environment.
+    # You can override this to run on a per-application/environment cluster, for example.
+    # cluster_arn: "{{ 'arn:aws:ecs:' + aws_region + ':' + aws.account_id + ':cluster/' + project_name + '-' env }}"
 
     # # By default, the entrypoint is run with the tinit init process so that
     # # commands in shell form (like calling proc_wrapper) pass on SIGTERM to
@@ -185,6 +176,11 @@ default_task_config:
     # # use_default_linux_parameters to false and pass them in via
     # # extra_main_container_properties.
     # use_default_linux_parameters: true
+
+    # enabled_ecs_managed_tags: true
+    # propagate_tags: TASK_DEFINITION # or "SERVICE" or "NONE"
+    # enabled_execute_command: true
+    # task_group: "{{ (project_name + '_' +  task_name + '_' + env) }}"
 
     # # Uncomment to add properties to the main container:
     # extra_main_container_properties
@@ -205,7 +201,7 @@ default_task_config:
     # extra_container_cpu_units: 32
     # extra_container_memory_mb: 128
     # # Each definition has the properties for containers in an AWS ECS task
-    # # definition,
+    # # definition. See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definitions
     # # The following example uses nginx as a reverse proxy. It assumed that a Docker image
     # # based on nginx, with configuration, is available in ECR already.
     # # See https://medium.com/@stefanofrancavilla/deploy-web-apps-nginx-to-ecs-with-docker-580c6af827e8
@@ -220,6 +216,41 @@ default_task_config:
     #      - containerPort: 80 # nginx default port is 80
     #      - hostPort: 8000    # port of the target group
     #      - protocol: tcp
+
+  aws:
+    # network:
+    #   subnets:
+    #     - subnet_1
+    #     - subnet_2
+    #   security_groups:
+    #     - sg_1
+    #     - sg_2
+    #   assign_public_ip: true
+
+    # # To use AWS Logs driver with common options:
+    # logging:
+    #   awslogs:
+    #     create_group: true
+    #     group: "/aws/fargate/{{ project_name }}-{{ env }}-{{ item }}"
+    #     stream_prefix: "{{ project_name }}-{{ env }}"
+    #     region: "us-west-1"
+    #
+    # # Otherwise, provide a LogConfiguration object as described in
+    # # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_LogConfiguration.html
+    # log_configuration:
+    #   logDriver: awsfirelens
+    #   options:
+    #     Name: firehose
+    #     region: us-west-2,
+    #     delivery_stream: my-stream
+    #     log-driver-buffer-limit: "2097152"
+    #   secretOptions:
+    #     - name: Token
+    #       value: SECRET_TOKEN
+    tags:
+      ManagedBy: CloudReactor
+      Application: "{{ project_name }}"
+
 
   # Properties sent to the wrapper, normally CloudReactor python proc_wrapper.
   # See https://github.com/CloudReactor/cloudreactor-procwrapper
@@ -449,6 +480,7 @@ default_task_config:
 # `command: python main.py`
 task_name_to_config:
   smoke:
+    deployed: false
     description: "This description shows up in CloudReactor dashboard"
     command: "echo 'hi'"
     schedule: cron(9 15 * * ? *)
@@ -457,6 +489,7 @@ task_name_to_config:
       enable_status_update_listener: true
   # This task shows how to use the temporary file system provided by ECS
   write_file:
+    deployed: false
     description: "File I/O"
     command: "./write_file.sh"
     ecs:
@@ -478,16 +511,14 @@ task_name_to_config:
     description: Template for a web server
     command: "python3 -m http.server"
     ecs:
-      task:
-        network:
-          assign_public_ip: true
       service:
+        force_new_deployment: false
         deployment_configuration:
-           force_new_deployment: false
-           minimum_healthy_percent: 100
-           maximum_percent: 200
-           enable_circuit_breaker: true
-           rollback_on_failure: true
+          minimum_healthy_percent: 100
+          maximum_percent: 200
+          deployment_circuit_breaker:
+            enable: true
+            rollback_on_failure: true
         enable_ecs_managed_tags: true
         propagate_tags: SERVICE # Or "TASK_EXECUTION"
         tags:
@@ -498,6 +529,9 @@ task_name_to_config:
           - hostPort: 7070
             containerPort: 7070
             protocol: tcp
+    aws:
+      network:
+        assign_public_ip: true
 
 # env_to_default_task_config is a mapping from deployment environment name to
 # non-secret Task settings common to all Tasks.
@@ -525,21 +559,36 @@ env_to_task_name_to_config:
     #  web_server:
     #    deployed: true
     #    service_instance_count: 2
+    #    aws:
+    #      network:
+    #       security_groups:
+    #         - sg-1
+    #         - sg-2
+    #       subnets:
+    #         - subnet-public-1
+    #         - subnet-public-2
+    #       assign_public_ip: false
     #    ecs:
     #      execution_role_arn: arn:aws:iam::12345678901:role/myrole
-    #      task:
-    #        network:
-    #         security_groups:
-    #           - sg-1
-    #           - sg-2
-    #         subnets:
-    #           - subnet-public-1
-    #           - subnet-public-2
-    #        role_arn: arn:aws:iam::12345678901:role/myrole
-    #      service:
+    #      task_role_arn: arn:aws:iam::12345678901:role/myrole
+    #    service_provider_type: AWS ECS
+    #    service_settings:
+    #      force_new_deployment: true
+    #      deployment_configuration:
+    #        maximum_percent: 200
+    #        minimum_healthy_percent: 100
+    #        deployment_circuit_breaker:
+    #          enable: true
+    #          rollback_on_failure: true
+    #      load_balancer_settings:
+    #        health_check_grace_period_seconds: 300
     #        load_balancers:
     #          - target_group_arn: arn:aws:elasticloadbalancing:us-west-1:xxx:targetgroup/example-web/xxx
     #            container_port: 7070
+    #      enable_ecs_managed_tags: true
+    #      propagate_tags: true
+    #      tags:
+    #        TASK_TYPE: SERVICE
     #    links:
     #      - name: Web Server
     #        link_url_template: "http://flask-example-xxx.us-west-1.elb.amazonaws.com/"

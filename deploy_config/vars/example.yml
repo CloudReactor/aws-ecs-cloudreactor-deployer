@@ -16,23 +16,23 @@
 # project_aws:
 #   account_id: 123456789012
 #   region: "us-west-2"
-#   ecs:
-#     cluster_name: staging
-#     # Required when deploying a scheduled task without CloudReactor
-#     # execution_role_arn: arn:aws:iam::12345678901:role/ecsTaskExecutionRole
-#     task:
-#       network:
-#         security_groups:
-#           - sg-1
-#           - sg-2
-#         subnets:
-#           - subnet-private-1
-#           - subnet-private-2
-#          # Set this to true if your subnets don't have access to a NAT gateway,
-#          # for example public subnets.
-#          # If you are running on private subnets, this must be false.
-#          assign_public_ip: false
-#       role_arn: arn:aws:iam::12345678901:role/myrole
+#   network:
+#     security_groups:
+#       - sg-1
+#       - sg-2
+#     subnets:
+#       - subnet-private-1
+#       - subnet-private-2
+#     # Set this to true if your subnets don't have access to a NAT gateway,
+#     # for example public subnets.
+#     # If you are running on private subnets, this must be false.
+#     assign_public_ip: false
+
+# project_ecs:
+#   cluster_name: staging
+#   # Required when deploying a scheduled task without CloudReactor
+#   # execution_role_arn: arn:aws:iam::12345678901:role/ecsTaskExecutionRole
+#   task_role_arn: arn:aws:iam::12345678901:role/myrole
 
 cloudreactor:
   # Required: the API key used to deploy the Tasks.
@@ -41,7 +41,7 @@ cloudreactor:
   deploy_api_key: xxx
 
   # # You can also specify the API key used by your Task.
-  # # The key must of Task access level or above  and be scoped to the
+  # # The key must have Task access level or above and be scoped to the
   # # Run Environment you are deploying to, or be unscoped.
   # task_api_key: yyy
 

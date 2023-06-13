@@ -17,28 +17,36 @@
     state: directory
   when: deployed
   tags:
-  - always
+    - always
 
 - name: Create ECS task definition file {{item}}
   template: src=/home/appuser/work/templates/ecs_task_definition.json.j2
             dest={{task_build_dir}}/ecs_task_definition.json
             lstrip_blocks=yes
-  when: deployed
+  when: deployed and (project_ecs_safe.task_definition_arn is not defined)
   tags:
-  - always
+    - always
+
+- name: Read ECS Task Definition
+  include_vars:
+    file: "{{task_build_dir}}/ecs_task_definition.json"
+    name: ecs_task_definition
+  when: deployed and (ansible_verbosity >= 2) and (project_ecs_safe.task_definition_arn is not defined)
+  tags:
+    - always
 
 - name: Register ECS task definition {{item}}
   command: "aws ecs register-task-definition --region={{aws_region | quote}} --cli-input-json file://ecs_task_definition.json"
   args:
     chdir: "{{task_build_dir}}"
   register: register_ecs_task_result
-  when: deployed
+  when: deployed and (project_ecs_safe.task_definition_arn is not defined)
   tags:
-  - always
+    - always
 
 - name: Output Task Definition ARN
   debug:
-    msg: "Task Definition ARN={{task_definition_arn}}"
+    msg: "Task Definition ARN = {{task_definition_arn}}"
   when: deployed
 
 - name: Create CloudReactor Task definition {{item}}
@@ -47,15 +55,20 @@
             lstrip_blocks=yes
   when: deployed
   tags:
-  - always
+    - always
 
-- name: Read yaml
+- name: Output CloudReactor Task yaml
+  debug:
+    msg: "CloudReactor Task YAML =\n{{lookup('ansible.builtin.file', task_build_dir + '/cloudreactor_task.yml').split('\n')}}"
+  when: deployed
+
+- name: Read CloudReactor Task yaml
   include_vars:
     file: "{{task_build_dir}}/cloudreactor_task.yml"
     name: cloudreactor_task
   when: cloudreactor_enabled and deployed
   tags:
-  - always
+    - always
 
 - name: Output CloudReactor Task JSON
   debug:
@@ -63,7 +76,7 @@
     verbosity: 2
   when: cloudreactor_enabled and deployed
   tags:
-  - always
+    - always
 
 - name: Create/update Task in CloudReactor
   uri:
@@ -109,16 +122,16 @@
     launch_type: FARGATE
     force_new_deployment: "{{ resolved_ecs_service.force_new_deployment | default(false) }}"
     network_configuration:
-      assign_public_ip: "{{ resolved_ecs_task_network.assign_public_ip | default(false) }}"
-      subnets: "{{ resolved_ecs_task_network.subnets }}"
-      security_groups: "{{ resolved_ecs_task_network.security_groups }}"
+      assign_public_ip: "{{ resolved_aws_network.assign_public_ip | default(false) }}"
+      subnets: "{{ resolved_aws_network.subnets }}"
+      security_groups: "{{ resolved_aws_network.security_groups }}"
     task_definition: "{{project_name}}_{{item}}_{{env}}"
     desired_count: "{{ resolved_task_config.service_instance_count | default(1) }}"
     deployment_configuration:
       minimum_healthy_percent: "{{ (resolved_ecs_service.deployment_configuration | default({})).minimum_healthy_percent | default(0) }}"
       maximum_percent: "{{ (resolved_ecs_service.deployment_configuration | default({})).maximum_percent | default(100) }}"
     delay: "{{ resolved_ecs_service.delay | default(10) }}"
-  when: (not cloudreactor_enabled) and deployed and (resolved_ecs_service.load_balancers is not defined) and (resolved_task_config.is_service | default(resolved_task_config.service_instance_count | default(0) | string != '0'))
+  when: (not cloudreactor_enabled) and deployed and (resolved_ecs_service.load_balancer_settings is not defined) and (resolved_task_config.is_service | default(resolved_task_config.service_instance_count | default(0) | string != '0'))
   tags:
     - always
 
@@ -131,9 +144,9 @@
     launch_type: FARGATE
     force_new_deployment: "{{ resolved_ecs_service.force_new_deployment | default(false) }}"
     network_configuration:
-      assign_public_ip: "{{ resolved_ecs_task_network.assign_public_ip | default(false) }}"
-      subnets: "{{ resolved_ecs_task_network.subnets }}"
-      security_groups: "{{ resolved_ecs_task_network.security_groups }}"
+      assign_public_ip: "{{ resolved_aws_network.assign_public_ip | default(false) }}"
+      subnets: "{{ resolved_aws_network.subnets }}"
+      security_groups: "{{ resolved_aws_network.security_groups }}"
     task_definition: "{{project_name}}_{{item}}_{{env}}"
     desired_count: "{{ resolved_task_config.service_instance_count | default(1) }}"
     deployment_configuration:
@@ -144,11 +157,11 @@
     # If you use CloudReactor to manage Tasks, it does support multiple load
     # balancers.
     load_balancers:
-      - targetGroupArn: "{{resolved_ecs_service.load_balancers[0].target_group_arn}}"
+      - targetGroupArn: "{{resolved_ecs_service.load_balancer_settings.load_balancers[0].target_group_arn}}"
         containerName:  "{{project_name}}_{{item}}_{{env}}"
-        containerPort: "{{resolved_ecs_service.load_balancers[0].container_port}}"
-    health_check_grace_period_seconds: "{{ resolved_ecs_service.health_check_grace_period_seconds | default(30) }}"
-  when: (not cloudreactor_enabled) and deployed and (resolved_ecs_service.load_balancers is defined) and (resolved_task_config.is_service | default(resolved_task_config.service_instance_count | default(0) | string != '0'))
+        containerPort: "{{resolved_ecs_service.load_balancer_settings.load_balancers[0].container_port}}"
+    health_check_grace_period_seconds: "{{ resolved_ecs_service.load_balancer_settings.health_check_grace_period_seconds | default(30) }}"
+  when: (not cloudreactor_enabled) and deployed and (resolved_ecs_service.load_balancer_settings is defined) and (resolved_task_config.is_service | default(resolved_task_config.service_instance_count | default(0) | string != '0'))
   tags:
     - always
 

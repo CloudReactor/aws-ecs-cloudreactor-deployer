@@ -4,27 +4,27 @@
   "Targets": [
     {
       "Id": {{ (project_name + '-' +  task_name + '-' + env) | to_json }},
-      "Arn": "arn:aws:ecs:{{ aws.region }}:{{ aws.account_id }}:cluster/{{ resolved_ecs.cluster_name }}",
+      "Arn": "arn:aws:ecs:{{ aws_region }}:{{ resolved_aws.account_id }}:cluster/{{ resolved_ecs.cluster_name }}",
       "RoleArn": {{ resolved_ecs.execution_role_arn | to_json }},
       "EcsParameters": {
         "LaunchType": "FARGATE",
         "NetworkConfiguration": {
           "awsvpcConfiguration": {
             "AssignPublicIp":
-            {% if resolved_ecs_task_network.assign_public_ip | default(false) %}
+            {% if resolved_aws_network.assign_public_ip | default(false) %}
             "ENABLED"
             {% else %}
             "DISABLED"
             {% endif %}
             ,
 
-            {% if resolved_ecs_task_network.security_groups %}
+            {% if resolved_aws_network.security_groups %}
             "SecurityGroups":
-            {{ resolved_ecs_task_network.security_groups | to_json }},
+            {{ resolved_aws_network.security_groups | to_json }},
             {% endif %}
 
             "Subnets":
-            {{ resolved_ecs_task_network.subnets | default(project_aws.subnets) | to_json }}
+            {{ resolved_aws_network.subnets | to_json }}
           }
         },
         {% if resolved_ecs.platform_version is defined %}
