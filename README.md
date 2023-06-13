@@ -402,16 +402,16 @@ container:
 
 In bash environments:
 
-    DEBUG_MODE=TRUE ./cr_deploy.sh <environment>
+    DEPLOYMENT_ENVIRONMENT=<environment> DEBUG_MODE=TRUE ./cr_deploy.sh <environment>
 
 In a bash environment with docker compose installed:
 
-    DEBUG_MODE=TRUE docker compose -f docker compose-deployer.yml run --rm deployer-shell
+    DEPLOYMENT_ENVIRONMENT=<environment> DEBUG_MODE=TRUE docker compose -f docker-compose-deployer.yml run --rm deployer-shell
 
 In a Windows command prompt:
 
     set DEPLOYMENT_ENVIRONMENT=<environment>
-    docker compose -f docker compose-deployer.yml run --rm deployer-shell
+    docker compose -f docker-compose-deployer.yml run --rm deployer-shell
 
 In a Windows PowerShell:
 

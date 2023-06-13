@@ -66,7 +66,7 @@
 #   - Passing secrets to the deploy container via environment variables
 #   - Passing AWS (temporary) credentials to the deployer container
 #   - Fetching the Ansible Vault password and using it to set
-#     CLOUDREACTOR_TASK_VERSION_SIGNATURE
+#     ANSIBLE_VAULT_PASSWORD
 #   - Computing a commit signature and using it to set
 #     CLOUDREACTOR_TASK_VERSION_SIGNATURE
 
