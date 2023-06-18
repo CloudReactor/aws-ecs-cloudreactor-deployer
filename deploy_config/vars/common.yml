@@ -249,8 +249,8 @@ default_task_config:
     #       value: SECRET_TOKEN
     tags:
       ManagedBy: CloudReactor
+      Environment: "{{env}}"
       Application: "{{ project_name }}"
-
 
   # Properties sent to the wrapper, normally CloudReactor python proc_wrapper.
   # See https://github.com/CloudReactor/cloudreactor-procwrapper
@@ -522,7 +522,6 @@ task_name_to_config:
         enable_ecs_managed_tags: true
         propagate_tags: SERVICE # Or "TASK_EXECUTION"
         tags:
-          Environment: "{{env}}"
           TaskType: Service
       extra_main_container_properties:
         portMappings:
@@ -588,7 +587,7 @@ env_to_task_name_to_config:
     #      enable_ecs_managed_tags: true
     #      propagate_tags: true
     #      tags:
-    #        TASK_TYPE: SERVICE
+    #        TaskType: Service
     #    links:
     #      - name: Web Server
     #        link_url_template: "http://flask-example-xxx.us-west-1.elb.amazonaws.com/"
