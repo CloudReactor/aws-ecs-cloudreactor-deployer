@@ -117,7 +117,7 @@
   ecs_service:
     state: present
     name: "{{project_name}}_{{item}}_{{env}}"
-    cluster: "{{resolved_ecs.cluster_name}}"
+    cluster: "{{resolved_ecs.cluster_arn}}"
     region: "{{aws_region}}"
     launch_type: FARGATE
     force_new_deployment: "{{ resolved_ecs_service.force_new_deployment | default(false) }}"
@@ -139,7 +139,7 @@
   ecs_service:
     state: present
     name: "{{project_name}}_{{item}}_{{env}}"
-    cluster: "{{resolved_ecs.cluster_name}}"
+    cluster: "{{resolved_ecs.cluster_arn}}"
     region: "{{aws_region}}"
     launch_type: FARGATE
     force_new_deployment: "{{ resolved_ecs_service.force_new_deployment | default(false) }}"

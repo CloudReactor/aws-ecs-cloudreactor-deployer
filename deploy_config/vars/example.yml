@@ -29,7 +29,7 @@
 #     assign_public_ip: false
 
 # project_ecs:
-#   cluster_name: staging
+#   cluster_arn: staging
 #   # Required when deploying a scheduled task without CloudReactor
 #   # execution_role_arn: arn:aws:iam::12345678901:role/ecsTaskExecutionRole
 #   task_role_arn: arn:aws:iam::12345678901:role/myrole

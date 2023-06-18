@@ -156,7 +156,7 @@ execution_method_capability_details:
   supported_launch_types:
     - FARGATE
 
-  {{ prop_def(project_task_ecs, 'cluster_name', 'cluster_arn') }}
+  {{ prop_def(project_task_ecs, 'cluster_arn') }}
 
   main_container_name: "{{project_name}}_{{task_name}}_{{env}}"
 

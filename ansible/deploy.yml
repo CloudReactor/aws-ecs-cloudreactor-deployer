@@ -62,7 +62,8 @@
     docker_image_name: "{{project_name}}:{{env}}_{{task_version_signature}}"
     run_environment_name: "{{ resolved_cloudreactor.run_environment | default(env) }}"
     run_environment: "{{ run_environment_result.json.results[0] }}"
-    run_environment_exec_method: "{{ run_environment.execution_method_capabilities | selectattr('type', 'equalto', 'AWS ECS') | first }}"
+    run_environment_ecs: "{{ run_environment.execution_method_settings['AWS ECS']['__default__']['settings'] }}"
+    run_environment_aws: "{{ run_environment.infrastructure_settings['AWS']['__default__']['settings'] }}"
     aws: "{{ run_environment_aws | default({}) | combine(project_aws | default({}), recursive=True) }}"
     aws_region: "{{ aws.region | default(lookup('env', 'AWS_DEFAULT_REGION')) }}"
     resolved_aws: "{{ aws | combine(resolved_task_config.aws | default({})) }}"
@@ -113,27 +114,17 @@
     tags:
       - create_tasks
 
-  - name: Set default AWS configuration from Run Environment
-    set_fact:
-      run_environment_aws:
-        account_id: "{{ run_environment.aws_account_id }}"
-        region: "{{ run_environment.aws_default_region }}"
-        network:
-          security_groups: "{{ run_environment_exec_method.default_security_groups }}"
-          subnets: "{{ run_environment_exec_method.default_subnets }}"
-          assign_public_ip: "{{ run_environment_exec_method.default_assign_public_ip }}"
-      run_environment_ecs:
-        cluster_name: "{{ run_environment_exec_method.default_cluster_arn }}"
-        execution_role_arn: "{{ run_environment_exec_method.default_execution_role }}"
-        task_role_arn: "{{ run_environment_exec_method.task_execution_role | default(run_environment_exec_method.default_execution_role) }}"
-    when: cloudreactor_enabled
+  - name: Output merged AWS settings
+    debug:
+      msg: "AWS settings: {{ resolved_aws }}"
+      verbosity: 1
     tags:
       - upload
       - create_tasks
 
-  - name: Output AWS settings
+  - name: Output merged ECS settings
     debug:
-      msg: "AWS settings: {{ aws }}"
+      msg: "ECS settings: {{ resolved_ecs }}"
       verbosity: 1
     tags:
       - upload

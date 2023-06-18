@@ -4,7 +4,12 @@
   "Targets": [
     {
       "Id": {{ (project_name + '-' +  task_name + '-' + env) | to_json }},
-      "Arn": "arn:aws:ecs:{{ aws_region }}:{{ resolved_aws.account_id }}:cluster/{{ resolved_ecs.cluster_name }}",
+      "Arn":
+      {% if resolved_ecs.cluster_arn is match("^arn:") %}
+      {{ resolved_ecs.cluster_arn | to_json }},
+      {% else %}
+      "arn:aws:ecs:{{ aws_region }}:{{ resolved_aws.account_id }}:cluster/{{ resolved_ecs.cluster_arn }}",
+      {% endif %}
       "RoleArn": {{ resolved_ecs.execution_role_arn | to_json }},
       "EcsParameters": {
         "LaunchType": "FARGATE",
