@@ -34,7 +34,7 @@
 #   # execution_role_arn: arn:aws:iam::12345678901:role/ecsTaskExecutionRole
 #   task_role_arn: arn:aws:iam::12345678901:role/myrole
 
-cloudreactor:
+env_cloudreactor:
   # Required: the API key used to deploy the Tasks.
   # The key must have Developer access level or above and be scoped to the
   # Run Environment you are deploying to, or be unscoped.

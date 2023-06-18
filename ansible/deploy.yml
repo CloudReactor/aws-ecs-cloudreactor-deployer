@@ -20,7 +20,7 @@
     extra_docker_tag_args: "{{ lookup('env', 'EXTRA_DOCKER_TAG_ARGS') | default(build_options.extra_docker_tag_args | default(''), true) }}"
     docker_push_general_options: "{{ lookup('env', 'DOCKER_PUSH_GENERAL_OPTIONS') | default(build_options.docker_push_general_options | default(''), true) }}"
     extra_docker_push_args: "{{ lookup('env', 'EXTRA_DOCKER_PUSH_ARGS') | default(build_options.extra_docker_push_args | default(''), true) }}"
-    resolved_cloudreactor: "{{ default_cloudreactor | default({}) | combine(cloudreactor | default({}), recursive=True) }}"
+    resolved_cloudreactor: "{{ project_cloudreactor | default({}) | combine(env_cloudreactor | default({}), recursive=True) }}"
     cloudreactor_enabled: "{{ resolved_cloudreactor.enabled | default(true) }}"
     cloudreactor_api_base_url: "{{ lookup('env', 'CLOUDREACTOR_API_BASE_URL') | default(resolved_cloudreactor.api_base_url | default('https://api.cloudreactor.io', true), true) }}"
     cloudreactor_deploy_api_key: "{{ lookup('env', 'CLOUDREACTOR_DEPLOY_API_KEY') | default(resolved_cloudreactor.deploy_api_key, true) }}"
@@ -73,7 +73,8 @@
     resolved_aws_awslogs: "{{ resolved_aws_logging.awslogs | default({}) }}"
     resolved_ecs_service: "{{ resolved_ecs.service | default({}) }}"
     project_ecs_safe: "{{ project_ecs | default({}) }}"
-    task_definition_arn: "{{ (register_ecs_task_result.stdout | from_json).taskDefinition.taskDefinitionArn if register_ecs_task_result.stdout is defined else project_ecs_safe.task_definition_arn }}"
+    predefined_task_definition_arn: "{{ project_ecs_safe.task_definition_arn }}"
+    task_definition_arn: "{{ (register_ecs_task_result.stdout | from_json).taskDefinition.taskDefinitionArn if register_ecs_task_result.stdout is defined else predefined_task_definition_arn }}"
     task_build_dir: "build/{{env}}/{{item}}"
     saved_cloudreactor_task: "{{ create_cloudreactor_task_result.json }}"
     awslogs_stream_prefix: "{{ resolved_aws_awslogs.stream_prefix | default(project_name + '-' + env) }}"
@@ -161,7 +162,7 @@
 
   - name: Login to ECR
     shell: "aws ecr get-login-password --region {{aws.region | quote}} | docker {{docker_common_general_options}} login --username AWS --password-stdin {{ecr_hostname}}"
-    when: project_ecs_safe.task_definition_arn is not defined
+    when: predefined_task_definition_arn is not defined
     tags:
       - upload
 
@@ -169,7 +170,7 @@
     file:
       path: "build/{{env}}"
       state: directory
-    when: project_ecs_safe.task_definition_arn is not defined
+    when: predefined_task_definition_arn is not defined
     tags:
       - build
 
@@ -177,7 +178,7 @@
     debug:
       msg: "Docker build options: {{build_options}}"
       verbosity: 1
-    when: project_ecs_safe.task_definition_arn is not defined
+    when: predefined_task_definition_arn is not defined
     tags:
       - build
 
@@ -185,7 +186,7 @@
     debug:
       msg: "Docker build command: 'docker {{docker_common_general_options}} {{docker_build_general_options}} build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} .'"
       verbosity: 1
-    when: project_ecs_safe.task_definition_arn is not defined
+    when: predefined_task_definition_arn is not defined
     tags:
       - build
 
@@ -193,7 +194,7 @@
     command: "docker {{docker_common_general_options}} {{docker_build_general_options}} build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} ."
     args:
       chdir: "{{ docker_context_dir }}"
-    when: project_ecs_safe.task_definition_arn is not defined
+    when: predefined_task_definition_arn is not defined
     tags:
       - build
 
@@ -201,20 +202,20 @@
     ecs_ecr:
       name: "{{project_name}}"
       region: "{{aws_region}}"
-    when: project_ecs_safe.task_definition_arn is not defined
+    when: predefined_task_definition_arn is not defined
     tags:
       - upload
       - create_ecr_repo
 
   - name: Tag Docker image
     command: "docker {{docker_common_general_options}} {{docker_tag_general_options}} tag {{docker_image_name}} {{ecr_hostname}}/{{docker_image_name}} {{extra_docker_tag_args}}"
-    when: project_ecs_safe.task_definition_arn is not defined
+    when: predefined_task_definition_arn is not defined
     tags:
       - upload
 
   - name: Push Docker image
     command: "docker {{docker_common_general_options}} {{docker_push_general_options}} push {{ecr_hostname}}/{{docker_image_name}} {{extra_docker_push_args}}"
-    when: project_ecs_safe.task_definition_arn is not defined
+    when: predefined_task_definition_arn is not defined
     tags:
       - upload
 
@@ -240,6 +241,6 @@
 
   - name: Logout of ECR
     command: "docker {{docker_common_general_options}} logout {{ecr_hostname}}"
-    when: project_ecs_safe.task_definition_arn is not defined
+    when: predefined_task_definition_arn is not defined
     tags:
       - upload

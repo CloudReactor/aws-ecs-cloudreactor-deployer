@@ -42,7 +42,7 @@ default_build_options:
   # # Additional options passed after "docker push"
   # extra_docker_push_args: ""
 
-default_cloudreactor:
+project_cloudreactor:
   # # Base URL of API server. Can be overridden if you're running your own
   # # instance of the CloudReactor Task Manager.
   # api_base_url: https://api.cloudreactor.io
