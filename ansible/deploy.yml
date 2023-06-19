@@ -58,6 +58,10 @@
 
     resolved_task_config: "{{ common_task_config | combine(resolved_task_name_to_config[item] | default({}), recursive=True) }}"
     resolved_task_names: "{{ (resolved_task_name_to_config | dict2items | json_query('[?((value.deployed==undefined)||(to_string(value.deployed)==to_string(`true`)) || (to_string(value.deployed)==`True`))].key')) if (task_names | upper) == 'ALL' else task_names.split(',') }}"
+    resolved_deployed_task_name_to_config_query: "{{ '[?(key==`' +  resolved_task_names | join('`)||(key==`') + '`)]' }}"
+    resolved_deployed_task_name_to_config: "{{ resolved_task_name_to_config | dict2items | json_query(resolved_deployed_task_name_to_config_query) | items2dict }}"
+    requires_build: "{{ (resolved_deployed_task_name_to_config | dict2items | json_query('[?((value.ecs.task_definition_arn==undefined)||(value.ecs.task_definition_arn==`__unset__`))]')) | length > 0 }}"
+
     task_version_signature: "{{ lookup('env','CLOUDREACTOR_TASK_VERSION_SIGNATURE') | default(ansible_date_time.iso8601_basic, true) }}"
     docker_image_name: "{{project_name}}:{{env}}_{{task_version_signature}}"
     run_environment_name: "{{ resolved_cloudreactor.run_environment | default(env) }}"
@@ -74,7 +78,7 @@
     resolved_aws_awslogs: "{{ resolved_aws_logging.awslogs | default({}) }}"
     resolved_ecs_service: "{{ resolved_ecs.service | default({}) }}"
     project_ecs_safe: "{{ project_ecs | default({}) }}"
-    predefined_task_definition_arn: "{{ project_ecs_safe.task_definition_arn }}"
+    predefined_task_definition_arn: "{{ resolved_ecs.task_definition_arn if (resolved_ecs.task_definition_arn is defined) and (resolved_ecs.task_definition_arn != '__unset__') else none }}"
     task_definition_arn: "{{ (register_ecs_task_result.stdout | from_json).taskDefinition.taskDefinitionArn if register_ecs_task_result.stdout is defined else predefined_task_definition_arn }}"
     task_build_dir: "build/{{env}}/{{item}}"
     saved_cloudreactor_task: "{{ create_cloudreactor_task_result.json }}"
@@ -151,17 +155,11 @@
       - upload
       - create_tasks
 
-  - name: Login to ECR
-    shell: "aws ecr get-login-password --region {{aws.region | quote}} | docker {{docker_common_general_options}} login --username AWS --password-stdin {{ecr_hostname}}"
-    when: predefined_task_definition_arn is not defined
-    tags:
-      - upload
-
   - name: Create output directory
     file:
       path: "build/{{env}}"
       state: directory
-    when: predefined_task_definition_arn is not defined
+    when: requires_build
     tags:
       - build
 
@@ -169,7 +167,7 @@
     debug:
       msg: "Docker build options: {{build_options}}"
       verbosity: 1
-    when: predefined_task_definition_arn is not defined
+    when: requires_build
     tags:
       - build
 
@@ -177,7 +175,7 @@
     debug:
       msg: "Docker build command: 'docker {{docker_common_general_options}} {{docker_build_general_options}} build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} .'"
       verbosity: 1
-    when: predefined_task_definition_arn is not defined
+    when: requires_build
     tags:
       - build
 
@@ -185,28 +183,35 @@
     command: "docker {{docker_common_general_options}} {{docker_build_general_options}} build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} ."
     args:
       chdir: "{{ docker_context_dir }}"
-    when: predefined_task_definition_arn is not defined
+    when: requires_build
     tags:
       - build
 
   - name: Create ECR repository
     ecs_ecr:
+      # TODO: make configurable
       name: "{{project_name}}"
       region: "{{aws_region}}"
-    when: predefined_task_definition_arn is not defined
+    when: requires_build
     tags:
       - upload
       - create_ecr_repo
 
   - name: Tag Docker image
     command: "docker {{docker_common_general_options}} {{docker_tag_general_options}} tag {{docker_image_name}} {{ecr_hostname}}/{{docker_image_name}} {{extra_docker_tag_args}}"
-    when: predefined_task_definition_arn is not defined
+    when: requires_build
+    tags:
+      - upload
+
+  - name: Login to Docker Repository
+    shell: "aws ecr get-login-password --region {{aws.region | quote}} | docker {{docker_common_general_options}} login --username AWS --password-stdin {{ecr_hostname}}"
+    when: requires_build
     tags:
       - upload
 
   - name: Push Docker image
     command: "docker {{docker_common_general_options}} {{docker_push_general_options}} push {{ecr_hostname}}/{{docker_image_name}} {{extra_docker_push_args}}"
-    when: predefined_task_definition_arn is not defined
+    when: requires_build
     tags:
       - upload
 
@@ -232,6 +237,6 @@
 
   - name: Logout of ECR
     command: "docker {{docker_common_general_options}} logout {{ecr_hostname}}"
-    when: predefined_task_definition_arn is not defined
+    when: requires_build
     tags:
       - upload

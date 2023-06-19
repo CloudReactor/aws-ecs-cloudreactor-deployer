@@ -23,7 +23,7 @@
   template: src=/home/appuser/work/templates/ecs_task_definition.json.j2
             dest={{task_build_dir}}/ecs_task_definition.json
             lstrip_blocks=yes
-  when: deployed and (predefined_task_definition_arn is not defined)
+  when: deployed and (not predefined_task_definition_arn)
   tags:
     - always
 
@@ -31,7 +31,7 @@
   include_vars:
     file: "{{task_build_dir}}/ecs_task_definition.json"
     name: ecs_task_definition
-  when: deployed and (ansible_verbosity >= 2) and (predefined_task_definition_arn is not defined)
+  when: deployed and (ansible_verbosity >= 2) and (not predefined_task_definition_arn)
   tags:
     - always
 
@@ -40,7 +40,7 @@
   args:
     chdir: "{{task_build_dir}}"
   register: register_ecs_task_result
-  when: deployed and (predefined_task_definition_arn is not defined)
+  when: deployed and (not predefined_task_definition_arn)
   tags:
     - always
 
