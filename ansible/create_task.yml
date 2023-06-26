@@ -59,7 +59,7 @@
 
 - name: Output CloudReactor Task yaml
   debug:
-    msg: "CloudReactor Task YAML =\n{{lookup('ansible.builtin.file', task_build_dir + '/cloudreactor_task.yml').split('\n')}}"
+    msg: "{{ ('CloudReactor Task YAML =\n' + lookup('ansible.builtin.file', task_build_dir + '/cloudreactor_task.yml')).split('\n') }}"
   when: deployed
 
 - name: Read CloudReactor Task yaml

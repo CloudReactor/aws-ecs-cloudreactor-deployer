@@ -13,27 +13,6 @@
 # isolation reasons); or,
 # c) You are not using CloudReactor to monitor and manage your tasks.
 #
-# project_aws:
-#   account_id: 123456789012
-#   region: "us-west-2"
-#   network:
-#     security_groups:
-#       - sg-1
-#       - sg-2
-#     subnets:
-#       - subnet-private-1
-#       - subnet-private-2
-#     # Set this to true if your subnets don't have access to a NAT gateway,
-#     # for example public subnets.
-#     # If you are running on private subnets, this must be false.
-#     assign_public_ip: false
-
-# project_ecs:
-#   cluster_arn: staging
-#   # Required when deploying a scheduled task without CloudReactor
-#   # execution_role_arn: arn:aws:iam::12345678901:role/ecsTaskExecutionRole
-#   task_role_arn: arn:aws:iam::12345678901:role/myrole
-
 env_cloudreactor:
   # Required: the API key used to deploy the Tasks.
   # The key must have Developer access level or above and be scoped to the
@@ -56,9 +35,40 @@ env_cloudreactor:
   # # deploy.
   # run_environment: Your Staging
 
+# Override settings in project_build_options
+# env_build_options:
+#   docker_common_general_options:
+#   docker_build_general_options:
+#   extra_docker_build_args:
+#   docker_tag_general_options:
+#   extra_docker_tag_args
+#   docker_push_general_options:
+#   extra_docker_push_args:
+
+# env_aws:
+#   account_id: 123456789012
+#   region: "us-west-2"
+#   network:
+#     security_groups:
+#       - sg-1
+#       - sg-2
+#     subnets:
+#       - subnet-private-1
+#       - subnet-private-2
+#     # Set this to true if your subnets don't have access to a NAT gateway,
+#     # for example public subnets.
+#     # If you are running on private subnets, this must be false.
+#     assign_public_ip: false
+
+# env_ecs:
+#   cluster_arn: staging
+#   # Required when deploying a scheduled task without CloudReactor
+#   # execution_role_arn: arn:aws:iam::12345678901:role/ecsTaskExecutionRole
+#   task_role_arn: arn:aws:iam::12345678901:role/myrole
+
 # Add Task settings that apply to all Tasks running in this deployment.
 # They will override the settings in common.yml.
-default_env_task_config:
+env_task_config:
   env:
     SOME_SECRET_KEY_FOR_ALL_TASKS: "FOO"
   # #  These will be resolved to DATABASE_USERNAME and DATABASE_PASSWORD by
@@ -66,6 +76,7 @@ default_env_task_config:
   # #  secret.
   #  DATABASE_USERNAME_FOR_PROC_WRAPPER_TO_RESOLVE: arn:aws:secretsmanager:us-west-2:123456789012:secret:app/example/db|JP:$.username
   #  DATABASE_PASWORD_FOR_PROC_WRAPPER_TO_RESOLVE: arn:aws:secretsmanager:us-west-2:123456789012:secret:app/example/db|JP:$.password
+  #
 
 # For any Tasks that require overrides vs. common.yml, enter those overrides here.
 task_name_to_env_config:

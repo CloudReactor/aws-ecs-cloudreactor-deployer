@@ -18,7 +18,7 @@ use_task_role: "{{ (task_role_name is defined) and (task_role_name != '__unset__
 
 use_secrets_manager: "{{ (secrets_manager_env_path is defined) and secrets_manager_env_path }}"
 
-default_build_options:
+project_build_options:
   # dockerfile_path: "{{ docker_context_dir }}/Dockerfile"
 
   # Options passed after "docker" to all docker commands
@@ -50,9 +50,27 @@ project_cloudreactor:
   # # Set to false to disable monitoring and management in CloudReactor.
   enabled: true
 
+# project_aws:
+#   account_id: 123456789012
+#   region: "us-west-2"
+#   network:
+#     security_groups:
+#       - sg-1
+#       - sg-2
+#     subnets:
+#       - subnet-private-1
+#       - subnet-private-2
+#     # Set this to true if your subnets don't have access to a NAT gateway,
+#     # for example public subnets.
+#     # If you are running on private subnets, this must be false.
+#     assign_public_ip: false
+
 # project_ecs:
-#   # Uncomment and change the value to deploy a pre-build ECS Task Definition
-#   task_definition_arn: "arn:aws:ecs:{{ aws_region }}:{{ aws.account_id }}:task-definition/aws-ecs-cloudreactor-deployer-sample_web_server_windows-dev:14"
+#   ecr_repository: "{{ project_name }}"
+#   cluster_arn: "{{ env }}"
+#   # Required when deploying a scheduled task without CloudReactor
+#   # execution_role_arn: arn:aws:iam::12345678901:role/ecsTaskExecutionRole
+#   task_role_arn: arn:aws:iam::12345678901:role/myrole
 
 # These settings will apply by default to all Tasks and in all deployments.
 # They override the settings in your Run Environment.
@@ -62,8 +80,8 @@ project_cloudreactor:
 # See https://apidocs.cloudreactor.io/#operation/tasks_create for a list of all
 # properties.
 # These properties can also be applied to task_name_to_config[task_name] and
-# default_env_task_config[task_name], which will override those set here.
-default_task_config:
+# env_task_config[task_name], which will override those set here.
+project_task_config:
   # # Set to false to skip this Task's deployment. This is usually set per-Task
   # # in task_name_to_config[task_name].deployed
   # deployed: "{{ env == 'staging' }}"
@@ -148,23 +166,29 @@ default_task_config:
   #    included: "{{ env == 'staging' }}"
 
   ecs:
-    # # See https://aws.amazon.com/fargate/pricing/
-    # # for supported combinations.
-    cpu_units: 256
-    memory_mb: 512
-    # # See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/platform_versions.html
-    # # for supported platform versions. Can also be set to "LATEST".
-    # platform_version: "LATEST"
+    #  # Uncomment and change the value to deploy a pre-build ECS Task Definition
+    # task_definition_arn: "arn:aws:ecs:{{ aws_region }}:{{ task_indep_aws.account_id }}:task-definition/aws-ecs-cloudreactor-deployer-sample_web_server_windows-dev:14"
+
+    # # Required when deploying a scheduled task without CloudReactor. Can be ARN
+    # # or just a simple name.
+    # By default, run on the ECS cluster specified by the Run Environment.
+    # You can override this to run on a per-application/environment cluster, for example.
+    # cluster_arn: "{{ 'arn:aws:ecs:' + aws_region + ':' + task_indep_aws.account_id + ':cluster/' + project_name + '-' env }}"
 
     # # Required when deploying a scheduled task without CloudReactor
     # execution_role_arn: arn:aws:iam::123456789012:role/ecsEventsRole
 
     # Results in an empty string if task_role_arn is null, but that's ok.
-    task_role_arn: "{{ (('arn:aws:iam::' + aws.account_id + ':role/' + task_role_name) if use_task_role and (task_role_name is not none) else none) }}"
+    task_role_arn: "{{ (('arn:aws:iam::' + task_indep_aws.account_id + ':role/' + task_role_name) if use_task_role and (task_role_name is not none) else none) }}"
 
-    # By default, run on the ECS cluster specified by the Run Environment.
-    # You can override this to run on a per-application/environment cluster, for example.
-    # cluster_arn: "{{ 'arn:aws:ecs:' + aws_region + ':' + aws.account_id + ':cluster/' + project_name + '-' env }}"
+    # # See https://aws.amazon.com/fargate/pricing/
+    # # for supported combinations.
+    cpu_units: 256
+    memory_mb: 512
+
+    # # See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/platform_versions.html
+    # # for supported platform versions. Can also be set to "LATEST".
+    # platform_version: "LATEST"
 
     # # By default, the entrypoint is run with the tinit init process so that
     # # commands in shell form (like calling proc_wrapper) pass on SIGTERM to
@@ -220,13 +244,16 @@ default_task_config:
   aws:
     # network:
     #   subnets:
-    #     - subnet_1
-    #     - subnet_2
+    #     - subnet-private-1
+    #     - subnet-private-2
     #   security_groups:
-    #     - sg_1
-    #     - sg_2
-    #   assign_public_ip: true
-
+    #     - sg-1
+    #     - sg-2
+    #   # Set this to true if your subnets don't have access to a NAT gateway,
+    #   # for example public subnets.
+    #   # If you are running on private subnets, this must be false.
+    #   assign_public_ip: false
+    #
     # # To use AWS Logs driver with common options:
     # logging:
     #   awslogs:
@@ -302,7 +329,7 @@ default_task_config:
     # # Top-level .env secret locations. The values in later locations take
     # # precedence over those in earlier locations.
     env_locations:
-      - "{{ ('arn:aws:secretsmanager:' + aws_region + ':' + aws.account_id + ':secret:' + secrets_manager_env_path) if use_secrets_manager else '' }}"
+      - "{{ ('arn:aws:secretsmanager:' + aws_region + ':' + task_indep_aws.account_id + ':secret:' + secrets_manager_env_path) if use_secrets_manager else '' }}"
 
       # # Other examples
       # - arn:aws:s3:::examplebucket/{{env}}/app/config.json
@@ -474,7 +501,7 @@ default_task_config:
     # rollbar_timeout_seconds: 30
 
 # These are per-Task settings that will inherit and override the settings in
-# default_task_config, in all environments.
+# project_task_config, in all environments.
 # To add a Task, add a property to task_name_to_config (e.g. task_1, file_io)
 # Each Task must at a minimum define which command to run i.e.
 # `command: python main.py`

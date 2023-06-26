@@ -138,7 +138,7 @@ is based on `deploy_config/vars/example.yml` and add your settings there.
 If you plan to deploy via command-line, you should add the value of the
 `Deployment API key` to `deploy_config/vars/<environment>.yml`:
 
-    cloudreactor:
+    env_cloudreactor:
       ...
       deploy_api_key: PASTE_DEPLOY_API_KEY_HERE
       ...
@@ -150,13 +150,13 @@ but populate the GitHub secret
 If you don't have strict security requirements, you can also populate
 the `Task API key` in the same file:
 
-    cloudreactor:
+    env_cloudreactor:
       ...
       task_api_key: PASTE_TASK_API_KEY_HERE
 
 along with other secrets in the environment the Tasks will see at runtime:
 
-    default_env_task_config:
+    env_task_config:
       ...
       env:
         ...
@@ -198,14 +198,14 @@ filter. The precedence of settings, from lowest to highest is:
 
 1. Settings found in your Run Environment that you set via the
 [CloudReactor AWS Setup Wizard](https://github.com/CloudReactor/cloudreactor-aws-setup-wizard) or the CloudReactor dashboard
-2. Deployment environment AWS settings -- found in `project_aws` in `deploy_config/vars/<environment>.yml`
-3. Default Task settings -- found in `default_task_config` in `deploy_config/vars/common.yml`,
+2. Deployment environment AWS and ECS settings -- found in `project_aws` and `project_ecs` in `deploy_config/vars/<environment>.yml`
+2. Default Task settings -- found in `project_task_config` in `deploy_config/vars/common.yml`,
 defines default settings for all Tasks
-4. Per environment settings -- found in `env_to_default_task_config.<environment>` in
+3. Per environment settings -- found in `env_to_default_task_config.<environment>` in
 `deploy_config/vars/common.yml` defines per environment settings for all Tasks
-5. Per Task settings -- found in `task_name_to_config.<task_name>` in `deploy_config/vars/common.yml`
-6. Per environment, per Task settings -- found in `env_to_task_name_to_config.<environment>.<task_name>` in `deploy_config/vars/common.yml`)
-7. Secret per environment settings -- found in `default_env_task_config` in `deploy_config/vars/<environment>.yml`, overrides per environment settings for
+4. Per Task settings -- found in `task_name_to_config.<task_name>` in `deploy_config/vars/common.yml`
+5. Per environment, per Task settings -- found in `env_to_task_name_to_config.<environment>.<task_name>` in `deploy_config/vars/common.yml`)
+6. Secret per environment settings -- found in `env_task_config` in `deploy_config/vars/<environment>.yml`, overrides per environment settings for
 all Tasks.
 See `deploy_config/vars/example.yml` an example.
 8. Secret per environment, per Task settings -- found in

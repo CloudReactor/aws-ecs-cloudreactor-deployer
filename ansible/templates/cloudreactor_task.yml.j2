@@ -16,14 +16,13 @@
 {% set max_age_seconds=resolved_task_config.max_age_seconds | default('__unset__') %}
 {% set wrapper=resolved_task_config.wrapper | default({}) %}
 {% set task_ecs=resolved_task_config.ecs | default({}) %}
-{% set project_task_ecs=project_ecs_safe | combine(task_ecs, recursive=True) %}
+{% set project_env_task_ecs=project_env_ecs | combine(task_ecs, recursive=True) %}
 {% set task_aws=resolved_task_config.aws | default({}) %}
-{% set project_aws_safe=project_aws | default({}) %}
-{% set project_task_aws=project_aws_safe | combine(task_aws, recursive=True) %}
-{% set project_task_aws_network=project_task_aws.network | default({}) %}
+{% set project_env_task_aws=project_env_aws | combine(task_aws, recursive=True) %}
+{% set project_env_task_aws_network=project_env_task_aws.network | default({}) %}
 
-{% set cpu_units=project_task_ecs.cpu_units | default(256) %}
-{% set memory_mb=project_task_ecs.memory_mb | default(512) %}
+{% set cpu_units=project_env_task_ecs.cpu_units | default(256) %}
+{% set memory_mb=project_env_task_ecs.memory_mb | default(512) %}
 
 {% set task_property_names = [
   'description',
@@ -97,22 +96,23 @@ null
   {%- endif -%}
 {%- endmacro %}
 
-{% set subnets=project_task_aws_network.subnets | default('__unset__') %}
-{% set security_groups=project_task_aws_network.security_groups | default('__unset__') %}
+{% set subnets=project_env_task_aws_network.subnets | default('__unset__') %}
+{% set security_groups=project_env_task_aws_network.security_groups | default('__unset__') %}
 
 # For debugging
 # resolved_task_config: {{ resolved_task_config | to_json }}
-# Project ECS: {{ project_ecs_safe | to_json }}
+# Project Env ECS: {{ project_env_ecs | to_json }}
 # Task ECS: {{ task_ecs | to_json }}
-# Project Task ECS: {{ project_task_ecs | to_json }}
-# Project AWS: {{ project_aws_safe | to_json }}
+# Project Env AWS: {{ project_env_aws | to_json }}
+# Project Env Task ECS: {{ project_env_task_ecs | to_json }}
 # Task AWS: {{ task_aws | to_json }}
-# Project Task AWS: {{ project_task_aws | to_json }}
+# Project Env Task AWS: {{ project_env_task_aws | to_json }}
 # wrapper: {{ wrapper | to_json }}
 # subnets: {{ subnets | to_json }}
 # security groups: {{ security_groups | to_json }}
 # End debug
 
+# TODO: Make configurable
 name: "{{project_name}}_{{task_name}}_{{env}}"
 
 {% for prop_name in task_property_names %}
@@ -156,15 +156,15 @@ execution_method_capability_details:
   supported_launch_types:
     - FARGATE
 
-  {{ prop_def(project_task_ecs, 'cluster_arn') }}
+  {{ prop_def(project_env_task_ecs, 'cluster_arn') }}
 
   main_container_name: "{{project_name}}_{{task_name}}_{{env}}"
 
-  {{ prop_def(project_task_ecs, 'execution_role_arn') }}
-  {{ prop_def(project_task_ecs, 'task_role_arn') }}
-  {{ prop_def(project_task_ecs, 'platform_version') }}
-  {{ prop_def(project_task_ecs, 'enable_ecs_managed_tags') }}
-  {{ prop_def(project_task_ecs, 'enable_execute_command') }}
+  {{ prop_def(project_env_task_ecs, 'execution_role_arn') }}
+  {{ prop_def(project_env_task_ecs, 'task_role_arn') }}
+  {{ prop_def(project_env_task_ecs, 'platform_version') }}
+  {{ prop_def(project_env_task_ecs, 'enable_ecs_managed_tags') }}
+  {{ prop_def(project_env_task_ecs, 'enable_execute_command') }}
 
 infrastructure_type: AWS
 infrastructure_settings:
@@ -189,12 +189,12 @@ infrastructure_settings:
     {% endfor %}
     {% endif %}
 
-    {{ prop_def(project_task_aws_network, 'assign_public_ip') }}
+    {{ prop_def(project_env_task_aws_network, 'assign_public_ip') }}
 
-  {% if project_task_aws.log_configuration is defined %}
+  {% if project_env_task_aws.log_configuration is defined %}
   logging:
-    driver: "{{ project_task_aws.log_configuration.logDriver }}"
-    options: {{ project_task_aws.log_configuration.options | default({}) | to_yaml(width=2147483647) }}
+    driver: "{{ project_env_task_aws.log_configuration.logDriver }}"
+    options: {{ project_env_task_aws.log_configuration.options | default({}) | to_yaml(width=2147483647) }}
   {% else %}
   logging:
     driver: awslogs
@@ -205,8 +205,8 @@ infrastructure_settings:
       region: "{{ resolved_aws_awslogs.region | default(aws_region) }}"
   {% endif %}
 
-  {% if (project_task_aws.tags is defined) and (project_task_aws.tags != '__unset__') %}
-  tags: {{  project_task_aws.tags | to_yaml(width=2147483647) }}
+  {% if (project_env_task_aws.tags is defined) and (project_env_task_aws.tags != '__unset__') %}
+  tags: {{  project_env_task_aws.tags | to_yaml(width=2147483647) }}
   {% endif %}
 
 {% if resolved_ecs.service is defined %}

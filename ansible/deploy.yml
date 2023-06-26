@@ -7,11 +7,12 @@
     - "{{deploy_config_dir}}/vars/common.yml"
     - "{{deploy_config_dir}}/vars/{{config_filename_stem}}.yml"
   vars:
+    task_version_signature: "{{ lookup('env','CLOUDREACTOR_TASK_VERSION_SIGNATURE') | default(ansible_date_time.iso8601_basic, true) }}"
     work_dir: "{{ lookup('env', 'WORK_DIR') | default('.', true) }}"
     docker_context_dir: "{{ lookup('env', 'CONTAINER_DOCKER_CONTEXT_DIR') | default(work_dir, true) }}"
     deploy_config_dir: "{{ work_dir }}/deploy_config"
     config_filename_stem: "{{ lookup('env', 'CONFIG_FILENAME_STEM') | default(env, true) }}"
-    build_options: "{{ default_build_options | default({}) }}"
+    build_options: "{{ project_build_options | default({}) | combine(env_build_options | default({}), recursive=True) }}"
     dockerfile_path: "{{ lookup('env', 'DOCKERFILE_PATH') | default(build_options.dockerfile_path | default(docker_context_dir + '/Dockerfile', true), true) }}"
     docker_common_general_options: "{{ lookup('env', 'DOCKER_COMMON_GENERAL_OPTIONS') | default(build_options.docker_common_general_options | default(''), true) }}"
     docker_build_general_options: "{{ lookup('env', 'DOCKER_BUILD_GENERAL_OPTIONS') | default(build_options.docker_build_general_options | default(''), true) }}"
@@ -20,12 +21,29 @@
     extra_docker_tag_args: "{{ lookup('env', 'EXTRA_DOCKER_TAG_ARGS') | default(build_options.extra_docker_tag_args | default(''), true) }}"
     docker_push_general_options: "{{ lookup('env', 'DOCKER_PUSH_GENERAL_OPTIONS') | default(build_options.docker_push_general_options | default(''), true) }}"
     extra_docker_push_args: "{{ lookup('env', 'EXTRA_DOCKER_PUSH_ARGS') | default(build_options.extra_docker_push_args | default(''), true) }}"
+    docker_image_name: "{{project_name}}:{{env}}_{{task_version_signature}}"
+
     resolved_cloudreactor: "{{ project_cloudreactor | default({}) | combine(env_cloudreactor | default({}), recursive=True) }}"
     cloudreactor_enabled: "{{ resolved_cloudreactor.enabled | default(true) }}"
     cloudreactor_api_base_url: "{{ lookup('env', 'CLOUDREACTOR_API_BASE_URL') | default(resolved_cloudreactor.api_base_url | default('https://api.cloudreactor.io', true), true) }}"
     cloudreactor_deploy_api_key: "{{ lookup('env', 'CLOUDREACTOR_DEPLOY_API_KEY') | default(resolved_cloudreactor.deploy_api_key, true) }}"
 
-    # default_task_config (defined in common.yml) contains common, non-secret
+    run_environment_name: "{{ resolved_cloudreactor.run_environment | default(env) }}"
+    run_environment: "{{ run_environment_result.json.results[0] }}"
+    run_environment_ecs: "{{ (run_environment.execution_method_settings['AWS ECS']['__default__']['settings'] | default({})) if cloudreactor_enabled else {} }}"
+    run_environment_aws: "{{ (run_environment.infrastructure_settings['AWS']['__default__']['settings'] | default({})) if cloudreactor_enabled else {} }}"
+
+    project_env_aws: "{{ (project_aws | default({})) | combine(env_aws | default({}), recursive=True) }}"
+    task_indep_aws: "{{ run_environment_aws | combine(project_env_aws, recursive=True) }}"
+    aws_region: "{{ task_indep_aws.region | default(lookup('env', 'AWS_DEFAULT_REGION')) }}"
+    ecr_hostname: "{{ task_indep_aws.account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com"
+
+    project_env_ecs: "{{ (project_ecs | default({})) | combine(env_ecs | default({}), recursive=True) }}"
+    task_indep_ecs: "{{ run_environment_ecs | combine(project_env_ecs, recursive=True) }}"
+
+    task_indep_task_config: "{{ project_task_config | default({}) | combine(env_default_task_config, env_task_config_safe, recursive=True) }}"
+
+    # project_task_config (defined in common.yml) contains common, non-secret
     # Task settings for all deployment environments, unless overridden.
     #
     # env_to_default_task_config (defined in common.yml) is a mapping from
@@ -34,12 +52,10 @@
     env_to_default_task_config_safe: "{{ env_to_default_task_config | default({}) }}"
     env_default_task_config: "{{ env_to_default_task_config_safe[env] | default({}) }}"
 
-    # default_env_task_config comes from [env].yml.
-    # default_task_config are secret Task settings for all Tasks in the deployment
+    # env_task_config comes from [env].yml.
+    # It contains secret Task settings for all Tasks in the deployment
     # environment, unless overridden.
-    env_task_config: "{{ default_env_task_config | default({}) }}"
-
-    common_task_config: "{{ default_task_config | default({}) | combine(env_default_task_config, env_task_config, recursive=True) }}"
+    env_task_config_safe: "{{ env_task_config | default({}) }}"
 
     # env_to_task_name_to_config (defined in common.yml) is a mapping from
     # deployment environment name to another mapping from Task name to
@@ -56,28 +72,17 @@
     # unless overridden.
     resolved_task_name_to_config: "{{ task_name_to_config | combine(env_task_name_to_config, task_name_to_env_config_safe, recursive=True) }}"
 
-    resolved_task_config: "{{ common_task_config | combine(resolved_task_name_to_config[item] | default({}), recursive=True) }}"
+    resolved_task_config: "{{ task_indep_task_config | combine(resolved_task_name_to_config[item] | default({}), recursive=True) }}"
     resolved_task_names: "{{ (resolved_task_name_to_config | dict2items | json_query('[?((value.deployed==undefined)||(to_string(value.deployed)==to_string(`true`)) || (to_string(value.deployed)==`True`))].key')) if (task_names | upper) == 'ALL' else task_names.split(',') }}"
     resolved_deployed_task_name_to_config_query: "{{ '[?(key==`' +  resolved_task_names | join('`)||(key==`') + '`)]' }}"
     resolved_deployed_task_name_to_config: "{{ resolved_task_name_to_config | dict2items | json_query(resolved_deployed_task_name_to_config_query) | items2dict }}"
     requires_build: "{{ (resolved_deployed_task_name_to_config | dict2items | json_query('[?((value.ecs.task_definition_arn==undefined)||(value.ecs.task_definition_arn==`__unset__`))]')) | length > 0 }}"
-
-    task_version_signature: "{{ lookup('env','CLOUDREACTOR_TASK_VERSION_SIGNATURE') | default(ansible_date_time.iso8601_basic, true) }}"
-    docker_image_name: "{{project_name}}:{{env}}_{{task_version_signature}}"
-    run_environment_name: "{{ resolved_cloudreactor.run_environment | default(env) }}"
-    run_environment: "{{ run_environment_result.json.results[0] }}"
-    run_environment_ecs: "{{ run_environment.execution_method_settings['AWS ECS']['__default__']['settings'] }}"
-    run_environment_aws: "{{ run_environment.infrastructure_settings['AWS']['__default__']['settings'] }}"
-    aws: "{{ run_environment_aws | default({}) | combine(project_aws | default({}), recursive=True) }}"
-    aws_region: "{{ aws.region | default(lookup('env', 'AWS_DEFAULT_REGION')) }}"
-    resolved_aws: "{{ aws | combine(resolved_task_config.aws | default({})) }}"
-    ecr_hostname: "{{ aws.account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com"
-    resolved_ecs: "{{ run_environment_ecs | default({}) | combine(resolved_task_config.ecs | default({}), recursive=True) }}"
+    resolved_aws: "{{ task_indep_aws | combine(resolved_task_config.aws | default({})) }}"
+    resolved_ecs: "{{ task_indep_ecs | combine(resolved_task_config.ecs | default({}), recursive=True) }}"
     resolved_aws_network: "{{ resolved_aws.network | default({}) }}"
     resolved_aws_logging: "{{ resolved_aws.logging | default({}) }}"
     resolved_aws_awslogs: "{{ resolved_aws_logging.awslogs | default({}) }}"
     resolved_ecs_service: "{{ resolved_ecs.service | default({}) }}"
-    project_ecs_safe: "{{ project_ecs | default({}) }}"
     predefined_task_definition_arn: "{{ resolved_ecs.task_definition_arn if (resolved_ecs.task_definition_arn is defined) and (resolved_ecs.task_definition_arn != '__unset__') else none }}"
     task_definition_arn: "{{ (register_ecs_task_result.stdout | from_json).taskDefinition.taskDefinitionArn if register_ecs_task_result.stdout is defined else predefined_task_definition_arn }}"
     task_build_dir: "build/{{env}}/{{item}}"
@@ -118,17 +123,17 @@
     tags:
       - create_tasks
 
-  - name: Output merged AWS settings
+  - name: Output Task Independent AWS settings
     debug:
-      msg: "AWS settings: {{ resolved_aws }}"
+      msg: "AWS settings: {{ task_indep_aws }}"
       verbosity: 1
     tags:
       - upload
       - create_tasks
 
-  - name: Output merged ECS settings
+  - name: Output Task Independent ECS settings
     debug:
-      msg: "ECS settings: {{ resolved_ecs }}"
+      msg: "ECS settings: {{ task_indep_ecs }}"
       verbosity: 1
     tags:
       - upload
@@ -189,8 +194,7 @@
 
   - name: Create ECR repository
     ecs_ecr:
-      # TODO: make configurable
-      name: "{{project_name}}"
+      name: "{{ task_indep_ecs.ecr_repository | default(project_name) }}"
       region: "{{aws_region}}"
     when: requires_build
     tags:
@@ -204,7 +208,7 @@
       - upload
 
   - name: Login to Docker Repository
-    shell: "aws ecr get-login-password --region {{aws.region | quote}} | docker {{docker_common_general_options}} login --username AWS --password-stdin {{ecr_hostname}}"
+    shell: "aws ecr get-login-password --region {{task_indep_aws.region | quote}} | docker {{docker_common_general_options}} login --username AWS --password-stdin {{ecr_hostname}}"
     when: requires_build
     tags:
       - upload
