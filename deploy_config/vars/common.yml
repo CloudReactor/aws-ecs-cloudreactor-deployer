@@ -92,6 +92,10 @@ project_task_config:
   # # task_name_to_config[task_name].enabled
   # enabled: true
 
+  # Override to set the name of the Task in CloudReactor. Ensure that Task names
+  # vary when the Run Environment changes.
+  # cloudreactor_task_name: "{{project_name}}-{{task_name}}_{{env}}"
+
   # # To execute the Task on a schedule, a cron or rate expression can be used.
   # # Expression syntax is documented here:
   # # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
@@ -507,7 +511,8 @@ project_task_config:
 # `command: python main.py`
 task_name_to_config:
   smoke:
-    deployed: false
+    # cloudreactor_task_name: "example_deployer-smokey_{{env}}"
+    deployed: true
     description: "This description shows up in CloudReactor dashboard"
     command: "echo 'hi'"
     schedule: cron(9 15 * * ? *)
@@ -516,7 +521,7 @@ task_name_to_config:
       enable_status_update_listener: true
   # This task shows how to use the temporary file system provided by ECS
   write_file:
-    deployed: false
+    deployed: true
     description: "File I/O"
     command: "./write_file.sh"
     ecs:
