@@ -64,32 +64,17 @@
     env_task_name_to_config: "{{ env_to_task_name_to_config_safe[env] | default({}) }}"
 
     # task_name_to_env_config (defined in [env].yml) is a mapping from Task name
-    # to secret Task settings specific to the deployment environment.
+    # to possibly secret Task settings specific to the deployment environment.
     task_name_to_env_config_safe: "{{ task_name_to_env_config | default({}) }}"
 
     # task_name_to_config (defined in common.yml)  is a mapping from Task name
     # to non-secret Task settings common to all deployment environments,
     # unless overridden.
     resolved_task_name_to_config: "{{ task_name_to_config | combine(env_task_name_to_config, task_name_to_env_config_safe, recursive=True) }}"
-
-    resolved_task_config: "{{ task_indep_task_config | combine(resolved_task_name_to_config[item] | default({}), recursive=True) }}"
     resolved_task_names: "{{ (resolved_task_name_to_config | dict2items | json_query('[?((value.deployed==undefined)||(to_string(value.deployed)==to_string(`true`)) || (to_string(value.deployed)==`True`))].key')) if (task_names | upper) == 'ALL' else task_names.split(',') }}"
     resolved_deployed_task_name_to_config_query: "{{ '[?(key==`' +  resolved_task_names | join('`)||(key==`') + '`)]' }}"
     resolved_deployed_task_name_to_config: "{{ resolved_task_name_to_config | dict2items | json_query(resolved_deployed_task_name_to_config_query) | items2dict }}"
     requires_build: "{{ (resolved_deployed_task_name_to_config | dict2items | json_query('[?((value.ecs.task_definition_arn==undefined)||(value.ecs.task_definition_arn==`__unset__`))]')) | length > 0 }}"
-    resolved_aws: "{{ task_indep_aws | combine(resolved_task_config.aws | default({})) }}"
-    resolved_ecs: "{{ task_indep_ecs | combine(resolved_task_config.ecs | default({}), recursive=True) }}"
-    resolved_aws_network: "{{ resolved_aws.network | default({}) }}"
-    resolved_aws_logging: "{{ resolved_aws.logging | default({}) }}"
-    resolved_aws_awslogs: "{{ resolved_aws_logging.awslogs | default({}) }}"
-    resolved_ecs_service: "{{ resolved_ecs.service | default({}) }}"
-    predefined_task_definition_arn: "{{ resolved_ecs.task_definition_arn if (resolved_ecs.task_definition_arn is defined) and (resolved_ecs.task_definition_arn != '__unset__') else none }}"
-    task_definition_arn: "{{ (register_ecs_task_result.stdout | from_json).taskDefinition.taskDefinitionArn if register_ecs_task_result.stdout is defined else predefined_task_definition_arn }}"
-    task_build_dir: "build/{{env}}/{{item}}"
-    saved_cloudreactor_task: "{{ create_cloudreactor_task_result.json }}"
-    awslogs_stream_prefix: "{{ resolved_aws_awslogs.stream_prefix | default(project_name + '-' + env) }}"
-    awslogs_group: "{{ resolved_aws_awslogs.log_group | default('/aws/fargate/' + awslogs_stream_prefix + '-' + item) }}"
-    log_query: "{{ awslogs_group }}"
 
   tasks:
   - name: Get configuration from CloudReactor Run Environment
@@ -152,6 +137,26 @@
     when: pre_build_hook_file_stat.stat.exists
     tags:
       - build
+
+  - debug:
+      msg: "task_name_to_config = {{ task_name_to_config }}"
+      verbosity: 2
+
+  - debug:
+      msg: "env_task_name_to_config = {{ env_task_name_to_config }}"
+      verbosity: 2
+
+  - debug:
+      msg: "task_name_to_env_config = {{ task_name_to_env_config }}"
+      verbosity: 2
+
+  - debug:
+      msg: "task_name_to_env_config_safe = {{ task_name_to_env_config_safe }}"
+      verbosity: 2
+
+  - debug:
+      msg: "resolved_task_name_to_config = {{ resolved_task_name_to_config }}"
+      verbosity: 2
 
   - debug: msg="Task version signature = {{task_version_signature}}, resolved task names = {{resolved_task_names}}"
     tags:

@@ -1,13 +1,54 @@
+- name: Set per-Task variables step 1
+  set_fact:
+    task_name: "{{ item }}"
+    task_build_dir: "build/{{env}}/{{item}}"
+    resolved_task_config: "{{ task_indep_task_config | combine(resolved_task_name_to_config[item] | default({}), recursive=True) }}"
+
+- name: Set per-Task variables step 2
+  set_fact:
+    deployed: "{{resolved_task_config.deployed | default(true) }}"
+    resolved_aws: "{{ task_indep_aws | combine(resolved_task_config.aws | default({})) }}"
+    resolved_ecs: "{{ task_indep_ecs | combine(resolved_task_config.ecs | default({}), recursive=True) }}"
+  tags:
+    - always
+
+- name: Set per-Task variables step 3
+  set_fact:
+    resolved_aws_network: "{{ resolved_aws.network | default({}) }}"
+    resolved_aws_logging: "{{ resolved_aws.logging | default({}) }}"
+    resolved_ecs_service: "{{ resolved_ecs.service | default({}) }}"
+  tags:
+    - always
+
+- name: Set per-Task variables step 4
+  set_fact:
+    predefined_task_definition_arn: "{{ resolved_ecs.task_definition_arn if (resolved_ecs.task_definition_arn is defined) and (resolved_ecs.task_definition_arn != '__unset__') else none }}"
+    resolved_aws_awslogs: "{{ resolved_aws_logging.awslogs | default({}) }}"
+  tags:
+    - always
+
+- name: Set per-Task variables step 5
+  set_fact:
+    awslogs_stream_prefix: "{{ resolved_aws_awslogs.stream_prefix | default(project_name + '-' + env) }}"
+  tags:
+  - always
+
+- name: Set per-Task variables step 6
+  set_fact:
+    awslogs_group: "{{ resolved_aws_awslogs.log_group | default('/aws/fargate/' + awslogs_stream_prefix + '-' + item) }}"
+  tags:
+  - always
+
+- name: Set per-Task variables step 7
+  set_fact:
+    log_query: "{{ awslogs_group }}"
+  tags:
+  - always
+
 - name: Output Task properties
   debug:
     msg: "{{ resolved_task_config | to_json }}"
     verbosity: 2
-  tags:
-  - always
-
-- name: Set deployed flag
-  set_fact:
-    deployed: "{{resolved_task_config.deployed | default(true) }}"
   tags:
   - always
 
@@ -40,6 +81,13 @@
   args:
     chdir: "{{task_build_dir}}"
   register: register_ecs_task_result
+  when: deployed and (not predefined_task_definition_arn)
+  tags:
+    - always
+
+- name: Set saved_cloudreactor_task
+  set_fact:
+    task_definition_arn: "{{ (register_ecs_task_result.stdout | from_json).taskDefinition.taskDefinitionArn if register_ecs_task_result.stdout is defined else predefined_task_definition_arn }}"
   when: deployed and (not predefined_task_definition_arn)
   tags:
     - always
@@ -94,6 +142,13 @@
   when: cloudreactor_enabled and deployed
   tags:
   - always
+
+- name: Set saved_cloudreactor_task
+  set_fact:
+    saved_cloudreactor_task: "{{ create_cloudreactor_task_result.json }}"
+  when: cloudreactor_enabled and deployed
+  tags:
+    - always
 
 - name: Create ECS scheduled event definition {{item}}
   template: src=/home/appuser/work/templates/ecs_scheduled_event_definition.json.j2

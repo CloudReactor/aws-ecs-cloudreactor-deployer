@@ -555,6 +555,7 @@ task_name_to_config:
         propagate_tags: SERVICE # Or "TASK_EXECUTION"
         tags:
           TaskType: Service
+
       extra_main_container_properties:
         portMappings:
           - hostPort: 7070
@@ -600,6 +601,10 @@ env_to_task_name_to_config:
     #         - subnet-public-2
     #       assign_public_ip: false
     #    ecs:
+    #      # Uncomment to change the Task Definition family format, which by default
+    #      # the project name, task name, and environment. Note that task_name
+    #      # is not available yet.
+    #      # task_definition_family: "{{project_name}}_web_server_{{env}}"
     #      execution_role_arn: arn:aws:iam::12345678901:role/myrole
     #      task_role_arn: arn:aws:iam::12345678901:role/myrole
     #    service_provider_type: AWS ECS
