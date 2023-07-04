@@ -17,6 +17,7 @@
     resolved_aws_network: "{{ resolved_aws.network | default({}) }}"
     resolved_aws_logging: "{{ resolved_aws.logging | default({}) }}"
     resolved_ecs_service: "{{ resolved_ecs.service | default({}) }}"
+    task_definition_family: "{{ resolved_ecs.task_definition_family | default(project_name + '_' +  task_name + '_' + env) }}"
   tags:
     - always
 
@@ -35,7 +36,7 @@
 
 - name: Set per-Task variables step 6
   set_fact:
-    awslogs_group: "{{ resolved_aws_awslogs.log_group | default('/aws/fargate/' + awslogs_stream_prefix + '-' + item) }}"
+    awslogs_group: "{{ resolved_aws_awslogs.log_group | default('/aws/fargate/' + awslogs_stream_prefix + '-' + task_name) }}"
   tags:
   - always
 
@@ -52,7 +53,7 @@
   tags:
   - always
 
-- name: Create task build directory {{item}}
+- name: Create task build directory {{task_name}}
   file:
     path: "{{task_build_dir}}"
     state: directory
@@ -60,7 +61,7 @@
   tags:
     - always
 
-- name: Create ECS task definition file {{item}}
+- name: Create ECS task definition file {{task_name}}
   template: src=/home/appuser/work/templates/ecs_task_definition.json.j2
             dest={{task_build_dir}}/ecs_task_definition.json
             lstrip_blocks=yes
@@ -76,7 +77,7 @@
   tags:
     - always
 
-- name: Register ECS task definition {{item}}
+- name: Register ECS task definition {{task_name}}
   command: "aws ecs register-task-definition --region={{aws_region | quote}} --cli-input-json file://ecs_task_definition.json"
   args:
     chdir: "{{task_build_dir}}"
@@ -97,7 +98,7 @@
     msg: "Task Definition ARN = {{task_definition_arn}}"
   when: deployed
 
-- name: Create CloudReactor Task definition {{item}}
+- name: Create CloudReactor Task definition {{task_name}}
   template: src=/home/appuser/work/templates/cloudreactor_task.yml.j2
             dest="{{task_build_dir}}/cloudreactor_task.yml"
             lstrip_blocks=yes
@@ -150,18 +151,18 @@
   tags:
     - always
 
-- name: Create ECS scheduled event definition {{item}}
+- name: Create ECS scheduled event definition {{task_name}}
   template: src=/home/appuser/work/templates/ecs_scheduled_event_definition.json.j2
             dest="{{ task_build_dir }}/ecs_scheduled_event_definition.json"
   when: (not cloudreactor_enabled) and deployed and (resolved_task_config.schedule is defined)
   tags: upload
 
-- name: Create AWS events rule {{item}}
-  command: "aws events put-rule --schedule-expression \"{{ resolved_task_config.schedule }})\" --name {{project_name}}-{{item}}-{{env}}"
+- name: Create AWS events rule {{task_name}}
+  command: "aws events put-rule --schedule-expression \"{{ resolved_task_config.schedule }})\" --name {{project_name}}-{{task_name}}-{{env}}"
   when: (not cloudreactor_enabled) and deployed and (resolved_task_config.schedule is defined)
   tags: upload
 
-- name: Put AWS event target {{item}}
+- name: Put AWS event target {{task_name}}
   command: "aws events put-targets --cli-input-json file://ecs_scheduled_event_definition.json"
   when: (not cloudreactor_enabled) and deployed and (resolved_task_config.schedule is defined)
   args:
@@ -171,7 +172,7 @@
 - name: Create ECS service without load balancer
   ecs_service:
     state: present
-    name: "{{project_name}}_{{item}}_{{env}}"
+    name: "{{project_name}}_{{task_name}}_{{env}}"
     cluster: "{{resolved_ecs.cluster_arn}}"
     region: "{{aws_region}}"
     launch_type: FARGATE
@@ -180,7 +181,7 @@
       assign_public_ip: "{{ resolved_aws_network.assign_public_ip | default(false) }}"
       subnets: "{{ resolved_aws_network.subnets }}"
       security_groups: "{{ resolved_aws_network.security_groups }}"
-    task_definition: "{{project_name}}_{{item}}_{{env}}"
+    task_definition: "{{task_definition_family}}"
     desired_count: "{{ resolved_task_config.service_instance_count | default(1) }}"
     deployment_configuration:
       minimum_healthy_percent: "{{ (resolved_ecs_service.deployment_configuration | default({})).minimum_healthy_percent | default(0) }}"
@@ -193,7 +194,7 @@
 - name: Create ECS service with load balancer
   ecs_service:
     state: present
-    name: "{{project_name}}_{{item}}_{{env}}"
+    name: "{{project_name}}_{{task_name}}_{{env}}"
     cluster: "{{resolved_ecs.cluster_arn}}"
     region: "{{aws_region}}"
     launch_type: FARGATE
@@ -202,7 +203,7 @@
       assign_public_ip: "{{ resolved_aws_network.assign_public_ip | default(false) }}"
       subnets: "{{ resolved_aws_network.subnets }}"
       security_groups: "{{ resolved_aws_network.security_groups }}"
-    task_definition: "{{project_name}}_{{item}}_{{env}}"
+    task_definition: "{{task_definition_family}}"
     desired_count: "{{ resolved_task_config.service_instance_count | default(1) }}"
     deployment_configuration:
       minimum_healthy_percent: "{{ (resolved_ecs_service.deployment_configuration | default({})).minimum_healthy_percent | default(100) }}"
@@ -213,7 +214,7 @@
     # balancers.
     load_balancers:
       - targetGroupArn: "{{resolved_ecs_service.load_balancer_settings.load_balancers[0].target_group_arn}}"
-        containerName:  "{{project_name}}_{{item}}_{{env}}"
+        containerName:  "{{project_name}}_{{task_name}}_{{env}}"
         containerPort: "{{resolved_ecs_service.load_balancer_settings.load_balancers[0].container_port}}"
     health_check_grace_period_seconds: "{{ resolved_ecs_service.load_balancer_settings.health_check_grace_period_seconds | default(30) }}"
   when: (not cloudreactor_enabled) and deployed and (resolved_ecs_service.load_balancer_settings is defined) and (resolved_task_config.is_service | default(resolved_task_config.service_instance_count | default(0) | string != '0'))

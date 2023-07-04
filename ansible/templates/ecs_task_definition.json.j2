@@ -108,7 +108,7 @@
     "requiresCompatibilities": [
         "FARGATE"
     ],
-    "family": {{ resolved_ecs.task_definition_family | default(project_name + '_' +  task_name + '_' + env) | to_json }},
+    "family": {{ task_definition_family | to_json }},
     "networkMode": "awsvpc",
     "executionRoleArn": {{ resolved_ecs.execution_role_arn | to_json }},
     {% if (resolved_ecs.task_role_arn is defined) and (resolved_ecs.task_role_arn != '__unset__') %}
