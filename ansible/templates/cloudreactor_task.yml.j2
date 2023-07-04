@@ -160,7 +160,7 @@ execution_method_capability_details:
 
   {{ prop_def(project_env_task_ecs, 'cluster_arn') }}
 
-  main_container_name: "{{project_name}}_{{task_name}}_{{env}}"
+  main_container_name: "{{main_container_name}}"
 
   {{ prop_def(project_env_task_ecs, 'execution_role_arn') }}
   {{ prop_def(project_env_task_ecs, 'task_role_arn') }}
@@ -229,7 +229,7 @@ service_settings:
     load_balancers:
       {% for load_balancer in resolved_ecs_service.load_balancer_settings.load_balancers %}
       - target_group_arn: "{{load_balancer.target_group_arn}}"
-        container_name:  "{{project_name}}_{{task_name}}_{{env}}"
+        container_name:  "{{main_container_name}}"
         container_port: {{load_balancer.container_port}}
       {% endfor %}
     {% else %}

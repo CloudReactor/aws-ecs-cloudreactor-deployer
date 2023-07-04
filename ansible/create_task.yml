@@ -17,7 +17,8 @@
     resolved_aws_network: "{{ resolved_aws.network | default({}) }}"
     resolved_aws_logging: "{{ resolved_aws.logging | default({}) }}"
     resolved_ecs_service: "{{ resolved_ecs.service | default({}) }}"
-    task_definition_family: "{{ resolved_ecs.task_definition_family | default(project_name + '_' +  task_name + '_' + env) }}"
+    task_definition_family: "{{ resolved_ecs.task_definition_family | default(project_name + '_' +  task_name + '_' + env, true) }}"
+    main_container_name: "{{ resolved_ecs.main_container_name | default('main', true) }}"
   tags:
     - always
 

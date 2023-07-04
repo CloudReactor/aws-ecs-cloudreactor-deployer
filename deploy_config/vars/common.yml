@@ -605,6 +605,11 @@ env_to_task_name_to_config:
     #      # the project name, task name, and environment. Note that task_name
     #      # is not available yet.
     #      # task_definition_family: "{{project_name}}_web_server_{{env}}"
+    #
+    #      # Uncomment to change the name of the main container, which by default
+    #      # the project name, task name, and environment.
+    #      # main_container_name: "main"
+    #
     #      execution_role_arn: arn:aws:iam::12345678901:role/myrole
     #      task_role_arn: arn:aws:iam::12345678901:role/myrole
     #    service_provider_type: AWS ECS
