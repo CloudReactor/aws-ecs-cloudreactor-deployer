@@ -16,7 +16,9 @@
   set_fact:
     resolved_aws_network: "{{ resolved_aws.network | default({}) }}"
     resolved_aws_logging: "{{ resolved_aws.logging | default({}) }}"
-    resolved_ecs_service: "{{ resolved_ecs.service | default({}) }}"
+    # ecs.service is allow for backward compatibility reasons, may deprecate in
+    # a later release.
+    resolved_ecs_service: "{{ resolved_task_config.service_settings | default(resolved_ecs.service | default({})) }}"
     task_definition_family: "{{ resolved_ecs.task_definition_family | default(project_name + '_' +  task_name + '_' + env, true) }}"
     main_container_name: "{{ resolved_ecs.main_container_name | default('main', true) }}"
   tags:
@@ -33,26 +35,26 @@
   set_fact:
     awslogs_stream_prefix: "{{ resolved_aws_awslogs.stream_prefix | default(project_name + '-' + env) }}"
   tags:
-  - always
+    - always
 
 - name: Set per-Task variables step 6
   set_fact:
     awslogs_group: "{{ resolved_aws_awslogs.log_group | default('/aws/fargate/' + awslogs_stream_prefix + '-' + task_name) }}"
   tags:
-  - always
+    - always
 
 - name: Set per-Task variables step 7
   set_fact:
     log_query: "{{ awslogs_group }}"
   tags:
-  - always
+    - always
 
 - name: Output Task properties
   debug:
     msg: "{{ resolved_task_config | to_json }}"
     verbosity: 2
   tags:
-  - always
+    - always
 
 - name: Create task build directory {{task_name}}
   file:

@@ -21,7 +21,6 @@
     extra_docker_tag_args: "{{ lookup('env', 'EXTRA_DOCKER_TAG_ARGS') | default(build_options.extra_docker_tag_args | default(''), true) }}"
     docker_push_general_options: "{{ lookup('env', 'DOCKER_PUSH_GENERAL_OPTIONS') | default(build_options.docker_push_general_options | default(''), true) }}"
     extra_docker_push_args: "{{ lookup('env', 'EXTRA_DOCKER_PUSH_ARGS') | default(build_options.extra_docker_push_args | default(''), true) }}"
-    docker_image_name: "{{project_name}}:{{env}}_{{task_version_signature}}"
 
     resolved_cloudreactor: "{{ project_cloudreactor | default({}) | combine(env_cloudreactor | default({}), recursive=True) }}"
     cloudreactor_enabled: "{{ resolved_cloudreactor.enabled | default(true) }}"
@@ -40,6 +39,9 @@
 
     project_env_ecs: "{{ (project_ecs | default({})) | combine(env_ecs | default({}), recursive=True) }}"
     task_indep_ecs: "{{ run_environment_ecs | combine(project_env_ecs, recursive=True) }}"
+
+    ecr_repository: "{{ task_indep_ecs.ecr_repository | default(project_name) }}"
+    docker_image_name: "{{ task_indep_ecs.docker_image_name | default(ecr_repository + ':' + env + '_' + task_version_signature)}}"
 
     task_indep_task_config: "{{ project_task_config | default({}) | combine(env_default_task_config, env_task_config_safe, recursive=True) }}"
 
@@ -199,7 +201,7 @@
 
   - name: Create ECR repository
     ecs_ecr:
-      name: "{{ task_indep_ecs.ecr_repository | default(project_name) }}"
+      name: "{{ecr_repository}}"
       region: "{{aws_region}}"
     when: requires_build
     tags:
