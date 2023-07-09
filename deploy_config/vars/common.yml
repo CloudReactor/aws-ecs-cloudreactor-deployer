@@ -50,6 +50,9 @@ project_cloudreactor:
   # # Set to false to disable monitoring and management in CloudReactor.
   enabled: true
 
+# # AWS settings for all Tasks. Required if not using CloudReactor.
+# # Will be overridden by Run Environment settings, per-environment settings,
+# # and per-Task settings.
 # project_aws:
 #   account_id: 123456789012
 #   region: "us-west-2"
@@ -65,6 +68,9 @@ project_cloudreactor:
 #     # If you are running on private subnets, this must be false.
 #     assign_public_ip: false
 
+# # AWS settings for all Tasks.
+# # Will be overridden by Run Environment settings, per-environment settings,
+# # and per-Task settings.
 # project_ecs:
 #   ecr_repository: "{{ project_name }}"
 #   cluster_arn: "{{ env }}"
@@ -85,69 +91,6 @@ project_task_config:
   # # Set to false to skip this Task's deployment. This is usually set per-Task
   # # in task_name_to_config[task_name].deployed
   # deployed: "{{ env == 'staging' }}"
-
-  # # Set to false to disable the Tasks's schedule/service in CloudReactor.
-  # # Usually you should leave this unset and manage the setting in the
-  # # CloudReactor dashboard. This is usually set per-Task in
-  # # task_name_to_config[task_name].enabled
-  # enabled: true
-
-  # Override to set the name of the Task in CloudReactor. Ensure that Task names
-  # vary when the Run Environment changes.
-  # cloudreactor_task_name: "{{project_name}}-{{task_name}}_{{env}}"
-
-  # # To execute the Task on a schedule, a cron or rate expression can be used.
-  # # Expression syntax is documented here:
-  # # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
-  # # This is usually set per-Task in task_name_to_config[task_name].schedule
-  # schedule: cron(0 12 * * ? *)
-
-  # # The number of Task Executions to create at the scheduled time.
-  # scheduled_instance_count: 1
-
-  # # The number of Task Executions to keep running continuously. Setting this
-  # # to 1 or greater makes the Task a service. Setting this to null or 0 makes
-  # # the Task a non-service.
-  # service_instance_count: 1
-
-  # # Maximum number of concurrent Task Executions of the same Task.
-  # # CloudReactor will block attempts to start Task Executions when the
-  # # existing number of running Task Executions reaches this limit.
-  # # -1 means no limit.
-  # max_concurrency: 1
-
-  # min_service_instance_count
-
-  # max_age_seconds: 7200
-
-  # # The number of seconds after which a Task is manually started, but
-  # # before the Task actually reports it started, before an alert is
-  # # triggered.
-  # max_manual_start_delay_before_alert_seconds: 60
-
-  # max_manual_start_delay_before_abandonment_seconds:
-
-  # # Tolerance for late heartbearts, in seconds, before a missing heartbeat
-  # # alert is triggered.
-  # max_heartbeat_lateness_before_alert_seconds: 120
-
-  # max_heartbeat_lateness_before_abandonment_seconds: 0
-  # postponed_failure_before_success_seconds: 0
-  # max_postponed_failure_count: 0
-  # max_postponed_timeout_count: 0
-  # postponed_missing_execution_before_start_seconds: 0
-  # max_postponed_missing_execution_count: 0
-  # min_missing_execution_delay_seconds: 0
-  # should_clear_failure_alerts_on_success: true
-  # should_clear_timeout_alerts_on_success: true
-  # is_scheduling_managed: true
-  # is_service_managed: true
-  # default_input_value: null
-  # input_value_schema: null
-  # output_value_schema: null
-  # managed_probability: 1.0
-  # failure_report_probability: 1.0
-  # timeout_report_probability: 1.0
 
   # # Environment variables to set in the process environment
   env:
@@ -170,29 +113,32 @@ project_task_config:
   #    included: "{{ env == 'staging' }}"
 
   ecs:
-    #  # Uncomment and change the value to deploy a pre-build ECS Task Definition
+    # # Uncomment and change the value to deploy a pre-build ECS Task Definition
     # task_definition_arn: "arn:aws:ecs:{{ aws_region }}:{{ task_indep_aws.account_id }}:task-definition/aws-ecs-cloudreactor-deployer-sample_web_server_windows-dev:14"
 
     # # Required when deploying a scheduled task without CloudReactor. Can be ARN
     # # or just a simple name.
-    # By default, run on the ECS cluster specified by the Run Environment.
-    # You can override this to run on a per-application/environment cluster, for example.
+    # # By default, run on the ECS cluster specified by the Run Environment.
+    # # You can override this to run on a per-application/environment cluster, for example.
     # cluster_arn: "{{ 'arn:aws:ecs:' + aws_region + ':' + task_indep_aws.account_id + ':cluster/' + project_name + '-' env }}"
 
     # # Required when deploying a scheduled task without CloudReactor
     # execution_role_arn: arn:aws:iam::123456789012:role/ecsEventsRole
 
-    # Results in an empty string if task_role_arn is null, but that's ok.
+    # # Results in an empty string if task_role_arn is null, but that's ok.
     task_role_arn: "{{ (('arn:aws:iam::' + task_indep_aws.account_id + ':role/' + task_role_name) if use_task_role and (task_role_name is not none) else none) }}"
 
-    # # See https://aws.amazon.com/fargate/pricing/
-    # # for supported combinations.
+    # # See https://aws.amazon.com/fargate/pricing/ for supported combinations.
     cpu_units: 256
     memory_mb: 512
 
     # # See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/platform_versions.html
     # # for supported platform versions. Can also be set to "LATEST".
     # platform_version: "LATEST"
+
+    # # Uncomment to change the name of the main container, which by default
+    # # is "main".
+    # # main_container_name: "main"
 
     # # By default, the entrypoint is run with the tinit init process so that
     # # commands in shell form (like calling proc_wrapper) pass on SIGTERM to
@@ -216,7 +162,9 @@ project_task_config:
     #     - name: environment_variable_name
     #       valueFrom: arn:aws:secretsmanager:[aws_region]:[aws_account_id]:secret:[secret_name]
 
-    # # Uncomment to add properties to the top-level ECS task definition:
+    # # Uncomment to add properties to the top-level ECS task definition
+    # # (see https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html)
+    # # for the description of all properties):
     # extra_task_definition_properties:
     #   volumes:
     #     - name: "database_scratch"
@@ -247,37 +195,9 @@ project_task_config:
 
   aws:
     # network:
-    #   subnets:
-    #     - subnet-private-1
-    #     - subnet-private-2
-    #   security_groups:
-    #     - sg-1
-    #     - sg-2
-    #   # Set this to true if your subnets don't have access to a NAT gateway,
-    #   # for example public subnets.
     #   # If you are running on private subnets, this must be false.
     #   assign_public_ip: false
     #
-    # # To use AWS Logs driver with common options:
-    # logging:
-    #   awslogs:
-    #     create_group: true
-    #     group: "/aws/fargate/{{ project_name }}-{{ env }}-{{ item }}"
-    #     stream_prefix: "{{ project_name }}-{{ env }}"
-    #     region: "us-west-1"
-    #
-    # # Otherwise, provide a LogConfiguration object as described in
-    # # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_LogConfiguration.html
-    # log_configuration:
-    #   logDriver: awsfirelens
-    #   options:
-    #     Name: firehose
-    #     region: us-west-2,
-    #     delivery_stream: my-stream
-    #     log-driver-buffer-limit: "2097152"
-    #   secretOptions:
-    #     - name: Token
-    #       value: SECRET_TOKEN
     tags:
       ManagedBy: CloudReactor
       Environment: "{{env}}"
@@ -511,12 +431,108 @@ project_task_config:
 # `command: python main.py`
 task_name_to_config:
   smoke:
-    # cloudreactor_task_name: "example_deployer-smokey_{{env}}"
     deployed: true
+
+    # # Set to false to disable the Tasks's schedule/service in CloudReactor.
+    # # Usually you should leave this unset and manage the setting in the
+    # # CloudReactor dashboard. This is usually set per-Task in
+    # # task_name_to_config[task_name].enabled
+    # enabled: true
+
+    # Override to set the name of the Task in CloudReactor. Ensure that Task names
+    # vary when the Run Environment changes. Note that task_name is not available here.
+    # cloudreactor_task_name: "{{project_name}}-smokey-{{env}}"
     description: "This description shows up in CloudReactor dashboard"
+
     command: "echo 'hi'"
-    schedule: cron(9 15 * * ? *)
+
+    # # To execute the Task on a schedule, a cron or rate expression can be used.
+    # # Expression syntax is documented here:
+    # # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+    # # This is usually set per-Task in task_name_to_config[task_name].schedule
+    # schedule: cron(0 12 * * ? *)
+
+    # # The number of Task Executions to create at the scheduled time.
     # scheduled_instance_count: 1
+
+    # # The number of Task Executions to keep running continuously. Setting this
+    # # to 1 or greater makes the Task a service. Setting this to null or 0 makes
+    # # the Task a non-service.
+    # service_instance_count: 1
+
+    # # Maximum number of concurrent Task Executions of the same Task.
+    # # CloudReactor will block attempts to start Task Executions when the
+    # # existing number of running Task Executions reaches this limit.
+    # # -1 means no limit.
+    # max_concurrency: 1
+
+    # min_service_instance_count
+
+    # max_age_seconds: 7200
+
+    # # The number of seconds after which a Task is manually started, but
+    # # before the Task actually reports it started, before an alert is
+    # # triggered.
+    # max_manual_start_delay_before_alert_seconds: 60
+
+    # max_manual_start_delay_before_abandonment_seconds:
+
+    # # Tolerance for late heartbearts, in seconds, before a missing heartbeat
+    # # alert is triggered.
+    # max_heartbeat_lateness_before_alert_seconds: 120
+
+    # max_heartbeat_lateness_before_abandonment_seconds: 0
+    # postponed_failure_before_success_seconds: 0
+    # max_postponed_failure_count: 0
+    # max_postponed_timeout_count: 0
+    # postponed_missing_execution_before_start_seconds: 0
+    # max_postponed_missing_execution_count: 0
+    # min_missing_execution_delay_seconds: 0
+    # should_clear_failure_alerts_on_success: true
+    # should_clear_timeout_alerts_on_success: true
+    # is_scheduling_managed: true
+    # is_service_managed: true
+    # default_input_value: null
+    # input_value_schema: null
+    # output_value_schema: null
+    # managed_probability: 1.0
+    # failure_report_probability: 1.0
+    # timeout_report_probability: 1.0
+
+    # ecs:
+    #   extra_main_container_properties:
+    #     mountPoints:
+    #         - sourceVolume: "database_scratch"
+    #           containerPath: "/home/appuser/scratch"
+    #   extra_task_definition_properties:
+    #     volumes:
+    #       - name: "database_scratch"
+    #         host: {}
+
+    # aws:
+    #  network:
+    #    assign_public_ip: true
+    #  # To use AWS Logs driver with common options:
+    #  logging:
+    #    awslogs:
+    #      create_group: true
+    #      group: "/aws/fargate/{{ project_name }}-{{ env }}-{{ item }}"
+    #      stream_prefix: "{{ project_name }}-{{ env }}"
+    #      region: "{{aws_region}}"
+    #
+    #  # Otherwise, provide a LogConfiguration object as described in
+    #  # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_LogConfiguration.html
+    #  log_configuration:
+    #    logDriver: awsfirelens
+    #    options:
+    #      Name: firehose
+    #      region: "{{aws_region}}"
+    #      delivery_stream: my-stream
+    #      log-driver-buffer-limit: "2097152"
+    #    secretOptions:
+    #      - name: Token
+    #        value: SECRET_TOKEN
+
     wrapper:
       enable_status_update_listener: true
   # This task shows how to use the temporary file system provided by ECS
@@ -536,26 +552,13 @@ task_name_to_config:
     env:
       TEMP_FILE_DIR: "/home/appuser/scratch"
 
-  # Set deployed = true to enable web server -- requires an IP target group and
-  # load balancer setup in AWS
   web_server:
+    # Set deployed to true to enable web server -- requires an IP target group
+    # and a load balancer setup in AWS.
     deployed: false
     description: Template for a web server
     command: "python3 -m http.server"
     ecs:
-      service:
-        force_new_deployment: false
-        deployment_configuration:
-          minimum_healthy_percent: 100
-          maximum_percent: 200
-          deployment_circuit_breaker:
-            enable: true
-            rollback_on_failure: true
-        enable_ecs_managed_tags: true
-        propagate_tags: SERVICE # Or "TASK_EXECUTION"
-        tags:
-          TaskType: Service
-
       extra_main_container_properties:
         portMappings:
           - hostPort: 7070
@@ -564,11 +567,44 @@ task_name_to_config:
     aws:
       network:
         assign_public_ip: true
+    service_settings:
+      force_new_deployment: true
+      deployment_configuration:
+        maximum_percent: 200
+        minimum_healthy_percent: 100
+        deployment_circuit_breaker:
+          enable: true
+          rollback_on_failure: true
+      load_balancer_settings:
+        health_check_grace_period_seconds: 300
+        load_balancers:
+          - target_group_arn: arn:aws:elasticloadbalancing:us-west-1:xxx:targetgroup/example-web/xxx
+            container_port: 7070
+      enable_ecs_managed_tags: true
+      propagate_tags: SERVICE # Or "TASK_EXECUTION" or "NONE"
+      tags:
+        TaskType: Service
+    links:
+      - name: Web Server
+        link_url_template: "http://flask-example-xxx.us-west-1.elb.amazonaws.com/"
+        description: Main web page
 
 # env_to_default_task_config is a mapping from deployment environment name to
 # non-secret Task settings common to all Tasks.
 env_to_default_task_config:
   staging:
+    # aws:
+    #   network:
+    #     subnets:
+    #       - subnet-private-1
+    #       - subnet-private-2
+    #     security_groups:
+    #       - sg-1
+    #       - sg-2
+    #     #   Set this to true if your subnets don't have access to a NAT gateway,
+    #     #   for example public subnets.
+    #     #   If you are running on private subnets, this must be false.
+    #     assign_public_ip: false
     env:
       FEATURE_A_ENABLED: "TRUE"
 
@@ -583,54 +619,33 @@ env_to_task_name_to_config:
     smoke:
       schedule: cron(9 0 * * ? *)
 
+    # # Uncomment to set non-secret properties for the web server in staging.
+    # web_server:
+    #   deployed: true
+    #   service_instance_count: 2
+    #   aws:
+    #     network:
+    #      security_groups:
+    #        - sg-1
+    #        - sg-2
+    #      subnets:
+    #        - subnet-public-1
+    #        - subnet-public-2
+    #      assign_public_ip: false
+    #   ecs:
+    #     # Uncomment to change the Task Definition family format, which by default
+    #     # the project name, Task name, and environment. Note that task_name
+    #     # is not available yet.
+    #     # task_definition_family: "{{project_name}}_web_server_{{env}}"
+    #
+    #     execution_role_arn: arn:aws:iam::12345678901:role/myrole_staging
+    #     task_role_arn: arn:aws:iam::12345678901:role/myrole_staging
+    #   service_settings:
+    #     load_balancer_settings:
+    #       load_balancers:
+    #         - target_group_arn: arn:aws:elasticloadbalancing:us-east-1:12345678901:targetgroup/web_server_staging/deadbeef012345
+    #           container_port: 7070
+
   production:
     smoke:
       schedule: cron(12 0 * * ? *)
-
-    # # Uncomment to set non-secret properties web server in production.
-    #  web_server:
-    #    deployed: true
-    #    service_instance_count: 2
-    #    aws:
-    #      network:
-    #       security_groups:
-    #         - sg-1
-    #         - sg-2
-    #       subnets:
-    #         - subnet-public-1
-    #         - subnet-public-2
-    #       assign_public_ip: false
-    #    ecs:
-    #      # Uncomment to change the Task Definition family format, which by default
-    #      # the project name, task name, and environment. Note that task_name
-    #      # is not available yet.
-    #      # task_definition_family: "{{project_name}}_web_server_{{env}}"
-    #
-    #      # Uncomment to change the name of the main container, which by default
-    #      # the project name, task name, and environment.
-    #      # main_container_name: "main"
-    #
-    #      execution_role_arn: arn:aws:iam::12345678901:role/myrole
-    #      task_role_arn: arn:aws:iam::12345678901:role/myrole
-    #    service_provider_type: AWS ECS
-    #    service_settings:
-    #      force_new_deployment: true
-    #      deployment_configuration:
-    #        maximum_percent: 200
-    #        minimum_healthy_percent: 100
-    #        deployment_circuit_breaker:
-    #          enable: true
-    #          rollback_on_failure: true
-    #      load_balancer_settings:
-    #        health_check_grace_period_seconds: 300
-    #        load_balancers:
-    #          - target_group_arn: arn:aws:elasticloadbalancing:us-west-1:xxx:targetgroup/example-web/xxx
-    #            container_port: 7070
-    #      enable_ecs_managed_tags: true
-    #      propagate_tags: true
-    #      tags:
-    #        TaskType: Service
-    #    links:
-    #      - name: Web Server
-    #        link_url_template: "http://flask-example-xxx.us-west-1.elb.amazonaws.com/"
-    #        description: Main web page

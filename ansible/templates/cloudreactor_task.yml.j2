@@ -233,7 +233,7 @@ service_settings:
         container_port: {{load_balancer.container_port}}
       {% endfor %}
     {% else %}
-      load_balancers: []
+    load_balancers: []
     {% endif %}
   {% endif %}
 
@@ -248,7 +248,6 @@ service_settings:
     {% endif %}
   {% endif %}
 {% endif %}
-
 
 log_query: "{{ log_query }}"
 
