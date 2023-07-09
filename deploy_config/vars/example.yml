@@ -63,8 +63,8 @@ env_cloudreactor:
 # env_ecs:
 #   cluster_arn: staging
 #   # Required when deploying a scheduled task without CloudReactor
-#   # execution_role_arn: arn:aws:iam::12345678901:role/ecsTaskExecutionRole
-#   task_role_arn: arn:aws:iam::12345678901:role/myrole
+#   # execution_role_arn: arn:aws:iam::123456789012:role/ecsTaskExecutionRole
+#   task_role_arn: arn:aws:iam::123456789012:role/myrole
 
 # Add Task settings that apply to all Tasks running in this deployment.
 # They will override the settings in common.yml.

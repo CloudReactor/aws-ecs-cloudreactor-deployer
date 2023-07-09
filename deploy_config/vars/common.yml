@@ -75,8 +75,8 @@ project_cloudreactor:
 #   ecr_repository: "{{ project_name }}"
 #   cluster_arn: "{{ env }}"
 #   # Required when deploying a scheduled task without CloudReactor
-#   # execution_role_arn: arn:aws:iam::12345678901:role/ecsTaskExecutionRole
-#   task_role_arn: arn:aws:iam::12345678901:role/myrole
+#   # execution_role_arn: arn:aws:iam::123456789012:role/ecsTaskExecutionRole
+#   task_role_arn: arn:aws:iam::123456789012:role/myrole
 
 # These settings will apply by default to all Tasks and in all deployments.
 # They override the settings in your Run Environment.
@@ -262,7 +262,7 @@ project_task_config:
     # # proc_wrapper can also load a configuration dictionary, merged from
     # # the sources below.
     # config_locations:
-    #   - arn:aws:secretsmanager:us-east-2:1234567890:secret:myapp/{{env}}/env
+    #   - arn:aws:secretsmanager:us-east-2:123456789012:secret:myapp/{{env}}/env
     #   - arn:aws:s3:::examplebucket/{{env}}/app1/config.json
 
     # # Merge stategy for configuration / environment. Can be one of these:
@@ -638,12 +638,12 @@ env_to_task_name_to_config:
     #     # is not available yet.
     #     # task_definition_family: "{{project_name}}_web_server_{{env}}"
     #
-    #     execution_role_arn: arn:aws:iam::12345678901:role/myrole_staging
-    #     task_role_arn: arn:aws:iam::12345678901:role/myrole_staging
+    #     execution_role_arn: arn:aws:iam::123456789012:role/myrole_staging
+    #     task_role_arn: arn:aws:iam::123456789012:role/myrole_staging
     #   service_settings:
     #     load_balancer_settings:
     #       load_balancers:
-    #         - target_group_arn: arn:aws:elasticloadbalancing:us-east-1:12345678901:targetgroup/web_server_staging/deadbeef012345
+    #         - target_group_arn: arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/web_server_staging/deadbeef012345
     #           container_port: 7070
 
   production:
