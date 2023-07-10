@@ -19,8 +19,10 @@ use_task_role: "{{ (task_role_name is defined) and (task_role_name != '__unset__
 use_secrets_manager: "{{ (secrets_manager_env_path is defined) and secrets_manager_env_path }}"
 
 project_build_options:
-  # # Override to use a non-default ECR host
-  # container_registry_host: "1234556789012.dkr.ecr.us-east-1.amazonaws.com"
+  # # Override to use a non-default ECR account and/or region
+  # ecr_aws_account_id: "1234556789013"
+  # ecr_aws_region: "us-east-2"
+
   # container_repository: "{{project_name}}"
 
   # # These are used to set the image name and tag on the machine running
