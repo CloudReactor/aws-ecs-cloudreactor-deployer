@@ -35,13 +35,18 @@
     project_env_aws: "{{ (project_aws | default({})) | combine(env_aws | default({}), recursive=True) }}"
     task_indep_aws: "{{ run_environment_aws | combine(project_env_aws, recursive=True) }}"
     aws_region: "{{ task_indep_aws.region | default(lookup('env', 'AWS_DEFAULT_REGION')) }}"
-    ecr_hostname: "{{ task_indep_aws.account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com"
+    container_registry_host: "{{ task_indep_aws.account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com"
 
     project_env_ecs: "{{ (project_ecs | default({})) | combine(env_ecs | default({}), recursive=True) }}"
     task_indep_ecs: "{{ run_environment_ecs | combine(project_env_ecs, recursive=True) }}"
 
-    ecr_repository: "{{ task_indep_ecs.ecr_repository | default(project_name) }}"
-    docker_image_name: "{{ task_indep_ecs.docker_image_name | default(ecr_repository + ':' + env + '_' + task_version_signature)}}"
+    container_repository: "{{ build_options.container_repository | default(project_name) }}"
+    source_docker_image_tag: "{{ build_options.docker_image_tag | default(env + '_' + task_version_signature) }}"
+    source_docker_image_name_without_tag: "{{ build_options.source_docker_image_name_without_tag | default(project_name) }}"
+    source_docker_image_name: "{{ source_docker_image_name_without_tag }}:{{source_docker_image_tag}}"
+    target_docker_image_tag: "{{ build_options.target_docker_image_tag | default(source_docker_image_tag) }}"
+    target_docker_image_name_without_tag: "{{ build_options.target_docker_image_name_without_tag | default(container_registry_host + '/' + container_repository) }}"
+    target_docker_image_name: "{{ target_docker_image_name_without_tag }}:{{target_docker_image_tag}}"
 
     task_indep_task_config: "{{ project_task_config | default({}) | combine(env_default_task_config, env_task_config_safe, recursive=True) }}"
 
@@ -181,14 +186,14 @@
 
   - name: Output Docker build command
     debug:
-      msg: "Docker build command: 'docker {{docker_common_general_options}} {{docker_build_general_options}} build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} .'"
+      msg: "Docker build command: 'docker {{docker_common_general_options}} {{docker_build_general_options}} build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{source_docker_image_name}} .'"
       verbosity: 1
     when: requires_build
     tags:
       - build
 
   - name: Build Docker image
-    command: "docker {{docker_common_general_options}} {{docker_build_general_options}} build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{docker_image_name}} ."
+    command: "docker {{docker_common_general_options}} {{docker_build_general_options}} build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{source_docker_image_name}} ."
     args:
       chdir: "{{ docker_context_dir }}"
     when: requires_build
@@ -197,7 +202,7 @@
 
   - name: Create ECR repository
     ecs_ecr:
-      name: "{{ecr_repository}}"
+      name: "{{container_repository}}"
       region: "{{aws_region}}"
     when: requires_build
     tags:
@@ -205,19 +210,19 @@
       - create_ecr_repo
 
   - name: Tag Docker image
-    command: "docker {{docker_common_general_options}} {{docker_tag_general_options}} tag {{docker_image_name}} {{ecr_hostname}}/{{docker_image_name}} {{extra_docker_tag_args}}"
+    command: "docker {{docker_common_general_options}} {{docker_tag_general_options}} tag {{source_docker_image_name}} {{target_docker_image_name}} {{extra_docker_tag_args}}"
     when: requires_build
     tags:
       - upload
 
   - name: Login to Docker Repository
-    shell: "aws ecr get-login-password --region {{task_indep_aws.region | quote}} | docker {{docker_common_general_options}} login --username AWS --password-stdin {{ecr_hostname}}"
+    shell: "aws ecr get-login-password --region {{task_indep_aws.region | quote}} | docker {{docker_common_general_options}} login --username AWS --password-stdin {{container_registry_host}}"
     when: requires_build
     tags:
       - upload
 
   - name: Push Docker image
-    command: "docker {{docker_common_general_options}} {{docker_push_general_options}} push {{ecr_hostname}}/{{docker_image_name}} {{extra_docker_push_args}}"
+    command: "docker {{docker_common_general_options}} {{docker_push_general_options}} push {{target_docker_image_name}} {{extra_docker_push_args}}"
     when: requires_build
     tags:
       - upload
@@ -243,7 +248,7 @@
       - create_tasks
 
   - name: Logout of ECR
-    command: "docker {{docker_common_general_options}} logout {{ecr_hostname}}"
+    command: "docker {{docker_common_general_options}} logout {{container_registry_host}}"
     when: requires_build
     tags:
       - upload

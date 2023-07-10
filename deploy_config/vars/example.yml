@@ -71,12 +71,11 @@ env_cloudreactor:
 env_task_config:
   env:
     SOME_SECRET_KEY_FOR_ALL_TASKS: "FOO"
-  # #  These will be resolved to DATABASE_USERNAME and DATABASE_PASSWORD by
-  # #  proc_wrapper, assuming you set a Task Role that has access to read the
-  # #  secret.
-  #  DATABASE_USERNAME_FOR_PROC_WRAPPER_TO_RESOLVE: arn:aws:secretsmanager:us-west-2:123456789012:secret:app/example/db|JP:$.username
-  #  DATABASE_PASWORD_FOR_PROC_WRAPPER_TO_RESOLVE: arn:aws:secretsmanager:us-west-2:123456789012:secret:app/example/db|JP:$.password
-  #
+    # #  These will be resolved to DATABASE_USERNAME and DATABASE_PASSWORD by
+    # #  proc_wrapper, assuming you set a Task Role that has access to read the
+    # #  secret.
+    # DATABASE_USERNAME_FOR_PROC_WRAPPER_TO_RESOLVE: arn:aws:secretsmanager:us-west-2:123456789012:secret:app/example/db|JP:$.username
+    # DATABASE_PASWORD_FOR_PROC_WRAPPER_TO_RESOLVE: arn:aws:secretsmanager:us-west-2:123456789012:secret:app/example/db|JP:$.password
 
 # For any Tasks that require overrides vs. common.yml, enter those overrides here.
 task_name_to_env_config:

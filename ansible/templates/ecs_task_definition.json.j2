@@ -131,7 +131,7 @@
     "containerDefinitions": [
         {
             "name": {{ main_container_name | to_json }},
-            "image": {{ (ecr_hostname + '/' + docker_image_name) | to_json }},
+            "image": {{ target_docker_image_name | to_json }},
             "cpu": {{ cpu_units - extra_container_cpu_units }},
             "memory": {{ memory_mb - extra_container_memory_mb }},
             "essential": true,

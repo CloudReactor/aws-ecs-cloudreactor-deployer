@@ -6,28 +6,42 @@ project_version_text: 4.0.0
 # # project_version_number: 1
 project_url: "https://github.com/CloudReactor/aws-ecs-cloudreactor-deployer"
 
-# Uncomment this line to use an IAM role for the Task Role.
-# task_role_name: "{{ project_name }}_task_{{env}}"
+# # Uncomment this line to use an IAM role for the Task Role.
+# # task_role_name: "{{ project_name }}_task_{{env}}"
 task_role_name: null
 
 use_task_role: "{{ (task_role_name is defined) and (task_role_name != '__unset__') }}"
 
-# Uncomment this line to push environment variables to Secrets Manager during
-# deployment, and have the proc_wrapper read them during runtime.
-# secrets_manager_env_path: "{{ project_name | replace('-', '_') }}/{{env}}/tasks/env"
+# # Uncomment this line to push environment variables to Secrets Manager during
+# # deployment, and have the proc_wrapper read them during runtime.
+# # secrets_manager_env_path: "{{ project_name | replace('-', '_') }}/{{env}}/tasks/env"
 
 use_secrets_manager: "{{ (secrets_manager_env_path is defined) and secrets_manager_env_path }}"
 
 project_build_options:
+  # # Override to use a non-default ECR host
+  # container_registry_host: "1234556789012.dkr.ecr.us-east-1.amazonaws.com"
+  # container_repository: "{{project_name}}"
+
+  # # These are used to set the image name and tag on the machine running
+  # # the deployer.
+  # source_docker_image_name_without_tag: "{{project_name}}"
+  # source_docker_image_tag: "{{env}}_{{task_version_signature}}"
+
+  # # These are used to set the image name and tag in the repository in the
+  # # container registry.
+  # target_docker_image_name_without_tag: "1234556789012.dkr.ecr.us-east-1.amazonaws.com/{{project_name}}"
+  # target_docker_image_tag: "{{env}}_{{task_version_signature}}"
+
   # dockerfile_path: "{{ docker_context_dir }}/Dockerfile"
 
-  # Options passed after "docker" to all docker commands
+  # # Options passed after "docker" to all docker commands
   # docker_common_general_options: ""
 
-  # Options passed after "docker" and "build"
+  # # Options passed after "docker" and "build"
   # docker_build_general_options: "--debug"
 
-  # Additional options passed after "docker build"
+  # # Additional options passed after "docker build"
   extra_docker_build_args: ""
 
   # # Options passed between "docker" and "tag"
@@ -72,7 +86,6 @@ project_cloudreactor:
 # # Will be overridden by Run Environment settings, per-environment settings,
 # # and per-Task settings.
 # project_ecs:
-#   ecr_repository: "{{ project_name }}"
 #   cluster_arn: "{{ env }}"
 #   # Required when deploying a scheduled task without CloudReactor
 #   # execution_role_arn: arn:aws:iam::123456789012:role/ecsTaskExecutionRole
