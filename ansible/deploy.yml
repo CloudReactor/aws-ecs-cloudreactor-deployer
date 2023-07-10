@@ -35,12 +35,18 @@
     project_env_aws: "{{ (project_aws | default({})) | combine(env_aws | default({}), recursive=True) }}"
     task_indep_aws: "{{ run_environment_aws | combine(project_env_aws, recursive=True) }}"
     aws_region: "{{ task_indep_aws.region | default(lookup('env', 'AWS_DEFAULT_REGION')) }}"
-    container_registry_host: "{{ task_indep_aws.account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com"
-
     project_env_ecs: "{{ (project_ecs | default({})) | combine(env_ecs | default({}), recursive=True) }}"
     task_indep_ecs: "{{ run_environment_ecs | combine(project_env_ecs, recursive=True) }}"
 
+    ecr_aws_account_id: "{{ build_options.ecr_aws_account_id | default(task_indep_aws.account_id) }}"
+    ecr_aws_region: "{{ build_options.ecr_aws_region | default(aws_region) }}"
+    container_registry_host: "{{ ecr_aws_account_id }}.dkr.ecr.{{ ecr_aws_region }}.amazonaws.com"
     container_repository: "{{ build_options.container_repository | default(project_name) }}"
+    # # Setting this causes "Cannot modify repository encryption type" error
+    # default_ecr_encryption_configuration:
+    #  encryption_type: AES256
+    # ecr_encryption_configuration: "{{ build_options.ecr_encryption_configuration | default(default_ecr_encryption_configuration) }}"
+
     source_docker_image_tag: "{{ build_options.docker_image_tag | default(env + '_' + task_version_signature) }}"
     source_docker_image_name_without_tag: "{{ build_options.source_docker_image_name_without_tag | default(project_name) }}"
     source_docker_image_name: "{{ source_docker_image_name_without_tag }}:{{source_docker_image_tag}}"
@@ -201,9 +207,13 @@
       - build
 
   - name: Create ECR repository
-    ecs_ecr:
+    community.aws.ecs_ecr:
+      registry_id: "{{ ecr_aws_account_id }}"
       name: "{{container_repository}}"
-      region: "{{aws_region}}"
+      region: "{{ecr_aws_region}}"
+      # Setting this causes "Cannot modify repository encryption type" error
+      # encryption_configuration: "{{ ecr_encryption_configuration }}"
+
     when: requires_build
     tags:
       - upload
