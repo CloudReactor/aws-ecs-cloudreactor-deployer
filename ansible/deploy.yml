@@ -40,12 +40,15 @@
 
     ecr_aws_account_id: "{{ build_options.ecr_aws_account_id | default(task_indep_aws.account_id) }}"
     ecr_aws_region: "{{ build_options.ecr_aws_region | default(aws_region) }}"
-    container_registry_host: "{{ ecr_aws_account_id }}.dkr.ecr.{{ ecr_aws_region }}.amazonaws.com"
+    container_registry_host: "{{ build_options.container_registry_host | default(ecr_aws_account_id + '.dkr.ecr.' + ecr_aws_region + '.amazonaws.com') }}"
     container_repository: "{{ build_options.container_repository | default(project_name) }}"
     # # Setting this causes "Cannot modify repository encryption type" error
     # default_ecr_encryption_configuration:
     #  encryption_type: AES256
     # ecr_encryption_configuration: "{{ build_options.ecr_encryption_configuration | default(default_ecr_encryption_configuration) }}"
+
+    use_private_ecr: "{{ container_registry_host is match('\\d+\\.dkr\\.ecr\\.[a-z0-9\\-]+\\.amazonaws\\.com') }}"
+    use_public_ecr: "{{ container_registry_host == 'public.ecr.aws' }}"
 
     source_docker_image_tag: "{{ build_options.docker_image_tag | default(env + '_' + task_version_signature) }}"
     source_docker_image_name_without_tag: "{{ build_options.source_docker_image_name_without_tag | default(project_name) }}"
@@ -206,15 +209,14 @@
     tags:
       - build
 
-  - name: Create ECR repository
+  - name: Create private ECR repository
     community.aws.ecs_ecr:
       registry_id: "{{ ecr_aws_account_id }}"
       name: "{{container_repository}}"
       region: "{{ecr_aws_region}}"
       # Setting this causes "Cannot modify repository encryption type" error
       # encryption_configuration: "{{ ecr_encryption_configuration }}"
-
-    when: requires_build
+    when: requires_build and use_private_ecr
     tags:
       - upload
       - create_ecr_repo
@@ -225,9 +227,15 @@
     tags:
       - upload
 
-  - name: Login to Docker Repository
-    shell: "aws ecr get-login-password --region {{task_indep_aws.region | quote}} | docker {{docker_common_general_options}} login --username AWS --password-stdin {{container_registry_host}}"
-    when: requires_build
+  - name: Login to private AWS ECR
+    shell: "aws ecr get-login-password --region {{ecr_aws_region | quote}} | docker {{docker_common_general_options}} login --username AWS --password-stdin {{container_registry_host}}"
+    when: requires_build and use_private_ecr
+    tags:
+      - upload
+
+  - name: Login to AWS ECR Public
+    shell: "aws ecr-public get-login-password --region {{ecr_aws_region | quote}} | docker {{docker_common_general_options}} login --username AWS --password-stdin {{container_registry_host}}"
+    when: requires_build and use_public_ecr
     tags:
       - upload
 

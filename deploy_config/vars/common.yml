@@ -23,7 +23,11 @@ project_build_options:
   # ecr_aws_account_id: "1234556789013"
   # ecr_aws_region: "us-east-2"
 
-  # container_repository: "{{project_name}}"
+  # # Uncomment and change container_repository to use ECR Public.
+  # # Repositories can be created with Terraform, see:
+  # # https://github.com/CloudReactor/example_aws_infrastructure_terraform/tree/master/public-ecr
+  # container_registry_host: public.ecr.aws
+  # container_repository: "deadbeef/aws-ecs-cloudreactor-deployer-samples"
 
   # # These are used to set the image name and tag on the machine running
   # # the deployer.
