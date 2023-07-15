@@ -165,7 +165,7 @@ fi
 # DockerHub by setting
 # DOCKER_IMAGE_NAME="cloudreactor/aws-ecs-cloudreactor-deployer"
 # Or, if deploying from within AWS, use the image in AWS ECR Public:
-# DOCKER_IMAGE_NAME=public.ecr.aws/x2w9p9b7/aws_ecs_cloudreactor_deployer
+# DOCKER_IMAGE_NAME=public.ecr.aws/cloudreactor/aws_ecs_cloudreactor_deployer
 # You can also use a custom image by setting DOCKER_IMAGE_NAME.
 if [ -z "$DOCKER_IMAGE_NAME" ]
   then
