@@ -120,7 +120,7 @@ and customize it. Common properties for all deployment environments can
 be entered in `deploy_config/vars/common.yml`. There you can set the
 command-lines that each Task in your project runs. For example:
 
-    task_name_to_config:
+    project_task_name_to_config:
       smoke:
         command: "echo 'hi'"
         ...
@@ -201,15 +201,15 @@ filter. The precedence of settings, from lowest to highest is:
 2. Deployment environment AWS and ECS settings -- found in `project_aws` and `project_ecs` in `deploy_config/vars/<environment>.yml`
 2. Default Task settings -- found in `project_task_config` in `deploy_config/vars/common.yml`,
 defines default settings for all Tasks
-3. Per environment settings -- found in `env_to_default_task_config.<environment>` in
+3. Per environment settings -- found in `env_to_task_config.<environment>` in
 `deploy_config/vars/common.yml` defines per environment settings for all Tasks
-4. Per Task settings -- found in `task_name_to_config.<task_name>` in `deploy_config/vars/common.yml`
+4. Per Task settings -- found in `project_task_name_to_config.<task_name>` in `deploy_config/vars/common.yml`
 5. Per environment, per Task settings -- found in `env_to_task_name_to_config.<environment>.<task_name>` in `deploy_config/vars/common.yml`)
 6. Secret per environment settings -- found in `env_task_config` in `deploy_config/vars/<environment>.yml`, overrides per environment settings for
 all Tasks.
 See `deploy_config/vars/example.yml` an example.
 8. Secret per environment, per Task settings -- found in
-`task_name_to_env_config.<task_name>` in `deploy_config/vars/<environment>.yml` overrides per environment, per Task settings
+`env_task_name_to_config.<task_name>` in `deploy_config/vars/<environment>.yml` overrides per environment, per Task settings
 
 ## Custom build steps
 
@@ -480,17 +480,17 @@ See [action.yml](action.yml) for a full list of options.
 
       AnsibleFilterError: |combine expects dictionaries, got None"}
 
-This may be caused by defining a property like a task under `task_name_to_config`
+This may be caused by defining a property like a task under `project_task_name_to_config`
 in `deploy_config/vars/common.yml`:
 
-    task_name_to_config:
+    project_task_name_to_config:
        some_task:
        another_task:
          schedule: cron(9 15 * * ? *)
 
 `some_task` is missing a dictionary value so the corrected version is:
 
-    task_name_to_config:
+    project_task_name_to_config:
        some_task: {}
        another_task:
          schedule: cron(9 15 * * ? *)

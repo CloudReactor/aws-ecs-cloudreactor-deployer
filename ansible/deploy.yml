@@ -97,11 +97,11 @@
     # project_task_config (defined in common.yml) contains common, non-secret
     # Task settings for all deployment environments, unless overridden.
     #
-    # env_to_default_task_config (defined in common.yml) is a mapping from
+    # env_to_task_config (defined in common.yml) is a mapping from
     # deployment environment name to non-secret Task settings common to all
     # Tasks, unless overridden.
-    env_to_default_task_config_safe: "{{ env_to_default_task_config | default({}) }}"
-    env_default_task_config: "{{ env_to_default_task_config_safe[env] | default({}) }}"
+    env_to_task_config_safe: "{{ env_to_task_config | default({}) }}"
+    env_default_task_config: "{{ env_to_task_config_safe[env] | default({}) }}"
 
     # env_task_config comes from [env].yml.
     # It contains secret Task settings for all Tasks in the deployment
@@ -114,20 +114,45 @@
     env_to_task_name_to_config_safe: "{{ env_to_task_name_to_config | default({}) }}"
     env_task_name_to_config: "{{ env_to_task_name_to_config_safe[env] | default({}) }}"
 
-    # task_name_to_env_config (defined in [env].yml) is a mapping from Task name
+    # env_task_name_to_config (defined in [env].yml) is a mapping from Task name
     # to possibly secret Task settings specific to the deployment environment.
-    task_name_to_env_config_safe: "{{ task_name_to_env_config | default({}) }}"
+    env_task_name_to_config_safe: "{{ env_task_name_to_config | default({}) }}"
 
-    # task_name_to_config (defined in common.yml)  is a mapping from Task name
+    # project_task_name_to_config (defined in common.yml)  is a mapping from Task name
     # to non-secret Task settings common to all deployment environments,
     # unless overridden.
-    resolved_task_name_to_config: "{{ task_name_to_config | combine(env_task_name_to_config, task_name_to_env_config_safe, recursive=True) }}"
+    resolved_task_name_to_config: "{{ project_task_name_to_config | combine(env_task_name_to_config, env_task_name_to_config_safe, recursive=True) }}"
     resolved_task_names: "{{ (resolved_task_name_to_config | dict2items | json_query('[?((value.deployed==undefined)||(to_string(value.deployed)==to_string(`true`)) || (to_string(value.deployed)==`True`))].key')) if (task_names | upper) == 'ALL' else task_names.split(',') }}"
     resolved_deployed_task_name_to_config_query: "{{ '[?(key==`' +  resolved_task_names | join('`)||(key==`') + '`)]' }}"
     resolved_deployed_task_name_to_config: "{{ resolved_task_name_to_config | dict2items | json_query(resolved_deployed_task_name_to_config_query) | items2dict }}"
     requires_build: "{{ (resolved_deployed_task_name_to_config | dict2items | json_query('[?((value.ecs.task_definition_arn==undefined)||(value.ecs.task_definition_arn==`__unset__`))]')) | length > 0 }}"
 
   tasks:
+  - name: Check legacy <4.0 properties
+    fail:
+      msg:
+        - "A legacy property was detected. Starting in version 4.0 of this
+        deployer, the following property names were renamed:"
+        - ""
+        - project_name => project_metadata.name
+        - project_url => project_metadata.source_repository
+        - "use_task_role => (use the task_role_arn property under an 'ecs' configuration, such as 'env_ecs')"
+        - "use_secrets_manager => (use the 'task_runtime_env_secret_path' and 'store_task_runtime_env_in_secrets_manager' property under a 'deployment' configuration, such as 'env_deployment')"
+        - "default_build_options => project_build_options"
+        - "default_cloudreactor => project_cloudreactor"
+        - "env_to_default_task_config  => env_to_task_config"
+        - "cloudreactor => env_cloudreactor"
+        - "default_env_task_config => env_task_config"
+        - "task_name_to_env_config => env_task_name_to_config"
+    when: (project_url is defined) or (project_url is defined) or
+      (use_task_role is defined) or (use_secrets_manager is defined) or
+      (default_build_options is defined) or
+      (default_cloudreactor is defined) or (default_task_config is defined) or
+      (task_name_to_config is defined) or
+      (env_to_default_task_config is defined) or (cloudreactor is defined) or
+      (default_env_task_config is defined) or
+      (task_name_to_env_config is defined)
+
   - name: Get configuration from CloudReactor Run Environment
     uri:
       url: "{{ cloudreactor_api_base_url }}/api/v1/run_environments/?name={{ run_environment_name | urlencode }}"
@@ -190,7 +215,7 @@
       - build
 
   - debug:
-      msg: "task_name_to_config = {{ task_name_to_config }}"
+      msg: "project_task_name_to_config = {{ project_task_name_to_config }}"
       verbosity: 2
 
   - debug:
@@ -198,7 +223,7 @@
       verbosity: 2
 
   - debug:
-      msg: "task_name_to_env_config_safe = {{ task_name_to_env_config_safe }}"
+      msg: "env_task_name_to_config_safe = {{ env_task_name_to_config_safe }}"
       verbosity: 2
 
   - debug:

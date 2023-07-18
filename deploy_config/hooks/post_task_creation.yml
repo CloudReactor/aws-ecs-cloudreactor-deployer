@@ -7,7 +7,7 @@
 
 # # Below is an example of running a Task immediately after it is deployed,
 # # in the case a DB migration Task which should appear first in
-# # task_name_to_config. This ensures the Task is run before the other Tasks
+# # project_task_name_to_config. This ensures the Task is run before the other Tasks
 # # are deployed. The Task creation response will be available in the variable
 # # cloudreactor_task, so you can use it start a Task Execution immediately.
 #

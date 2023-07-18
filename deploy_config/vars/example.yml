@@ -121,7 +121,7 @@ env_task_config:
     # DATABASE_PASWORD_FOR_PROC_WRAPPER_TO_RESOLVE: arn:aws:secretsmanager:us-west-2:123456789012:secret:app/example/db|JP:$.password
 
 # For any Tasks that require overrides vs. common.yml, enter those overrides here.
-task_name_to_env_config:
+env_task_name_to_config:
   smoke:
     env:
       SMOKE_SECRET_KEY: "xyz"

@@ -133,11 +133,11 @@ project_cloudreactor:
 # Run Environment, set the property value to null.
 # See https://apidocs.cloudreactor.io/#operation/tasks_create for a list of all
 # properties.
-# These properties can also be applied to task_name_to_config[task_name] and
+# These properties can also be applied to project_task_name_to_config[task_name] and
 # env_task_config[task_name], which will override those set here.
 project_task_config:
   # # Set to false to skip this Task's deployment. This is usually set per-Task
-  # # in task_name_to_config[task_name].deployed
+  # # in project_task_name_to_config[task_name].deployed
   # deployed: "{{ env == 'staging' }}"
 
   # # Environment variables to set in the process environment
@@ -478,17 +478,17 @@ project_task_config:
 
 # These are per-Task settings that will inherit and override the settings in
 # project_task_config, in all environments.
-# To add a Task, add a property to task_name_to_config (e.g. task_1, file_io)
+# To add a Task, add a property to project_task_name_to_config (e.g. task_1, file_io)
 # Each Task must at a minimum define which command to run i.e.
 # `command: python main.py`
-task_name_to_config:
+project_task_name_to_config:
   smoke:
     deployed: true
 
     # # Set to false to disable the Tasks's schedule/service in CloudReactor.
     # # Usually you should leave this unset and manage the setting in the
     # # CloudReactor dashboard. This is usually set per-Task in
-    # # task_name_to_config[task_name].enabled
+    # # project_task_name_to_config[task_name].enabled
     # enabled: true
 
     # Override to set the name of the Task in CloudReactor. Ensure that Task names
@@ -501,7 +501,7 @@ task_name_to_config:
     # # To execute the Task on a schedule, a cron or rate expression can be used.
     # # Expression syntax is documented here:
     # # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
-    # # This is usually set per-Task in task_name_to_config[task_name].schedule
+    # # This is usually set per-Task in project_task_name_to_config[task_name].schedule
     # schedule: cron(0 12 * * ? *)
 
     # # The number of Task Executions to create at the scheduled time.
@@ -641,9 +641,9 @@ task_name_to_config:
         link_url_template: "http://flask-example-xxx.us-west-1.elb.amazonaws.com/"
         description: Main web page
 
-# env_to_default_task_config is a mapping from deployment environment name to
+# env_to_task_config is a mapping from deployment environment name to
 # non-secret Task settings common to all Tasks.
-env_to_default_task_config:
+env_to_task_config:
   staging:
     # aws:
     #   network:
