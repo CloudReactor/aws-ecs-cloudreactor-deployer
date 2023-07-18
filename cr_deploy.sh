@@ -160,16 +160,29 @@ if [ -n "$DOCKERFILE_PATH" ]
     EXTRA_DOCKER_RUN_OPTIONS="$EXTRA_DOCKER_RUN_OPTIONS -e DOCKERFILE_PATH=$DOCKERFILE_PATH"
 fi
 
-# The default Docker image name is "ghcr.io/cloudreactor/aws-ecs-cloudreactor-deployer"
-# which comes from GitHub Packages. You may also get the image from
-# DockerHub by setting
+# The default Docker image comes from GitHub Packages. However, if we
+# detect that this process is running in AWS CodeBuild or AWS ECS, in the
+# default Docker image comes from AWS ECR Public.
+# You may also get the image from 1) DockerHub; or 2) your local repository if
+# you ran ./build.sh; by setting
 # DOCKER_IMAGE_NAME="cloudreactor/aws-ecs-cloudreactor-deployer"
-# Or, if deploying from within AWS, use the image in AWS ECR Public:
-# DOCKER_IMAGE_NAME=public.ecr.aws/cloudreactor/aws_ecs_cloudreactor_deployer
-# You can also use a custom image by setting DOCKER_IMAGE_NAME.
+# You can also use a custom image by setting DOCKER_IMAGE_NAME explicitly.
+ECR_IMAGE_NAME="public.ecr.aws/cloudreactor/aws_ecs_cloudreactor_deployer"
+GHCR_IMAGE_NAME="ghcr.io/cloudreactor/aws-ecs-cloudreactor-deployer"
+
 if [ -z "$DOCKER_IMAGE_NAME" ]
   then
-    DOCKER_IMAGE_NAME="ghcr.io/cloudreactor/aws-ecs-cloudreactor-deployer"
+    if [ -n "$GITHUB_ACTION" ]
+      then
+        DOCKER_IMAGE_NAME=$GHCR_IMAGE_NAME
+      else
+        if [ -n "$CODEBUILD_BUILD_ARN" ] || [ -n "$ECS_CONTAINER_METADATA_URI" ]
+          then
+            DOCKER_IMAGE_NAME=$ECR_IMAGE_NAME
+          else
+            DOCKER_IMAGE_NAME=$GHCR_IMAGE_NAME
+        fi
+    fi
 fi
 
 echo "Docker image name = $DOCKER_IMAGE_NAME"
