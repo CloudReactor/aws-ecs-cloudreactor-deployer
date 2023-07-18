@@ -7,7 +7,13 @@
     - "{{deploy_config_dir}}/vars/common.yml"
     - "{{deploy_config_dir}}/vars/{{config_filename_stem}}.yml"
   vars:
+    project_env_metadata: "{{ project_metadata | combine(env_metadata | default({}), recursive=True) }}"
+    project_name: "{{ project_env_metadata.name }}"
+    project_version_number: "{{ project_env_metadata.version_number }}"
+    project_version_text: "{{ project_env_metadata.version_text }}"
+    source_repository_url: "{{ project_env_metadata.source_repository_url }}"
     task_version_signature: "{{ lookup('env','CLOUDREACTOR_TASK_VERSION_SIGNATURE') | default(ansible_date_time.iso8601_basic, true) }}"
+
     work_dir: "{{ lookup('env', 'WORK_DIR') | default('.', true) }}"
     docker_context_dir: "{{ lookup('env', 'CONTAINER_DOCKER_CONTEXT_DIR') | default(work_dir, true) }}"
     deploy_config_dir: "{{ work_dir }}/deploy_config"
@@ -21,6 +27,12 @@
     extra_docker_tag_args: "{{ lookup('env', 'EXTRA_DOCKER_TAG_ARGS') | default(build_options.extra_docker_tag_args | default(''), true) }}"
     docker_push_general_options: "{{ lookup('env', 'DOCKER_PUSH_GENERAL_OPTIONS') | default(build_options.docker_push_general_options | default(''), true) }}"
     extra_docker_push_args: "{{ lookup('env', 'EXTRA_DOCKER_PUSH_ARGS') | default(build_options.extra_docker_push_args | default(''), true) }}"
+
+    project_env_deployment: "{{ project_deployment | combine(env_deployment | default({}), recursive=True) }}"
+    task_runtime_env_secret_path: "{{ project_env_deployment.task_runtime_env_secret_path | default('__unset__') }}"
+    store_task_runtime_env_in_secrets_manager: "{{ (project_env_deployment.store_task_runtime_env_in_secrets_manager | default(false)) and (task_runtime_env_secret_path != '__unset__') }}"
+    container_registry_credentials_secret_path: "{{ project_env_deployment.container_registry_credentials_secret_path | default('__unset__') }}"
+    store_container_registry_credentials_in_secrets_manager: "{{ project_env_deployment.store_container_registry_credentials_in_secrets_manager | default(false, true) }}"
 
     resolved_cloudreactor: "{{ project_cloudreactor | default({}) | combine(env_cloudreactor | default({}), recursive=True) }}"
     cloudreactor_enabled: "{{ resolved_cloudreactor.enabled | default(true) }}"
@@ -49,6 +61,29 @@
 
     use_private_ecr: "{{ container_registry_host is match('\\d+\\.dkr\\.ecr\\.[a-z0-9\\-]+\\.amazonaws\\.com') }}"
     use_public_ecr: "{{ container_registry_host == 'public.ecr.aws' }}"
+    container_registry_username: "{{ lookup('env', 'CONTAINER_REGISTRY_USERNAME') | \
+      default(('AWS' if (use_private_ecr or use_public_ecr) else build_options.container_registry_username) if requires_build else '__unset__', true) }}"
+    container_registry_password: "{{ lookup('env', 'CONTAINER_REGISTRY_PASSWORD') | default(build_options.container_registry_password, true) | default('__unset__', true) }}"
+
+    container_registry_password_command: "{{
+      (
+        ('aws ecr get-login-password --region ' + (ecr_aws_region | quote))
+        if use_private_ecr
+        else
+        (
+          ('aws ecr-public get-login-password --region ' + (ecr_aws_region | quote))
+          if use_public_ecr
+          else
+          ('echo ' + (container_registry_password | quote))
+        )
+      )
+      if requires_build
+      else none
+    }}"
+
+    container_registry_pull_credentials:
+      username: "{{ lookup('env', 'CONTAINER_REGISTRY_PULL_USERNAME') | default(project_env_deployment.container_registry_pull_username | default(container_registry_username), true) }}"
+      password: "{{ lookup('env', 'CONTAINER_REGISTRY_PULL_PASSWORD') | default(project_env_deployment.container_registry_pull_password | default(container_registry_password), true) }}"
 
     source_docker_image_tag: "{{ build_options.docker_image_tag | default(env + '_' + task_version_signature) }}"
     source_docker_image_name_without_tag: "{{ build_options.source_docker_image_name_without_tag | default(project_name) }}"
@@ -227,15 +262,10 @@
     tags:
       - upload
 
-  - name: Login to private AWS ECR
-    shell: "aws ecr get-login-password --region {{ecr_aws_region | quote}} | docker {{docker_common_general_options}} login --username AWS --password-stdin {{container_registry_host}}"
-    when: requires_build and use_private_ecr
-    tags:
-      - upload
-
-  - name: Login to AWS ECR Public
-    shell: "aws ecr-public get-login-password --region {{ecr_aws_region | quote}} | docker {{docker_common_general_options}} login --username AWS --password-stdin {{container_registry_host}}"
-    when: requires_build and use_public_ecr
+  - name: Login to container repository
+    shell: "{{ container_registry_password_command }} | docker {{docker_common_general_options}} login --username {{ container_registry_username | quote }} --password-stdin {{container_registry_host}}"
+    no_log: true
+    when: requires_build
     tags:
       - upload
 
@@ -244,6 +274,34 @@
     when: requires_build
     tags:
       - upload
+
+  - name: Upload container registry credentials to AWS Secrets Manager
+    community.aws.aws_secret:
+      name: "{{ container_registry_credentials_secret_path }}"
+      state: present
+      json_secret: "{{ container_registry_pull_credentials | to_json }}"
+      region: "{{ aws_region }}"
+      tags:
+        Environment: "{{ env }}"
+    when: store_container_registry_credentials_in_secrets_manager and (container_registry_credentials_secret_path != '__unset')
+
+  # Uploads your locally encrypted .env file to Secrets Manager each time you
+  # deploy. This does not support secret paths that start with "arn:".
+  - name: Upload .env file to AWS Secrets Manager
+    community.aws.aws_secret:
+      name: "{{ task_runtime_env_secret_path }}"
+      state: present
+      secret_type: 'string'
+      secret: "{{ lookup('file', deploy_config_dir + '/env/.env.' + config_filename_stem) }}"
+      region: "{{ aws_region }}"
+      tags:
+        Environment: "{{ env }}"
+    register: create_dotenv_secret_result
+    when: store_task_runtime_env_in_secrets_manager
+
+  - debug:
+      msg: "Secret: {{create_dotenv_secret_result}}"
+    when: store_task_runtime_env_in_secrets_manager
 
   - name: Check if post-build hook file exists
     stat:
@@ -265,7 +323,7 @@
     tags:
       - create_tasks
 
-  - name: Logout of ECR
+  - name: Logout of container repository
     command: "docker {{docker_common_general_options}} logout {{container_registry_host}}"
     when: requires_build
     tags:

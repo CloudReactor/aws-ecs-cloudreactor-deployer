@@ -1,22 +1,12 @@
-project_name: "aws-ecs-cloudreactor-deployer-sample"
-project_version_text: 4.0.0
+project_metadata:
+  name: "aws-ecs-cloudreactor-deployer-sample"
+  version_text: 4.0.0
 
-# # Optionally, provide a steadily increasing whole number to indicate which
-# # build is more updated than another.
-# # project_version_number: 1
-project_url: "https://github.com/CloudReactor/aws-ecs-cloudreactor-deployer"
+  # # Optionally, provide a steadily increasing whole number to indicate which
+  # # build is more updated than another.
+  # version_number: 1
 
-# # Uncomment this line to use an IAM role for the Task Role.
-# # task_role_name: "{{ project_name }}_task_{{env}}"
-task_role_name: null
-
-use_task_role: "{{ (task_role_name is defined) and (task_role_name != '__unset__') }}"
-
-# # Uncomment this line to push environment variables to Secrets Manager during
-# # deployment, and have the proc_wrapper read them during runtime.
-# # secrets_manager_env_path: "{{ project_name | replace('-', '_') }}/{{env}}/tasks/env"
-
-use_secrets_manager: "{{ (secrets_manager_env_path is defined) and secrets_manager_env_path }}"
+  source_repository_url: "https://github.com/CloudReactor/aws-ecs-cloudreactor-deployer"
 
 project_build_options:
   # # Override to use a non-default ECR account and/or region
@@ -61,6 +51,45 @@ project_build_options:
 
   # # Additional options passed after "docker push"
   # extra_docker_push_args: ""
+
+project_deployment:
+  # # Credentials used to pull an image from the container repository before
+  # # a Task is run by ECS. These default to container_registry_username
+  # # and container_registry_password in project_build_options or
+  # # env_build_options.
+  # container_registry_pull_username:
+  # container_registry_pull_password:
+
+  # # Uncomment to set the path in Secrets Manager to that has a JSON value
+  # # consisting of the "username" and "password" property, that can be read
+  # # by the Task Execution role to authenticate with the container registry.
+  # # For images in AWS ECR (public or private), this is not needed, as
+  # # the Task Execution role be granted permissions via IAM.
+  # # For GitHub Container Registry, the username should be a GitHub username
+  # # that has the read:packages scope and the password should be a personal
+  # # access token (classic).
+  # # For more more information on the using a personal access token to
+  # # authenticate, see https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry
+  # # For other repositories, for example Docker Hub, use a username and
+  # # password for an account that has read access to the repository.
+  # #
+  # # The Task Execution role (execution_role_arn in ECS settings)
+  # # must have permission to read secrets from this path.
+  # container_registry_credentials_secret_path: "CloudReactor/{{env}}/common/ghcr.json"
+
+  # Set to true to store the container registry pull credentials in Secrets
+  # Manager during deployment.
+  store_container_registry_credentials_in_secrets_manager: false
+
+  # # Uncomment and override to set the path in Secrets Manager that has a
+  # # string value in the dotenv format, containing environment variables read
+  # # by Tasks at runtime. proc_wrapper will read them during runtime and
+  # # inject them in the process environment of your Tasks.
+  # task_runtime_env_secret_path: "{{ project_name | replace('-', '_') }}/{{env}}/tasks/env"
+
+  # # Set to true to store the environment variables in Secrets Manager during
+  # # deployment.
+  store_task_runtime_env_in_secrets_manager: false
 
 project_cloudreactor:
   # # Base URL of API server. Can be overridden if you're running your own
@@ -145,7 +174,7 @@ project_task_config:
     # execution_role_arn: arn:aws:iam::123456789012:role/ecsEventsRole
 
     # # Results in an empty string if task_role_arn is null, but that's ok.
-    task_role_arn: "{{ (('arn:aws:iam::' + task_indep_aws.account_id + ':role/' + task_role_name) if use_task_role and (task_role_name is not none) else none) }}"
+    # task_role_arn: "{{project_name}}_{{env}}"
 
     # # See https://aws.amazon.com/fargate/pricing/ for supported combinations.
     cpu_units: 256
@@ -272,7 +301,11 @@ project_task_config:
     # # Top-level .env secret locations. The values in later locations take
     # # precedence over those in earlier locations.
     env_locations:
-      - "{{ ('arn:aws:secretsmanager:' + aws_region + ':' + task_indep_aws.account_id + ':secret:' + secrets_manager_env_path) if use_secrets_manager else '' }}"
+      - "{{ '' if task_runtime_env_secret_path == '__unset__' else (
+            task_runtime_env_secret_path if task_runtime_env_secret_path.startswith('arn:') else
+            ('arn:aws:secretsmanager:' + aws_region + ':' + task_indep_aws.account_id + ':secret:' + task_runtime_env_secret_path)
+          )
+        }}"
 
       # # Other examples
       # - arn:aws:s3:::examplebucket/{{env}}/app/config.json

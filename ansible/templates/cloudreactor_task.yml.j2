@@ -121,8 +121,8 @@ name: "{{cloudreactor_task_name}}"
 {{ prop_def(resolved_task_config, prop_name) }}
 {% endfor %}
 
-{% if project_url is defined %}
-project_url: "{{project_url}}"
+{% if source_repository_url is defined %}
+project_url: "{{source_repository_url}}"
 {% endif %}
 
 {% if wrapper.api_heartbeat_interval_seconds is defined %}

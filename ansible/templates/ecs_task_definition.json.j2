@@ -104,15 +104,24 @@
   {%- endif -%}
 {%- endmacro %}
 
+{% macro make_role_arn(v) -%}
+  {%- if not v -%}
+  {%- elif v.startswith('arn:') -%}
+    {{v}}
+  {%- else -%}
+    arn:aws:iam::{{ task_indep_aws.account_id }}:role/{{v}}
+  {%- endif -%}
+{%- endmacro %}
+
 {
     "requiresCompatibilities": [
         "FARGATE"
     ],
     "family": {{ task_definition_family | to_json }},
     "networkMode": "awsvpc",
-    "executionRoleArn": {{ resolved_ecs.execution_role_arn | to_json }},
+    "executionRoleArn": {{ make_role_arn(resolved_ecs.execution_role_arn) | to_json }},
     {% if (resolved_ecs.task_role_arn is defined) and (resolved_ecs.task_role_arn != '__unset__') %}
-    "taskRoleArn": {{ resolved_ecs.task_role_arn | to_json }},
+    "taskRoleArn": {{ make_role_arn(resolved_ecs.task_role_arn) | to_json }},
     {% endif %}
     "cpu": "{{cpu_units}}",
     "memory": "{{memory_mb}}",
@@ -132,6 +141,12 @@
         {
             "name": {{ main_container_name | to_json }},
             "image": {{ target_docker_image_name | to_json }},
+
+            {% if container_registry_credentials_secret_path != '__unset__' %}
+            "repositoryCredentials": {
+                "credentialsParameter": "arn:aws:secretsmanager:{{ aws_region }}:{{ task_indep_aws.account_id }}:secret:{{ container_registry_credentials_secret_path }}"
+            },
+            {% endif %}
             "cpu": {{ cpu_units - extra_container_cpu_units }},
             "memory": {{ memory_mb - extra_container_memory_mb }},
             "essential": true,

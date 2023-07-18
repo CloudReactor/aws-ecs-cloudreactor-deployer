@@ -5,14 +5,13 @@
 # ansible-vault or git-crypt, or that this file is included in .gitignore.
 # Otherwise you may commit secrets to your respository.
 
-# You can override your Run Environment's AWS settings here, but it shouldn't
-# be necessary unless:
-# a) You haven't specified security groups or subnets in
-# your Run Environment; or,
-# b) Want to use custom settings for this project (possibly for security and/or
-# isolation reasons); or,
-# c) You are not using CloudReactor to monitor and manage your tasks.
-#
+# Can override project_metadata in common.yml
+# env_metadata:
+#   name:
+#   version_text:
+#   source_repository_url:
+
+# Can override settings in project_cloudreactor in common.yml
 env_cloudreactor:
   # Required: the API key used to deploy the Tasks.
   # The key must have Developer access level or above and be scoped to the
@@ -35,8 +34,38 @@ env_cloudreactor:
   # # deploy.
   # run_environment: Your Staging
 
-# Override settings in project_build_options
+# # Can override settings in project_build_options
 # env_build_options:
+  # # Uncomment and change to use GitHub Container Repository
+  # container_registry_host: ghcr.io
+  # # GitHub username. This value also be specified with the environment variable
+  # # CONTAINER_REGISTRY_USERNAME
+  # #
+  # # Either:
+  # # 1) The GITHUB_TOKEN passed in by GitHub Actions; or
+  # # 2) a GitHub personal access token (classic), with access to write the
+  # # repository (the write:packages scope).
+  # # The value can also be specified with the environment variable
+  # # CONTAINER_REGISTRY_PASSWORD
+  # # For more information on the using the GITHUB_TOKEN to authenticate,
+  # # see https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions#upgrading-a-workflow-that-accesses-a-registry-using-a-personal-access-token
+  # # For more more information on the using a personal access token to
+  # # authenticate, see https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry
+  # container_registry_username: octocat
+  # container_registry_password: ghp_somepersonalaccesstokenclassic
+  # # Note that the first part (NAMESPACE) must be your GitHub username or
+  # # organization, lower-cased.
+  # container_repository: "cloudreactor/aws-ecs-cloudreactor-deployer-samples"
+
+  # # Uncomment if credentials are needed to pull the Docker image. If so,
+  # # this should be the path of the secret in AWS Secrets Manager which
+  # # contains the credentials. See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/private-auth.html
+  # container_registry_credentials_secret_path: CloudReactor/staging/common/ghcr.json
+
+  # # Set to true to store container registry credentials needed to pull the
+  # # Docker image, in AWS Secrets Manager, as part of the deployment process.
+  # store_container_registry_credentials_in_secrets_manager: false
+
 #   docker_common_general_options:
 #   docker_build_general_options:
 #   extra_docker_build_args:
@@ -45,6 +74,13 @@ env_cloudreactor:
 #   docker_push_general_options:
 #   extra_docker_push_args:
 
+# You can override your Run Environment's AWS settings here, but it shouldn't
+# be necessary unless:
+# a) You haven't specified security groups or subnets in
+# your Run Environment; or,
+# b) Want to use custom settings for this project (possibly for security and/or
+# isolation reasons); or,
+# c) You are not using CloudReactor to monitor and manage your tasks.
 # env_aws:
 #   account_id: 123456789012
 #   region: "us-west-2"
@@ -65,6 +101,13 @@ env_cloudreactor:
 #   # Required when deploying a scheduled task without CloudReactor
 #   # execution_role_arn: arn:aws:iam::123456789012:role/ecsTaskExecutionRole
 #   task_role_arn: arn:aws:iam::123456789012:role/myrole
+
+# # Can override project_deployment in common.yml
+# env_deployment:
+#   container_registry_credentials_secret_path: CloudReactor/staging/common/ghcr.json
+#   store_container_registry_credentials_in_secrets_manager: true
+#   task_runtime_env_secret_path: "aws_ecs_cloudreactor_deployer_example/staging/runtime.env"  # store_task_runtime_env_in_secrets_manager: true
+#   store_task_runtime_env_in_secrets_manager: true
 
 # Add Task settings that apply to all Tasks running in this deployment.
 # They will override the settings in common.yml.
