@@ -126,7 +126,7 @@
     "cpu": "{{cpu_units}}",
     "memory": "{{memory_mb}}",
 
-    {% if resolved_aws.tags is defined %}
+    {% if (resolved_aws.tags is defined) and not (resolved_aws.tags is none) %}
     "tags": [
       {% for name, value in resolved_aws.tags.items() %}
       {
