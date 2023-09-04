@@ -2,13 +2,13 @@
   set_fact:
     task_name: "{{ item }}"
     task_build_dir: "build/{{env}}/{{item}}"
-    resolved_task_config: "{{ task_indep_task_config | combine(resolved_task_name_to_config[item] | default({}), recursive=True) }}"
+    resolved_task_config: "{{ resolved_task_name_to_config[item] }}"
 
 - name: Set per-Task variables step 2
   set_fact:
     deployed: "{{resolved_task_config.deployed | default(true) }}"
-    resolved_aws: "{{ task_indep_aws | combine(resolved_task_config.aws | default({})) }}"
-    resolved_ecs: "{{ task_indep_ecs | combine(resolved_task_config.ecs | default({}), recursive=True) }}"
+    resolved_aws: "{{ resolved_task_config.aws }}"
+    resolved_ecs: "{{ resolved_task_config.ecs }}"
   tags:
     - always
 
@@ -27,6 +27,7 @@
 - name: Set per-Task variables step 4
   set_fact:
     predefined_task_definition_arn: "{{ resolved_ecs.task_definition_arn if (resolved_ecs.task_definition_arn is defined) and (resolved_ecs.task_definition_arn != '__unset__') else none }}"
+    predefined_docker_image_name: "{{ resolved_ecs.docker_image_name if (resolved_ecs.docker_image_name is defined) and (resolved_ecs.docker_image_name != '__unset__') else none }}"
     resolved_aws_awslogs: "{{ resolved_aws_logging.awslogs | default({}) }}"
   tags:
     - always
@@ -49,14 +50,14 @@
   tags:
     - always
 
-- name: Output Task properties
+- name: Output Task properties for {{task_name}}
   debug:
     msg: "{{ resolved_task_config | to_json }}"
     verbosity: 2
   tags:
     - always
 
-- name: Create task build directory {{task_name}}
+- name: Create Task build directory for {{task_name}}
   file:
     path: "{{task_build_dir}}"
     state: directory
@@ -89,7 +90,7 @@
   tags:
     - always
 
-- name: Set saved_cloudreactor_task
+- name: Set Task Definition ARN
   set_fact:
     task_definition_arn: "{{ (register_ecs_task_result.stdout | from_json).taskDefinition.taskDefinitionArn if register_ecs_task_result.stdout is defined else predefined_task_definition_arn }}"
   when: deployed and (not predefined_task_definition_arn)

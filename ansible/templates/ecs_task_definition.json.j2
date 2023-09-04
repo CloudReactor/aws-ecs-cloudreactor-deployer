@@ -140,8 +140,7 @@
     "containerDefinitions": [
         {
             "name": {{ main_container_name | to_json }},
-            "image": {{ target_docker_image_name | to_json }},
-
+            "image": {{ predefined_docker_image_name | default(target_docker_image_name, true) | to_json }},
             {% if container_registry_credentials_secret_path != '__unset__' %}
             "repositoryCredentials": {
                 "credentialsParameter": "arn:aws:secretsmanager:{{ aws_region }}:{{ task_indep_aws.account_id }}:secret:{{ container_registry_credentials_secret_path }}"

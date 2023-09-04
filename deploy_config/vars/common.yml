@@ -117,7 +117,7 @@ project_cloudreactor:
 #     # If you are running on private subnets, this must be false.
 #     assign_public_ip: false
 
-# # AWS settings for all Tasks.
+# # ECS settings for all Tasks.
 # # Will be overridden by Run Environment settings, per-environment settings,
 # # and per-Task settings.
 # project_ecs:
@@ -161,7 +161,10 @@ project_task_config:
   #    included: "{{ env == 'staging' }}"
 
   ecs:
-    # # Uncomment and change the value to deploy a pre-build ECS Task Definition
+    # # Uncomment and change the value to deploy a pre-built Docker image
+    # docker_image_name: "123456789012.dkr.ecr.us-east-1.amazonaws.com/aws-ecs-cloudreactor-deployer-sample:deadbeef"
+
+    # # Uncomment and change the value to deploy an existing ECS Task Definition
     # task_definition_arn: "arn:aws:ecs:{{ aws_region }}:{{ task_indep_aws.account_id }}:task-definition/aws-ecs-cloudreactor-deployer-sample_web_server_windows-dev:14"
 
     # # Required when deploying a scheduled task without CloudReactor. Can be ARN

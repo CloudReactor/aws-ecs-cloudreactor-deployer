@@ -3,9 +3,6 @@
 - name: "{{project_name}}"
   hosts: 127.0.0.1
   connection: local
-  vars_files:
-    - "{{deploy_config_dir}}/vars/common.yml"
-    - "{{deploy_config_dir}}/vars/{{config_filename_stem}}.yml"
   vars:
     project_env_metadata: "{{ project_metadata | combine(env_metadata | default({}), recursive=True) }}"
     project_name: "{{ project_env_metadata.name }}"
@@ -92,11 +89,16 @@
     target_docker_image_name_without_tag: "{{ build_options.target_docker_image_name_without_tag | default(container_registry_host + '/' + container_repository) }}"
     target_docker_image_name: "{{ target_docker_image_name_without_tag }}:{{target_docker_image_tag}}"
 
-    task_indep_task_config: "{{ project_task_config | default({}) | combine(env_default_task_config, env_task_config_safe, recursive=True) }}"
+    task_indep_task_infra_dict:
+      ecs: "{{ task_indep_ecs }}"
+      aws: "{{ task_indep_aws }}"
 
     # project_task_config (defined in common.yml) contains common, non-secret
     # Task settings for all deployment environments, unless overridden.
-    #
+    project_task_config_safe: "{{ project_task_config | default({}) }}"
+
+    task_indep_task_config: "{{ task_indep_task_infra_dict | combine(project_task_config_safe, env_default_task_config, env_task_config_safe, recursive=True) }}"
+
     # env_to_task_config (defined in common.yml) is a mapping from
     # deployment environment name to non-secret Task settings common to all
     # Tasks, unless overridden.
@@ -114,16 +116,23 @@
     env_to_task_name_to_config_safe: "{{ env_to_task_name_to_config | default({}) }}"
     env_task_name_to_config: "{{ env_to_task_name_to_config_safe[env] | default({}) }}"
 
+    indep_task_config_dict_entry:
+      value: "{{ task_indep_task_config }}"
+
     # project_task_name_to_config (defined in common.yml) is a mapping from Task name
     # to non-secret Task settings common to all deployment environments,
     # unless overridden.
-    resolved_task_name_to_config: "{{ project_task_name_to_config | combine(env_task_name_to_config, recursive=True) }}"
+    project_env_task_name_to_config_no_indep: "{{ project_task_name_to_config | combine(env_task_name_to_config, recursive=True) }}"
+    resolved_task_name_to_config: "{{ project_env_task_name_to_config_no_indep | dict2items | map('combine', indep_task_config_dict_entry, recursive=True) | items2dict | combine(project_env_task_name_to_config_no_indep, recursive=True) }}"
     resolved_task_names: "{{ (resolved_task_name_to_config | dict2items | json_query('[?((value.deployed==undefined)||(to_string(value.deployed)==to_string(`true`)) || (to_string(value.deployed)==`True`))].key')) if (task_names | upper) == 'ALL' else task_names.split(',') }}"
     resolved_deployed_task_name_to_config_query: "{{ '[?(key==`' +  resolved_task_names | join('`)||(key==`') + '`)]' }}"
     resolved_deployed_task_name_to_config: "{{ resolved_task_name_to_config | dict2items | json_query(resolved_deployed_task_name_to_config_query) | items2dict }}"
-    requires_build: "{{ (resolved_deployed_task_name_to_config | dict2items | json_query('[?((value.ecs.task_definition_arn==undefined)||(value.ecs.task_definition_arn==`__unset__`))]')) | length > 0 }}"
-
+    requires_build: "{{ (resolved_deployed_task_name_to_config | dict2items | json_query('[?(((value.ecs.task_definition_arn==undefined)||(value.ecs.task_definition_arn==`__unset__`))&&((value.ecs.docker_image_name==undefined)||(value.ecs.docker_image_name==`__unset__`)))]')) | length > 0 }}"
   tasks:
+  - name: Set project-level variables
+    include_vars: "{{deploy_config_dir}}/vars/common.yml"
+  - name: Set deployment environment-specific variables
+    include_vars: "{{deploy_config_dir}}/vars/{{config_filename_stem}}.yml"
   - name: Check legacy <4.0 properties
     fail:
       msg:
@@ -219,14 +228,10 @@
       verbosity: 2
 
   - debug:
-      msg: "env_task_name_to_config_safe = {{ env_task_name_to_config_safe }}"
-      verbosity: 2
-
-  - debug:
       msg: "resolved_task_name_to_config = {{ resolved_task_name_to_config }}"
       verbosity: 2
 
-  - debug: msg="Task version signature = {{task_version_signature}}, resolved task names = {{resolved_task_names}}"
+  - debug: msg="Task version signature = {{task_version_signature}}, resolved task names = {{resolved_task_names}}, requires_build = {{requires_build}}"
     tags:
       - version
       - build
@@ -272,6 +277,7 @@
       region: "{{ecr_aws_region}}"
       # Setting this causes "Cannot modify repository encryption type" error
       # encryption_configuration: "{{ ecr_encryption_configuration }}"
+    # TODO: add option to disable
     when: requires_build and use_private_ecr
     tags:
       - upload
