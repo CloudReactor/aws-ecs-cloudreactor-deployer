@@ -122,12 +122,12 @@
     # project_task_name_to_config (defined in common.yml) is a mapping from Task name
     # to non-secret Task settings common to all deployment environments,
     # unless overridden.
-    project_env_task_name_to_config_no_indep: "{{ project_task_name_to_config | combine(env_task_name_to_config, recursive=True) }}"
+    project_env_task_name_to_config_no_indep: "{{ project_task_name_to_config | default({}) | combine(env_task_name_to_config, recursive=True) }}"
     resolved_task_name_to_config: "{{ project_env_task_name_to_config_no_indep | dict2items | map('combine', indep_task_config_dict_entry, recursive=True) | items2dict | combine(project_env_task_name_to_config_no_indep, recursive=True) }}"
-    resolved_task_names: "{{ (resolved_task_name_to_config | dict2items | json_query('[?((value.deployed==undefined)||(to_string(value.deployed)==to_string(`true`)) || (to_string(value.deployed)==`True`))].key')) if (task_names | upper) == 'ALL' else task_names.split(',') }}"
-    resolved_deployed_task_name_to_config_query: "{{ '[?(key==`' +  resolved_task_names | join('`)||(key==`') + '`)]' }}"
-    resolved_deployed_task_name_to_config: "{{ resolved_task_name_to_config | dict2items | json_query(resolved_deployed_task_name_to_config_query) | items2dict }}"
-    requires_build: "{{ (resolved_deployed_task_name_to_config | dict2items | json_query('[?(((value.ecs.task_definition_arn==undefined)||(value.ecs.task_definition_arn==`__unset__`))&&((value.ecs.docker_image_name==undefined)||(value.ecs.docker_image_name==`__unset__`)))]')) | length > 0 }}"
+    resolved_task_names: "{{ (resolved_task_name_to_config | dict2items | json_query('[?((value.deployed==undefined) || (to_string(value.deployed)==to_string(`true`)) || (to_string(value.removed_from_task_manager)==to_string(`true`)))].key')) if (task_names | upper) == 'ALL' else task_names.split(',') }}"
+    resolved_sync_required_task_name_to_config_query: "{{ '[?(key==`' +  resolved_task_names | join('`)||(key==`') + '`)]' }}"
+    resolved_sync_required_task_name_to_config: "{{ resolved_task_name_to_config | dict2items | json_query(resolved_sync_required_task_name_to_config_query) | items2dict }}"
+    requires_build: "{{ (resolved_sync_required_task_name_to_config | dict2items | json_query('[?(((value.ecs.task_definition_arn==undefined)||(value.ecs.task_definition_arn==`__unset__`))&&((value.ecs.docker_image_name==undefined)||(value.ecs.docker_image_name==`__unset__`))&&(to_string(value.removed_from_task_manager)!=to_string(`true`)))]')) | length > 0 }}"
   tasks:
   - name: Set project-level variables
     include_vars: "{{deploy_config_dir}}/vars/common.yml"
@@ -136,7 +136,7 @@
   - name: Check legacy <4.0 properties
     fail:
       msg:
-        - "A legacy property was detected. Starting in version 4.0 of this
+        - "A legacy property was detected. Starting in version 4.0 of the
         deployer, the following property names were renamed:"
         - ""
         - project_name => project_metadata.name
@@ -169,7 +169,7 @@
     when: cloudreactor_enabled
     tags:
       - upload
-      - create_tasks
+      - sync_tasks
 
   - name: Ensure Runtime Environment is found
     assert:
@@ -179,7 +179,7 @@
     when: cloudreactor_enabled
     tags:
       - upload
-      - create_tasks
+      - sync_tasks
 
   - name: Output Runtime Environment
     debug:
@@ -187,7 +187,7 @@
       verbosity: 1
     when: cloudreactor_enabled
     tags:
-      - create_tasks
+      - sync_tasks
 
   - name: Output Task Independent AWS settings
     debug:
@@ -195,7 +195,7 @@
       verbosity: 1
     tags:
       - upload
-      - create_tasks
+      - sync_tasks
 
   - name: Output Task Independent ECS settings
     debug:
@@ -203,7 +203,7 @@
       verbosity: 1
     tags:
       - upload
-      - create_tasks
+      - sync_tasks
 
   - name: Check if pre-build hook file exists
     stat:
@@ -236,7 +236,7 @@
       - version
       - build
       - upload
-      - create_tasks
+      - sync_tasks
 
   - name: Create output directory
     file:
@@ -345,10 +345,10 @@
     tags:
       - build
 
-  - include_tasks: create_task.yml
+  - include_tasks: sync_task.yml
     with_items: "{{ resolved_task_names }}"
     tags:
-      - create_tasks
+      - sync_tasks
 
   - name: Logout of container repository
     command: "docker {{docker_common_general_options}} logout {{container_registry_host}}"

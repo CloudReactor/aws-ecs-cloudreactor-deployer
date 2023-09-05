@@ -1,8 +1,6 @@
 ---
 {% set task_name=item %}{# from 'with_items' in the calling task #}
 
-{% set cloudreactor_task_name=resolved_task_config.cloudreactor_task_name | default(project_name + '_' + task_name + '_' + env) %}
-
 {% set service_instance_count=resolved_task_config.service_instance_count | default('__unset__') %}
 
 {% if resolved_task_config.is_service is defined %}

@@ -6,7 +6,9 @@
 
 - name: Set per-Task variables step 2
   set_fact:
-    deployed: "{{resolved_task_config.deployed | default(true) }}"
+    deployed: "{{ resolved_task_config.deployed | default(true) }}"
+    removed_from_task_manager: "{{ resolved_task_config.removed_from_task_manager | default(false) }}"
+    cloudreactor_task_name: "{{ resolved_task_config.cloudreactor_task_name | default(project_name + '_' + task_name + '_' + env) }}"
     resolved_aws: "{{ resolved_task_config.aws }}"
     resolved_ecs: "{{ resolved_task_config.ecs }}"
   tags:
@@ -14,6 +16,7 @@
 
 - name: Set per-Task variables step 3
   set_fact:
+    deployed_to_task_manager: "{{ cloudreactor_enabled and deployed and not removed_from_task_manager }}"
     resolved_aws_network: "{{ resolved_aws.network | default({}) }}"
     resolved_aws_logging: "{{ resolved_aws.logging | default({}) }}"
     # ecs.service is allow for backward compatibility reasons, may deprecate in
@@ -73,7 +76,7 @@
   tags:
     - always
 
-- name: Read ECS Task Definition
+- name: Read ECS Task Definition for {{task_name}}
   include_vars:
     file: "{{task_build_dir}}/ecs_task_definition.json"
     name: ecs_task_definition
@@ -81,7 +84,7 @@
   tags:
     - always
 
-- name: Register ECS task definition {{task_name}}
+- name: Register ECS task definition for {{task_name}}
   command: "aws ecs register-task-definition --region={{aws_region | quote}} --cli-input-json file://ecs_task_definition.json"
   args:
     chdir: "{{task_build_dir}}"
@@ -90,14 +93,14 @@
   tags:
     - always
 
-- name: Set Task Definition ARN
+- name: Set Task Definition ARN for {{task_name}}
   set_fact:
     task_definition_arn: "{{ (register_ecs_task_result.stdout | from_json).taskDefinition.taskDefinitionArn if register_ecs_task_result.stdout is defined else predefined_task_definition_arn }}"
   when: deployed and (not predefined_task_definition_arn)
   tags:
     - always
 
-- name: Output Task Definition ARN
+- name: Output Task Definition ARN for {{task_name}}
   debug:
     msg: "Task Definition ARN = {{task_definition_arn}}"
   when: deployed
@@ -106,32 +109,32 @@
   template: src=/home/appuser/work/templates/cloudreactor_task.yml.j2
             dest="{{task_build_dir}}/cloudreactor_task.yml"
             lstrip_blocks=yes
-  when: deployed
+  when: deployed_to_task_manager
   tags:
     - always
 
-- name: Output CloudReactor Task yaml
+- name: Output CloudReactor Task yaml for {{task_name}}
   debug:
     msg: "{{ ('CloudReactor Task YAML =\n' + lookup('ansible.builtin.file', task_build_dir + '/cloudreactor_task.yml')).split('\n') }}"
-  when: deployed
+  when: deployed_to_task_manager
 
-- name: Read CloudReactor Task yaml
+- name: Read CloudReactor Task yaml for {{task_name}}
   include_vars:
     file: "{{task_build_dir}}/cloudreactor_task.yml"
     name: cloudreactor_task
-  when: cloudreactor_enabled and deployed
+  when: deployed_to_task_manager
   tags:
     - always
 
-- name: Output CloudReactor Task JSON
+- name: Output CloudReactor Task JSON for {{task_name}}
   debug:
     msg: "{{ cloudreactor_task | to_json }}"
     verbosity: 2
-  when: cloudreactor_enabled and deployed
+  when: deployed_to_task_manager
   tags:
     - always
 
-- name: Create/update Task in CloudReactor
+- name: Create/update Task in Task Manager for {{task_name}}
   uri:
     url: "{{ cloudreactor_api_base_url }}/api/v1/tasks/"
     method: POST
@@ -144,36 +147,61 @@
       - 200
       - 201
   register: create_cloudreactor_task_result
-  when: cloudreactor_enabled and deployed
+  when: deployed_to_task_manager
   tags:
   - always
 
-- name: Set saved_cloudreactor_task
+- name: Set saved_cloudreactor_task for {{task_name}}
   set_fact:
     saved_cloudreactor_task: "{{ create_cloudreactor_task_result.json }}"
-  when: cloudreactor_enabled and deployed
+  when: deployed_to_task_manager
   tags:
     - always
 
-- name: Create ECS scheduled event definition {{task_name}}
+- name: Get Task in CloudReactor named {{ cloudreactor_task_name }}
+  uri:
+    url: "{{ cloudreactor_api_base_url }}/api/v1/tasks/?name={{ cloudreactor_task_name | urlencode }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{cloudreactor_deploy_api_key}}"
+    return_content: True
+  register: fetch_cloudreactor_task_result
+  when: removed_from_task_manager
+  tags:
+    - always
+
+- name: Remove Task in CloudReactor named {{ cloudreactor_task_name }}
+  uri:
+    url: "{{ cloudreactor_api_base_url }}/api/v1/tasks/{{ fetch_cloudreactor_task_result.json.results[0].uuid | urlencode }}"
+    method: DELETE
+    headers:
+      Authorization: "Bearer {{cloudreactor_deploy_api_key}}"
+    status_code:
+      - 200
+      - 204
+  when: removed_from_task_manager and (fetch_cloudreactor_task_result.json.results | length == 1)
+  tags:
+    - always
+
+- name: Create ECS scheduled event definition for {{task_name}}
   template: src=/home/appuser/work/templates/ecs_scheduled_event_definition.json.j2
             dest="{{ task_build_dir }}/ecs_scheduled_event_definition.json"
   when: (not cloudreactor_enabled) and deployed and (resolved_task_config.schedule is defined)
   tags: upload
 
-- name: Create AWS events rule {{task_name}}
+- name: Create AWS events rule for {{task_name}}
   command: "aws events put-rule --schedule-expression \"{{ resolved_task_config.schedule }})\" --name {{project_name}}-{{task_name}}-{{env}}"
   when: (not cloudreactor_enabled) and deployed and (resolved_task_config.schedule is defined)
   tags: upload
 
-- name: Put AWS event target {{task_name}}
+- name: Put AWS event target for {{task_name}}
   command: "aws events put-targets --cli-input-json file://ecs_scheduled_event_definition.json"
   when: (not cloudreactor_enabled) and deployed and (resolved_task_config.schedule is defined)
   args:
     chdir: "{{ task_build_dir }}"
   tags: upload
 
-- name: Create ECS service without load balancer
+- name: Create ECS service without load balancer for {{task_name}}
   ecs_service:
     state: present
     name: "{{project_name}}_{{task_name}}_{{env}}"
@@ -195,7 +223,7 @@
   tags:
     - always
 
-- name: Create ECS service with load balancer
+- name: Create ECS service with load balancer for {{task_name}}
   ecs_service:
     state: present
     name: "{{project_name}}_{{task_name}}_{{env}}"

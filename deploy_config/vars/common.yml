@@ -136,10 +136,6 @@ project_cloudreactor:
 # These properties can also be applied to project_task_name_to_config[task_name] and
 # env_task_config[task_name], which will override those set here.
 project_task_config:
-  # # Set to false to skip this Task's deployment. This is usually set per-Task
-  # # in project_task_name_to_config[task_name].deployed
-  # deployed: "{{ env == 'staging' }}"
-
   # # Environment variables to set in the process environment
   env:
     DEPLOYMENT: "{{env | to_yaml}}"
@@ -486,7 +482,12 @@ project_task_config:
 # `command: python main.py`
 project_task_name_to_config:
   smoke:
-    deployed: true
+    # # Set to false to skip this Task's deployment.
+    # deployed: false
+
+    # # Set to true to remove the Task from CloudReactor. Do this when cleaning
+    # # up unused Tasks.
+    # removed_from_task_manager: true
 
     # # Set to false to disable the Tasks's schedule/service in CloudReactor.
     # # Usually you should leave this unset and manage the setting in the
