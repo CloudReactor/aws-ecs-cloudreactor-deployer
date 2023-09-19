@@ -232,26 +232,31 @@ if [ -n "$ANSIBLE_VAULT_PASSWORD" ]
       EXTRA_DOCKER_RUN_OPTIONS="-e ANSIBLE_VAULT_PASSWORD $EXTRA_DOCKER_RUN_OPTIONS"
 fi
 
-
 echo "Extra Docker run options = '$EXTRA_DOCKER_RUN_OPTIONS'"
 
-# Optional: use the latest git commit hash to set the version signature,
-# so that the git commit can be linked in the CloudReactor dashboard.
-# Otherwise, ansible will use the current date/time as the task version signature.
-# You can comment out the next block if you don't use git, or set the
-# CLOUDREACTOR_TASK_VERSION_SIGNATURE variable before calling this script.
 if [ -z "$CLOUDREACTOR_TASK_VERSION_SIGNATURE" ]
   then
-    if command -v git &> /dev/null
+    if [ -n "$CODEBUILD_RESOLVED_SOURCE_VERSION" ]
       then
-        CLOUDREACTOR_TASK_VERSION_SIGNATURE=`git rev-parse HEAD`
-        echo "CLOUDREACTOR_TASK_VERSION_SIGNATURE = $CLOUDREACTOR_TASK_VERSION_SIGNATURE"
+        CLOUDREACTOR_TASK_VERSION_SIGNATURE=$CODEBUILD_RESOLVED_SOURCE_VERSION
       else
-        echo "git not found, setting CLOUDREACTOR_TASK_VERSION_SIGNATURE to empty string"
-        CLOUDREACTOR_TASK_VERSION_SIGNATURE=""
+        # Optional: use the latest git commit hash to set the version signature,
+        # so that the git commit can be linked in the CloudReactor dashboard.
+        # Otherwise, ansible will use the current date/time as the task version signature.
+        # You can comment out the next block if you don't use git, or set the
+        # CLOUDREACTOR_TASK_VERSION_SIGNATURE variable before calling this script.
+        if command -v git &> /dev/null
+          then
+            CLOUDREACTOR_TASK_VERSION_SIGNATURE=`git rev-parse HEAD`
+          else
+            echo "git not found, setting CLOUDREACTOR_TASK_VERSION_SIGNATURE to empty string"
+            CLOUDREACTOR_TASK_VERSION_SIGNATURE=""
+        fi
+        # End Optional
     fi
 fi
-# End Optional
+
+echo "CLOUDREACTOR_TASK_VERSION_SIGNATURE = $CLOUDREACTOR_TASK_VERSION_SIGNATURE"
 
 if [ -z "$DEPLOY_COMMAND" ]
   then
