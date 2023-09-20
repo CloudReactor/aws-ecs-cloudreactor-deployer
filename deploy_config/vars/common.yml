@@ -1,3 +1,5 @@
+schema_version: 4
+
 project_metadata:
   name: "aws-ecs-cloudreactor-deployer-sample"
   version_text: 4.0.0

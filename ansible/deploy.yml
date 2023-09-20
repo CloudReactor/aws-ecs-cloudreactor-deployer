@@ -131,6 +131,16 @@
   tasks:
   - name: Set project-level variables
     include_vars: "{{deploy_config_dir}}/vars/common.yml"
+  - name: Ensure schema version is present
+    fail:
+      msg: schema_version not found at the top level of common.yml, please set to 4
+    when: schema_version is not defined
+  - name: Ensure schema version is compatible
+    fail:
+      msg:
+        - schema_version {{ schema_version }} is not compatible with this version of the deployer.
+        - The only acceptable value this deployer version accepts is 4.
+    when: (schema_version != 4)
   - name: Set deployment environment-specific variables
     include_vars: "{{deploy_config_dir}}/vars/{{config_filename_stem}}.yml"
   - name: Check legacy <4.0 properties
