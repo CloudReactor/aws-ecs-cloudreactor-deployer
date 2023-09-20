@@ -187,14 +187,14 @@ fi
 
 echo "Docker image name = $DOCKER_IMAGE_NAME"
 
-# By default, the Docker image tag is 3, since this project uses
+# By default, the Docker image tag is 4, since this project uses
 # semantic versioning and non-compatible changes will increment the
 # major version number.
 # For repeatable builds, pin the DOCKER_IMAGE_TAG to a version that is
 # known to work.
 if [ -z "$DOCKER_IMAGE_TAG" ]
   then
-    DOCKER_IMAGE_TAG="3"
+    DOCKER_IMAGE_TAG="4"
 fi
 
 echo "Docker image tag = $DOCKER_IMAGE_TAG"
@@ -301,8 +301,8 @@ if [ -z "$DEPLOY_COMMAND" ]
     fi
 fi
 
-exec docker run --rm \
-  -e CLOUDREACTOR_TASK_VERSION_SIGNATURE=$CLOUDREACTOR_TASK_VERSION_SIGNATURE \
+CMD="docker run --rm \
+  -e CLOUDREACTOR_TASK_VERSION_SIGNATURE \
   -e HOST_PWD=$PWD \
   -e CONTAINER_DOCKER_CONTEXT_DIR=/home/appuser/work/docker_context \
   $ENV_FILE_OPTIONS \
@@ -311,4 +311,8 @@ exec docker run --rm \
   -v $DOCKER_CONTEXT_DIR:/home/appuser/work/docker_context \
   $EXTRA_DOCKER_RUN_OPTIONS \
   $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG \
-  $DEPLOY_COMMAND "$@"
+  $DEPLOY_COMMAND ""$@"""
+
+echo "CMD = $CMD"
+
+eval $CMD
