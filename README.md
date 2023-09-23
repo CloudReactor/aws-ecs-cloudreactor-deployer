@@ -91,7 +91,7 @@ Run Environment.
 
 ### Create or identify a AWS role or user with sufficient permissions
 
-The deployer needs to be configured with AWS credentials that
+The deployer needs to be configured to use AWS permissions that
 allow it to deploy Docker images to AWS ECR and create tasks in ECS on your
 behalf.
 
@@ -101,7 +101,7 @@ or the user created by the
 The template also creates roles and access keys with the same permissions.
 
 If deploying from the command-line, a role will work if you are running
-inside an EC2 instance, within ECS, or a lambda, as these can inherit roles
+inside an EC2 instance, within ECS, or a Lambda function, as these can inherit roles
 from AWS. Access keys are also a simpler, but less secure option.
 
 If deploying using the GitHub Action, you'll want to use access keys.
