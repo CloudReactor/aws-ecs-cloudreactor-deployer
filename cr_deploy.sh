@@ -301,7 +301,7 @@ if [ -z "$DEPLOY_COMMAND" ]
     fi
 fi
 
-CMD="docker run --rm \
+exec docker run --rm \
   -e CLOUDREACTOR_TASK_VERSION_SIGNATURE \
   -e HOST_PWD=$PWD \
   -e CONTAINER_DOCKER_CONTEXT_DIR=/home/appuser/work/docker_context \
@@ -311,8 +311,4 @@ CMD="docker run --rm \
   -v $DOCKER_CONTEXT_DIR:/home/appuser/work/docker_context \
   $EXTRA_DOCKER_RUN_OPTIONS \
   $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG \
-  $DEPLOY_COMMAND ""$@"""
-
-echo "CMD = $CMD"
-
-eval $CMD
+  $DEPLOY_COMMAND "$@"
