@@ -292,7 +292,7 @@ if [ -z "$DEPLOY_COMMAND" ]
       then
         DEPLOY_COMMAND=""
       else
-        DEPLOY_COMMAND="'$DEPLOYMENT_ENVIRONMENT' $TASK_NAMES"
+        DEPLOY_COMMAND="""$DEPLOYMENT_ENVIRONMENT"" $TASK_NAMES"
 
         if [ -n "$EXTRA_ANSIBLE_OPTIONS" ]
           then
@@ -302,7 +302,7 @@ if [ -z "$DEPLOY_COMMAND" ]
 fi
 
 exec docker run --rm \
-  -e CLOUDREACTOR_TASK_VERSION_SIGNATURE \
+  -e CLOUDREACTOR_TASK_VERSION_SIGNATURE="$CLOUDREACTOR_TASK_VERSION_SIGNATURE" \
   -e HOST_PWD=$PWD \
   -e CONTAINER_DOCKER_CONTEXT_DIR=/home/appuser/work/docker_context \
   $ENV_FILE_OPTIONS \
