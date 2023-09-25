@@ -1,6 +1,6 @@
 ---
 # Ansible tasks to deploy projects to AWS ECS, managed by CloudReactor
-- name: "{{project_name}}"
+- name: "AWS ECS CloudReactor Deployer"
   hosts: 127.0.0.1
   connection: local
   vars:
