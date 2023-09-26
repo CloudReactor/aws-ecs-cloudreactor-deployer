@@ -17,9 +17,9 @@
 {% set max_age_seconds=resolved_task_config.max_age_seconds | default('__unset__') %}
 {% set wrapper=resolved_task_config.wrapper | default({}) %}
 {% set task_ecs=resolved_task_config.ecs | default({}) %}
-{% set project_env_task_ecs=project_env_ecs | combine(task_ecs, recursive=True) %}
+{% set project_env_task_ecs=project_env_ecs | combine(task_ecs, recursive=true) %}
 {% set task_aws=resolved_task_config.aws | default({}) %}
-{% set project_env_task_aws=project_env_aws | combine(task_aws, recursive=True) %}
+{% set project_env_task_aws=project_env_aws | combine(task_aws, recursive=true) %}
 {% set project_env_task_aws_network=project_env_task_aws.network | default({}) %}
 
 {% set cpu_units=project_env_task_ecs.cpu_units | default(256) %}

@@ -103,9 +103,10 @@
 - name: Output Task Definition ARN for {{task_name}}
   debug:
     msg: "Task Definition ARN = {{task_definition_arn}}"
+    verbosity: 2
   when: deployed
 
-- name: Create CloudReactor Task definition {{task_name}}
+- name: Create CloudReactor Task yaml for {{task_name}}
   template: src=/home/appuser/work/templates/cloudreactor_task.yml.j2
             dest="{{task_build_dir}}/cloudreactor_task.yml"
             lstrip_blocks=yes

@@ -141,6 +141,7 @@ project_task_config:
   # # Environment variables to set in the process environment
   env:
     DEPLOYMENT: "{{env | to_yaml}}"
+    APPLICATION: wtfn
 
   # alert_methods:
   #   - name: Alert Method 1
@@ -593,6 +594,7 @@ project_task_name_to_config:
 
     wrapper:
       enable_status_update_listener: true
+
   # This task shows how to use the temporary file system provided by ECS
   write_file:
     deployed: true

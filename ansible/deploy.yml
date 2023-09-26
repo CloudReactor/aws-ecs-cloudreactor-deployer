@@ -4,7 +4,7 @@
   hosts: 127.0.0.1
   connection: local
   vars:
-    project_env_metadata: "{{ project_metadata | combine(env_metadata | default({}), recursive=True) }}"
+    project_env_metadata: "{{ project_metadata | combine(env_metadata | default({}), recursive=true) }}"
     project_name: "{{ project_env_metadata.name }}"
     project_version_number: "{{ project_env_metadata.version_number }}"
     project_version_text: "{{ project_env_metadata.version_text }}"
@@ -15,7 +15,7 @@
     docker_context_dir: "{{ lookup('env', 'CONTAINER_DOCKER_CONTEXT_DIR') | default(work_dir, true) }}"
     deploy_config_dir: "{{ work_dir }}/deploy_config"
     config_filename_stem: "{{ lookup('env', 'CONFIG_FILENAME_STEM') | default(env, true) }}"
-    build_options: "{{ project_build_options | default({}) | combine(env_build_options | default({}), recursive=True) }}"
+    build_options: "{{ project_build_options | default({}) | combine(env_build_options | default({}), recursive=true) }}"
     dockerfile_path: "{{ lookup('env', 'DOCKERFILE_PATH') | default(build_options.dockerfile_path | default(docker_context_dir + '/Dockerfile', true), true) }}"
     docker_common_general_options: "{{ lookup('env', 'DOCKER_COMMON_GENERAL_OPTIONS') | default(build_options.docker_common_general_options | default(''), true) }}"
     docker_build_general_options: "{{ lookup('env', 'DOCKER_BUILD_GENERAL_OPTIONS') | default(build_options.docker_build_general_options | default(''), true) }}"
@@ -25,13 +25,13 @@
     docker_push_general_options: "{{ lookup('env', 'DOCKER_PUSH_GENERAL_OPTIONS') | default(build_options.docker_push_general_options | default(''), true) }}"
     extra_docker_push_args: "{{ lookup('env', 'EXTRA_DOCKER_PUSH_ARGS') | default(build_options.extra_docker_push_args | default(''), true) }}"
 
-    project_env_deployment: "{{ project_deployment | combine(env_deployment | default({}), recursive=True) }}"
+    project_env_deployment: "{{ project_deployment | combine(env_deployment | default({}), recursive=true) }}"
     task_runtime_env_secret_path: "{{ project_env_deployment.task_runtime_env_secret_path | default('__unset__') }}"
     store_task_runtime_env_in_secrets_manager: "{{ (project_env_deployment.store_task_runtime_env_in_secrets_manager | default(false)) and (task_runtime_env_secret_path != '__unset__') }}"
     container_registry_credentials_secret_path: "{{ project_env_deployment.container_registry_credentials_secret_path | default('__unset__') }}"
     store_container_registry_credentials_in_secrets_manager: "{{ project_env_deployment.store_container_registry_credentials_in_secrets_manager | default(false, true) }}"
 
-    resolved_cloudreactor: "{{ project_cloudreactor | default({}) | combine(env_cloudreactor | default({}), recursive=True) }}"
+    resolved_cloudreactor: "{{ project_cloudreactor | default({}) | combine(env_cloudreactor | default({}), recursive=true) }}"
     cloudreactor_enabled: "{{ resolved_cloudreactor.enabled | default(true) }}"
     cloudreactor_api_base_url: "{{ lookup('env', 'CLOUDREACTOR_API_BASE_URL') | default(resolved_cloudreactor.api_base_url | default('https://api.cloudreactor.io', true), true) }}"
     cloudreactor_deploy_api_key: "{{ lookup('env', 'CLOUDREACTOR_DEPLOY_API_KEY') | default(resolved_cloudreactor.deploy_api_key, true) }}"
@@ -41,11 +41,11 @@
     run_environment_ecs: "{{ (run_environment.execution_method_settings['AWS ECS']['__default__']['settings'] | default({})) if cloudreactor_enabled else {} }}"
     run_environment_aws: "{{ (run_environment.infrastructure_settings['AWS']['__default__']['settings'] | default({})) if cloudreactor_enabled else {} }}"
 
-    project_env_aws: "{{ (project_aws | default({})) | combine(env_aws | default({}), recursive=True) }}"
-    task_indep_aws: "{{ run_environment_aws | combine(project_env_aws, recursive=True) }}"
+    project_env_aws: "{{ (project_aws | default({})) | combine(env_aws | default({}), recursive=true) }}"
+    task_indep_aws: "{{ run_environment_aws | combine(project_env_aws, recursive=true) }}"
     aws_region: "{{ task_indep_aws.region | default(lookup('env', 'AWS_DEFAULT_REGION')) }}"
-    project_env_ecs: "{{ (project_ecs | default({})) | combine(env_ecs | default({}), recursive=True) }}"
-    task_indep_ecs: "{{ run_environment_ecs | combine(project_env_ecs, recursive=True) }}"
+    project_env_ecs: "{{ (project_ecs | default({})) | combine(env_ecs | default({}), recursive=true) }}"
+    task_indep_ecs: "{{ run_environment_ecs | combine(project_env_ecs, recursive=true) }}"
 
     ecr_aws_account_id: "{{ build_options.ecr_aws_account_id | default(task_indep_aws.account_id) }}"
     ecr_aws_region: "{{ build_options.ecr_aws_region | default(aws_region) }}"
@@ -97,8 +97,6 @@
     # Task settings for all deployment environments, unless overridden.
     project_task_config_safe: "{{ project_task_config | default({}) }}"
 
-    task_indep_task_config: "{{ task_indep_task_infra_dict | combine(project_task_config_safe, env_default_task_config, env_task_config_safe, recursive=True) }}"
-
     # env_to_task_config (defined in common.yml) is a mapping from
     # deployment environment name to non-secret Task settings common to all
     # Tasks, unless overridden.
@@ -110,7 +108,9 @@
     # environment, unless overridden.
     env_task_config_safe: "{{ env_task_config | default({}) }}"
 
-    # env_to_task_name_to_config (defined in common.yml) is a mapping from
+    task_indep_task_config: "{{ task_indep_task_infra_dict | combine(project_task_config_safe, env_default_task_config, env_task_config_safe, recursive=true) }}"
+
+    # env_to_task_name_to_config (defined in common.yml) is mapping from
     # deployment environment name to another mapping from Task name to
     # non-secret Task settings.
     env_to_task_name_to_config_safe: "{{ env_to_task_name_to_config | default({}) }}"
@@ -122,8 +122,8 @@
     # project_task_name_to_config (defined in common.yml) is a mapping from Task name
     # to non-secret Task settings common to all deployment environments,
     # unless overridden.
-    project_env_task_name_to_config_no_indep: "{{ project_task_name_to_config | default({}) | combine(env_task_name_to_config, recursive=True) }}"
-    resolved_task_name_to_config: "{{ project_env_task_name_to_config_no_indep | dict2items | map('combine', indep_task_config_dict_entry, recursive=True) | items2dict | combine(project_env_task_name_to_config_no_indep, recursive=True) }}"
+    project_env_task_name_to_config_no_indep: "{{ project_task_name_to_config | default({}) | combine(env_task_name_to_config, recursive=true) }}"
+    resolved_task_name_to_config: "{{ project_env_task_name_to_config_no_indep | dict2items | map('combine', indep_task_config_dict_entry, recursive=true) | items2dict | combine(project_env_task_name_to_config_no_indep, recursive=true) }}"
     resolved_task_names: "{{ (resolved_task_name_to_config | dict2items | json_query('[?((value.deployed==undefined) || (to_string(value.deployed)==to_string(`true`)) || (to_string(value.removed_from_task_manager)==to_string(`true`)))].key')) if (task_names | upper) == 'ALL' else task_names.split(',') }}"
     resolved_sync_required_task_name_to_config_query: "{{ '[?(key==`' +  resolved_task_names | join('`)||(key==`') + '`)]' }}"
     resolved_sync_required_task_name_to_config: "{{ resolved_task_name_to_config | dict2items | json_query(resolved_sync_required_task_name_to_config_query) | items2dict }}"
@@ -235,15 +235,11 @@
       - build
 
   - debug:
-      msg: "project_task_name_to_config = {{ project_task_name_to_config }}"
-      verbosity: 2
-
-  - debug:
-      msg: "env_task_name_to_config = {{ env_task_name_to_config }}"
-      verbosity: 2
-
-  - debug:
-      msg: "resolved_task_name_to_config = {{ resolved_task_name_to_config }}"
+      msg:
+        - "project_task_name_to_config = {{ project_task_name_to_config }}"
+        - "env_task_name_to_config = {{ env_task_name_to_config }}"
+        - "task_indep_task_config = {{ task_indep_task_config }}"
+        - "resolved_task_name_to_config = {{ resolved_task_name_to_config }}"
       verbosity: 2
 
   - debug: msg="Task version signature = {{task_version_signature}}, resolved task names = {{resolved_task_names}}, requires_build = {{requires_build}}"

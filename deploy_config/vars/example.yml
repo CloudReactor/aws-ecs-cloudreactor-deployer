@@ -106,7 +106,7 @@ env_cloudreactor:
 # env_deployment:
 #   container_registry_credentials_secret_path: CloudReactor/staging/common/ghcr.json
 #   store_container_registry_credentials_in_secrets_manager: true
-#   task_runtime_env_secret_path: "aws_ecs_cloudreactor_deployer_example/staging/runtime.env"  # store_task_runtime_env_in_secrets_manager: true
+#   task_runtime_env_secret_path: "aws_ecs_cloudreactor_deployer_example/staging/runtime.env"
 #   store_task_runtime_env_in_secrets_manager: true
 
 # Add Task settings that apply to all Tasks running in this deployment.
