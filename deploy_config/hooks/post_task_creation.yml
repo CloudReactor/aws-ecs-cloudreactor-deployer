@@ -1,5 +1,5 @@
-# Override this file with after the Task has been created in ECS and
-# CloudReactor.
+# Override this file with steps to execute after the Task has been created in 
+# ECS and CloudReactor.
 ---
 - debug:
     msg: "Post-Task creation: nothing to do"
@@ -9,7 +9,7 @@
 # # in the case a DB migration Task which should appear first in
 # # project_task_name_to_config. This ensures the Task is run before the other Tasks
 # # are deployed. The Task creation response will be available in the variable
-# # cloudreactor_task, so you can use it start a Task Execution immediately.
+# # create_cloudreactor_task_execution_result, so you can use it start a Task Execution immediately.
 #
 # - name: Run the DB migration Task immediately with CloudReactor
 #   uri:
@@ -27,7 +27,7 @@
 #       - 200
 #       - 201
 #   register: create_cloudreactor_task_execution_result
-#   when: (item == 'db_migrator')
+#   when: (task_name == 'db_migrator')
 #   tags:
 #     - migrate
 
@@ -43,7 +43,7 @@
 #       - 200
 #       - 201
 #   register: check_cloudreactor_task_execution_result
-#   when: (item == 'db_migrator')
+#   when: (task_name == 'db_migrator')
 #   until: (check_cloudreactor_task_execution_result.json.status != 'MANUALLY_STARTED') and (check_cloudreactor_task_execution_result.json.status != 'RUNNING')
 #   delay: 30
 #   retries: 1000
@@ -53,4 +53,4 @@
 # - name: Ensure migration succeeded
 #   assert:
 #     that: check_cloudreactor_task_execution_result.json.status == 'SUCCEEDED'
-#   when: (item == 'db_migrator')
+#   when: (task_name == 'db_migrator')
