@@ -75,7 +75,7 @@
         )
       )
       if requires_build
-      else none 
+      else none
     }}"
 
     container_registry_pull_credentials:
@@ -128,10 +128,10 @@
     resolved_sync_required_task_name_to_config_query: "{{ '[?(key==`' +  resolved_task_names | join('`)||(key==`') + '`)]' }}"
     resolved_sync_required_task_name_to_config: "{{ resolved_task_name_to_config | dict2items | json_query(resolved_sync_required_task_name_to_config_query) | items2dict }}"
     requires_build: "{{ (resolved_sync_required_task_name_to_config | dict2items | json_query('[?(((value.ecs.task_definition_arn==undefined)||(value.ecs.task_definition_arn==`__unset__`))&&((value.ecs.docker_image_name==undefined)||(value.ecs.docker_image_name==`__unset__`))&&(to_string(value.removed_from_task_manager)!=to_string(`true`)))]')) | length > 0 }}"
-    
+
     # Use this when referencing the Task name, possibly before the Task name is set, as in custom top-level variables.
     # Otherwise, the variables that you declare that reference "item" or "task_name" may end up being undefined.
-    task_name_safe: "{{ item | default("_TASK_NAME_PLACEHOLDER_") }}"
+    task_name_safe: "{{ item | default('_TASK_NAME_PLACEHOLDER_') }}"
   tasks:
   - name: Set project-level variables
     include_vars: "{{deploy_config_dir}}/vars/common.yml"
@@ -242,11 +242,11 @@
       msg:
         - "project_task_name_to_config = {{ project_task_name_to_config }}"
         - "env_task_name_to_config = {{ env_task_name_to_config }}"
-        - "project_task_config_safe = {{ project_task_config_safe }}"                
+        - "project_task_config_safe = {{ project_task_config_safe }}"
         - "env_default_task_config = {{ env_default_task_config }}"
         - "env_task_config_safe = {{ env_task_config_safe }}"
         - "task_indep_task_config = {{ task_indep_task_config }}"
-        
+
         - "resolved_task_name_to_config = {{ resolved_task_name_to_config }}"
       verbosity: 2
 
