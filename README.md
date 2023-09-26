@@ -101,10 +101,11 @@ or the user created by the
 The template also creates roles and access keys with the same permissions.
 
 If deploying from the command-line, a role will work if you are running
-inside an EC2 instance, within ECS, or a Lambda function, as these can inherit roles
-from AWS. Access keys are also a simpler, but less secure option.
+inside an EC2 instance, within AWS CodeBuild, or a Lambda function, as these can
+inherit roles from AWS. Access keys are also a simpler, but less secure option.
 
-If deploying using the GitHub Action, you'll want to use access keys.
+If deploying using the GitHub Action, you'll want to use access keys that are
+set as [Action secrets](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions).
 
 See [Deployer AWS Permissions](https://docs.cloudreactor.io/deployer_aws_permissions.html)
 for the exact permissions required.
