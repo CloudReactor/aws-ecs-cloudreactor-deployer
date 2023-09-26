@@ -2,7 +2,7 @@ schema_version: 4
 
 project_metadata:
   name: "aws-ecs-cloudreactor-deployer-sample"
-  version_text: 4.0.0
+  version_text: 4.0.1
 
   # # Optionally, provide a steadily increasing whole number to indicate which
   # # build is more updated than another.
@@ -146,7 +146,7 @@ project_task_config:
   #   - name: Alert Method 1
   #   - name: Alert Method 2
   #     included: false
-  
+
   # links:
   #  - name: Rollbar
   #    link_url_template: "https://rollbar.com/YourCompanyName/{{ project_name | urlencode }}/"
