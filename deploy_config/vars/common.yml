@@ -141,12 +141,12 @@ project_task_config:
   # # Environment variables to set in the process environment
   env:
     DEPLOYMENT: "{{env | to_yaml}}"
-    APPLICATION: wtfn
 
   # alert_methods:
   #   - name: Alert Method 1
   #   - name: Alert Method 2
   #     included: false
+  
   # links:
   #  - name: Rollbar
   #    link_url_template: "https://rollbar.com/YourCompanyName/{{ project_name | urlencode }}/"

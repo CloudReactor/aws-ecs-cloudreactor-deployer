@@ -75,7 +75,7 @@
         )
       )
       if requires_build
-      else none
+      else none 
     }}"
 
     container_registry_pull_credentials:
@@ -238,7 +238,11 @@
       msg:
         - "project_task_name_to_config = {{ project_task_name_to_config }}"
         - "env_task_name_to_config = {{ env_task_name_to_config }}"
+        - "project_task_config_safe = {{ project_task_config_safe }}"                
+        - "env_default_task_config = {{ env_default_task_config }}"
+        - "env_task_config_safe = {{ env_task_config_safe }}"
         - "task_indep_task_config = {{ task_indep_task_config }}"
+        
         - "resolved_task_name_to_config = {{ resolved_task_name_to_config }}"
       verbosity: 2
 
@@ -288,7 +292,6 @@
       region: "{{ecr_aws_region}}"
       # Setting this causes "Cannot modify repository encryption type" error
       # encryption_configuration: "{{ ecr_encryption_configuration }}"
-    # TODO: add option to disable
     when: requires_build and use_private_ecr
     tags:
       - upload
