@@ -4,7 +4,7 @@
 # This is good if we're only running python code.
 # But debian:bullseye-slim is more likely to be a base image that different
 # language environment inherit from.
-FROM debian:bullseye-slim
+FROM public.ecr.aws/docker/library/debian:bookworm-slim
 
 LABEL maintainer="jeff@cloudreactor.io"
 
@@ -46,4 +46,5 @@ RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/5.1.0/
 COPY --chown=appuser:appuser src .
 RUN chmod +x write_file.sh
 
-ENTRYPOINT ["./proc_wrapper.bin"]
+# ENTRYPOINT ["./proc_wrapper.bin"]
+ENTRYPOINT "./write_file.sh"

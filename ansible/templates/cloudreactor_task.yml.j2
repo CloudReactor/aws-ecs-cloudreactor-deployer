@@ -24,6 +24,8 @@
 
 {% set cpu_units=project_env_task_ecs.cpu_units | default(256) %}
 {% set memory_mb=project_env_task_ecs.memory_mb | default(512) %}
+{% set extra_container_cpu_units=project_env_task_ecs.extra_container_cpu_units | default(0) %}
+{% set extra_container_memory_mb=project_env_task_ecs.extra_container_memory_mb | default(0) %}
 
 {% set task_property_names = [
   'description',
@@ -149,6 +151,9 @@ run_environment:
 allocated_cpu_units: {{cpu_units}}
 allocated_memory_mb: {{memory_mb}}
 
+deployment:
+  task_execution_uuid: {% if deployment_task_execution_uuid == '__unset__' %}null{% else %}{{ deployment_task_execution_uuid }}{% endif %}
+
 execution_method_type: AWS ECS
 execution_method_capability_details:
   task_definition_arn: {{ task_definition_arn }}
@@ -159,6 +164,8 @@ execution_method_capability_details:
   {{ prop_def(project_env_task_ecs, 'cluster_arn') }}
 
   main_container_name: "{{main_container_name}}"
+  main_container_cpu_units: {{ cpu_units - extra_container_cpu_units }}
+  main_container_memory_mb: {{ memory_mb - extra_container_memory_mb }}
 
   {{ prop_def(project_env_task_ecs, 'execution_role_arn') }}
   {{ prop_def(project_env_task_ecs, 'task_role_arn') }}

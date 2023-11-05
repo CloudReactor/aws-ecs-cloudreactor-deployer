@@ -9,4 +9,6 @@ if [ -z "$1" ]
     exit 1
 fi
 
+echo "Deploying sample Tasks ..."
+
 DOCKER_IMAGE_TAG=latest DOCKER_CONTEXT_DIR="$PWD/sample_docker_context" exec ./cr_deploy.sh "$@"

@@ -206,11 +206,20 @@ project_task_config:
     # enabled_execute_command: true
     # task_group: "{{ (project_name + '_' +  task_name + '_' + env) }}"
 
+    #wrapped_container_names:
+    #  - collector
+    primary_wrapped_container_name: collector
+
     # # Uncomment to add properties to the main container:
     # extra_main_container_properties
     #   secrets:
     #     - name: environment_variable_name
     #       valueFrom: arn:aws:secretsmanager:[aws_region]:[aws_account_id]:secret:[secret_name]
+
+    extra_main_container_properties:
+      dependsOn:
+        - containerName: collector
+          condition: HEALTHY
 
     # # Uncomment to add properties to the top-level ECS task definition
     # # (see https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html)
@@ -237,12 +246,32 @@ project_task_config:
     #    image: XXXXXXXXXX.dkr.ecr.us-west-2.amazonaws.com/configured-nginx
     #    cpu: 256
     #    memory: 1024
-    #    essential: "true"
+    #    essential: true
     #    portMappings:
     #      - containerPort: 80 # nginx default port is 80
-    #      - hostPort: 8000    # port of the target group
-    #      - protocol: tcp
+    #        hostPort: 8000    # port of the target group
+    #        protocol: tcp
 
+    extra_container_cpu_units: 32
+    extra_container_memory_mb: 128
+    extra_container_definitions:
+      - name: collector
+        image: public.ecr.aws/cloudreactor/cloudreactor-aws-otel-collector:0.1.1
+        cpu: 32
+        memory: 128
+        essential: true
+        portMappings:
+          # health check
+          - containerPort: 13133
+            hostPort: 13133
+            protocol: tcp
+        healthCheck:
+          command:
+            - "CMD-SHELL"
+            - "wget -nv --tries=1 --spider http://localhost:13133/ || exit 1"
+          timeout: 30
+          retries: 5
+          startPeriod: 60
   aws:
     # network:
     #   # If you are running on private subnets, this must be false.

@@ -80,6 +80,10 @@
 {% set resolvable_env_var_name_prefix = wrapper.resolvable_env_var_name_prefix | default('') %}
 {% set resolvable_env_var_name_suffix = wrapper.resolvable_env_var_name_suffix | default('_FOR_PROC_WRAPPER_TO_RESOLVE') %}
 
+{% set primary_wrapped_container_name = resolved_ecs.primary_wrapped_container_name | default(main_container_name) %}
+{% set wrapped_container_names = resolved_task_config.wrapped_container_names | default([primary_wrapped_container_name]) %}
+{% set is_main_container_wrapped = main_container_name in wrapped_container_names %}
+
 {% macro env_def(obj, name, maybe_secret=false, env_name='',
   formatter=default_formatter) -%}
   {%- if (obj[name] is defined) and (obj[name] != '__unset__') -%}
@@ -112,6 +116,128 @@
     arn:aws:iam::{{ task_indep_aws.account_id }}:role/{{v}}
   {%- endif -%}
 {%- endmacro %}
+
+{% macro wrapped_env(container_name) -%}
+  {%- if container_name == primary_wrapped_container_name -%}
+    {%- set task_manager_task_name = (project_name + '_' +  task_name + '_' + env) -%}
+  {%- else -%}
+    {%- set task_manager_task_name = (project_name + '_' +  task_name + '_' + container_name + '_' +  env) -%}
+  {%- endif -%}
+  {
+      "name" : "PROC_WRAPPER_API_BASE_URL",
+      "value" : {{ cloudreactor_api_base_url | to_json }}
+  },
+  {# Only puts PROC_WRAPPER_API_KEY in your environment if
+      resolved_cloudreactor.task_api_key is defined. Leave it undefined if you
+      plan on getting it from AWS Secrets Manager through the
+      ECS Task Execution role (where AWS injects the environment).
+      The API key can also be a AWS Secrets Manager ARN which the proc_wrapper
+      module will fetch at runtime.
+  #}
+  {{ env_def(resolved_cloudreactor, 'task_api_key', true, 'PROC_WRAPPER_API_KEY') }}
+  {
+      "name" : "PROC_WRAPPER_TASK_NAME",
+      "value" : {{ task_manager_task_name | to_json }}
+  },
+  {
+      "name" : "PROC_WRAPPER_TASK_IS_SERVICE",
+      "value" : "{{ is_service | string | upper }}"
+  },
+  {
+      "name" : "PROC_WRAPPER_TASK_MAX_CONCURRENCY",
+      "value" : {% if max_concurrency is number %}{{ max_concurrency | string | to_json }}{% else %}"-1"{% endif %}
+  },
+  {% if wrapper.env_locations is defined %}
+  {
+      "name": "PROC_WRAPPER_ENV_LOCATIONS",
+      "value": {% filter to_json %}{% for loc in wrapper.env_locations %}{{ loc }}{{ '' if loop.last else ',' }}{% endfor %}{% endfilter %}
+  },
+  {% endif %}
+  {% if wrapper.config_locations is defined %}
+  {
+      "name": "PROC_WRAPPER_CONFIG_LOCATIONS",
+      "value": {% filter to_json %}{% for loc in wrapper.config_locations %}{{ loc }}{{ '' if loop.last else ',' }}{% endfor %}{% endfilter %}
+  },
+  {% endif %}
+  {{ env_def(resolved_task_config, 'work_dir') }}
+  {% if service_instance_count == '__unset__' %}
+  {
+      "name" : "PROC_WRAPPER_PROCESS_TIMEOUT_SECONDS",
+      "value" : {{ wrapper.process_timeout_seconds | default(-1) | string | to_json }}
+  },
+  {% endif %}
+  {% if task_version_number != '__unset__' %}
+  {
+      "name" : "PROC_WRAPPER_TASK_VERSION_NUMBER",
+      "value" : {{ task_version_number | string | to_json }}
+  },
+  {% endif %}
+  {% if task_version_text != '__unset__' %}
+  {
+      "name" : "PROC_WRAPPER_TASK_VERSION_TEXT",
+      "value" : {{ task_version_text | to_json }}
+  },
+  {% endif %}
+  {% if task_version_signature is defined %}
+  {
+      "name" : "PROC_WRAPPER_TASK_VERSION_SIGNATURE",
+      "value" : {{ task_version_signature | to_json }}
+  },
+  {% endif %}
+  {% if deployment_task_execution_uuid != '__unset__' %}
+  {
+      "name" : "PROC_WRAPPER_DEPLOYMENT_TASK_EXECUTION_UUID",
+      "value" : {{ deployment_task_execution_uuid | to_json }}
+  },
+  {% endif %}
+  {% if wrapper.other_instance_metadata is defined %}
+  {
+      "name" : "PROC_WRAPPER_TASK_INSTANCE_METADATA",
+      "value" : {{ wrapper.other_instance_metadata | to_json | to_json }}
+  },
+  {% endif %}
+  {% for prop_name in proc_wrapper_property_names %}
+  {{ env_def(wrapper, prop_name) }}
+  {% endfor %}
+  {# Only puts PROC_WRAPPER_ROLLBAR_ACCESS_TOKEN in your environment if
+      wrapper.rollbar_access_token is defined. The value may be a
+      AWS Secrets Manager ARN which will be fetched by the
+      proc_wrapper module at runtime.
+  #}
+  {{ env_def(wrapper, 'rollbar_access_token', true) }}
+  {
+      "name" : "PROC_WRAPPER_DEPLOYMENT",
+      "value" : {{ env | to_json }}
+  },
+  {
+      "name" : "PROC_WRAPPER_MAIN_CONTAINER_NAME",
+      "value" : {{ main_container_name | to_json }}
+  }
+{%- endmacro %}
+
+
+{% macro default_log_configuration(container_name) -%}
+{% set stream_prefix_for_container=awslogs_stream_prefix %}
+{% set awslogs_group_for_container=awslogs_group %}
+{% if container_name != main_container_name %}
+  {% set awslogs_group_for_container='/aws/fargate/' + awslogs_stream_prefix + '-' + task_name + '-' + container_name %}
+{% endif %}
+{
+    "logDriver": "awslogs",
+    "options": {
+        {# Note: the ECS-CloudWatchLogs policy must be attached to your ecsTaskExecutionRole so that
+            the log group can be created. Alternatively, you may create the group yourself before deploying and
+            set this to "false".
+            See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_cloudwatch_logs.html
+        #}
+        "awslogs-create-group": "{{ resolved_aws_awslogs.create_group | default('true') }}",
+        "awslogs-group": {{ awslogs_group_for_container | to_json }},
+        "awslogs-region": {{ resolved_aws_awslogs.region | default(aws_region) | to_json }},
+        "awslogs-stream-prefix": {{ resolved_aws_awslogs.stream_prefix | default(project_name + '-' + env) | to_json }}
+    }
+}
+{%- endmacro %}
+
 
 {
     "requiresCompatibilities": [
@@ -153,116 +279,26 @@
             {% if resolved_aws.log_configuration is defined %}
                 {{ resolved_aws.log_configuration | to_json }}
             {% else %}
-            {
-                "logDriver": "awslogs",
-                "options": {
-                    {# Note: the ECS-CloudWatchLogs policy must be attached to your ecsTaskExecutionRole so that
-                       the log group can be created. Alternatively, you may create the group yourself before deploying and
-                       set this to "false".
-                       See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_cloudwatch_logs.html
-                    #}
-                    "awslogs-create-group": "{{ resolved_aws_awslogs.create_group | default('true') }}",
-                    "awslogs-group": {{ awslogs_group | to_json }},
-                    "awslogs-region": {{ resolved_aws_awslogs.region | default(aws_region) | to_json }},
-                    "awslogs-stream-prefix": {{ resolved_aws_awslogs.stream_prefix | default(project_name + '-' + env) | to_json }}
-                }
-            },
+                {{ default_log_configuration(main_container_name) }}
             {% endif %}
-
+            ,
             "environment": [
                 {% for name, value in environment_variables.items() %}
                 {
                     "name" : {{ name | string | to_json }},
                     "value" : {{ value | string | to_json }}
-                },
+                }{{ '' if loop.last else ',' }}
                 {% endfor %}
-                {
-                    "name" : "PROC_WRAPPER_API_BASE_URL",
-                    "value" : {{ cloudreactor_api_base_url | to_json }}
-                },
-                {# Only puts PROC_WRAPPER_API_KEY in your environment if
-                   resolved_cloudreactor.task_api_key is defined. Leave it undefined if you
-                   plan on getting it from AWS Secrets Manager through the
-                   ECS Task Execution role (where AWS injects the environment).
-                   The API key can also be a AWS Secrets Manager ARN which the proc_wrapper
-                   module will fetch at runtime.
-                #}
-                {{ env_def(resolved_cloudreactor, 'task_api_key', true, 'PROC_WRAPPER_API_KEY') }}
-                {
-                    "name" : "PROC_WRAPPER_DEPLOYMENT",
-                    "value" : {{ env | to_json }}
-                },
-                {
-                    "name" : "PROC_WRAPPER_TASK_NAME",
-                    "value" : {{ (project_name + '_' +  task_name + '_' + env) | to_json }}
-                },
-                {
-                    "name" : "PROC_WRAPPER_TASK_IS_SERVICE",
-                    "value" : "{{ is_service | string | upper }}"
-                },
-                {
-                    "name" : "PROC_WRAPPER_TASK_MAX_CONCURRENCY",
-                    "value" : "{% if max_concurrency is number %}{{ max_concurrency }}{% else %}-1{% endif %}"
-                },
-                {% if wrapper.env_locations is defined %}
-                {
-                    "name": "PROC_WRAPPER_ENV_LOCATIONS",
-                    "value": {% filter to_json %}{% for loc in wrapper.env_locations %}{{ loc }}{{ '' if loop.last else ',' }}{% endfor %}{% endfilter %}
-                },
-                {% endif %}
-                {% if wrapper.config_locations is defined %}
-                {
-                    "name": "PROC_WRAPPER_CONFIG_LOCATIONS",
-                    "value": {% filter to_json %}{% for loc in wrapper.config_locations %}{{ loc }}{{ '' if loop.last else ',' }}{% endfor %}{% endfilter %}
-                },
-                {% endif %}
-                {{ env_def(resolved_task_config, 'work_dir') }}
-                {% if service_instance_count == '__unset__' %}
-                {
-                    "name" : "PROC_WRAPPER_PROCESS_TIMEOUT_SECONDS",
-                    "value" : "{{ wrapper.process_timeout_seconds | default(-1) }}"
-                },
-                {% endif %}
-                {% if task_version_number != '__unset__' %}
-                {
-                    "name" : "PROC_WRAPPER_TASK_VERSION_NUMBER",
-                    "value" : "{{task_version_number}}"
-                },
-                {% endif %}
-                {% if task_version_text != '__unset__' %}
-                {
-                    "name" : "PROC_WRAPPER_TASK_VERSION_TEXT",
-                    "value" : {{ task_version_text | to_json }}
-                },
-                {% endif %}
-                {% if task_version_signature is defined %}
-                {
-                    "name" : "PROC_WRAPPER_TASK_VERSION_SIGNATURE",
-                    "value" : {{ task_version_signature | to_json }}
-                },
-                {% endif %}
-                {% if wrapper.other_instance_metadata is defined %}
-                {
-                    "name" : "PROC_WRAPPER_TASK_INSTANCE_METADATA",
-                    "value" : {{ wrapper.other_instance_metadata | to_json | to_json }}
-                },
-                {% endif %}
-                {% for prop_name in proc_wrapper_property_names %}
-                {{ env_def(wrapper, prop_name) }}
-                {% endfor %}
-                {# Only puts PROC_WRAPPER_ROLLBAR_ACCESS_TOKEN in your environment if
-                   wrapper.rollbar_access_token is defined. The value may be a
-                   AWS Secrets Manager ARN which will be fetched by the
-                   proc_wrapper module at runtime.
-                #}
-                {{ env_def(wrapper, 'rollbar_access_token', true) }}
-                {# This is last because it is required so it definitely does not end with a comma #}
+                {% if is_main_container_wrapped %}
+                ,
+                {{ wrapped_env(main_container_name) }},
                 {
                     "name" : "PROC_WRAPPER_TASK_COMMAND",
                     "value" : {{ resolved_task_config.command | to_json }}
                 }
+                {% endif %}
             ]
-            {% if use_default_linux_parameters %}
+            {% if is_main_container_wrapped and use_default_linux_parameters %}
             ,
             "linuxParameters": {
               "initProcessEnabled": true
@@ -278,7 +314,23 @@
         {% if resolved_ecs.extra_container_definitions[0] is defined %}
         ,
         {% for container_definition in resolved_ecs.extra_container_definitions %}
-        {{ container_definition | to_json }}{{ '' if loop.last else ',' }}
+          {% if container_definition.name in (wrapped_container_names | default([])) %}
+            {% set container_env = (container_definition.environment | default([])) + (('[' + wrapped_env(container_definition.name) + ']') | from_json) %}
+            {% set container_linux_parameters = {'initProcessEnabled': true} if use_default_linux_parameters else {} %}
+            {% set container_log_configuration = default_log_configuration(container_definition.name) | from_json %}
+
+            {% set override_container_properties = {
+                'environment': container_env,
+                'linuxParameters': container_linux_parameters,
+                'logConfiguration': container_log_configuration
+            } %}
+
+            {# {% set override_container_properties = {'linuxParameters': container_linux_parameters} %} #}
+            {% set resolved_container_definition = container_definition | combine(override_container_properties, recursive=true) %}
+          {% else %}
+            {% set resolved_container_definition = container_definition %}
+          {% endif %}
+        {{ resolved_container_definition | to_json }}{{ '' if loop.last else ',' }}
         {% endfor %}
         {% endif %}
     ]
