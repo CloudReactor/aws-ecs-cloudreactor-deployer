@@ -2,7 +2,7 @@ schema_version: 4
 
 project_metadata:
   name: "aws-ecs-cloudreactor-deployer-sample"
-  version_text: 4.0.1
+  version_text: 4.1.0
 
   # # Optionally, provide a steadily increasing whole number to indicate which
   # # build is more updated than another.
@@ -206,9 +206,6 @@ project_task_config:
     # enabled_execute_command: true
     # task_group: "{{ (project_name + '_' +  task_name + '_' + env) }}"
 
-    #wrapped_container_names:
-    #  - collector
-    primary_wrapped_container_name: collector
 
     # # Uncomment to add properties to the main container:
     # extra_main_container_properties
@@ -216,10 +213,11 @@ project_task_config:
     #     - name: environment_variable_name
     #       valueFrom: arn:aws:secretsmanager:[aws_region]:[aws_account_id]:secret:[secret_name]
 
-    extra_main_container_properties:
-      dependsOn:
-        - containerName: collector
-          condition: HEALTHY
+    # # Uncomment to have the main container exit if the sidecar exits
+    # extra_main_container_properties:
+    #   dependsOn:
+    #     - containerName: collector
+    #       condition: HEALTHY
 
     # # Uncomment to add properties to the top-level ECS task definition
     # # (see https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html)
@@ -252,26 +250,38 @@ project_task_config:
     #        hostPort: 8000    # port of the target group
     #        protocol: tcp
 
-    extra_container_cpu_units: 32
-    extra_container_memory_mb: 128
-    extra_container_definitions:
-      - name: collector
-        image: public.ecr.aws/cloudreactor/cloudreactor-aws-otel-collector:0.1.1
-        cpu: 32
-        memory: 128
-        essential: true
-        portMappings:
-          # health check
-          - containerPort: 13133
-            hostPort: 13133
-            protocol: tcp
-        healthCheck:
-          command:
-            - "CMD-SHELL"
-            - "wget -nv --tries=1 --spider http://localhost:13133/ || exit 1"
-          timeout: 30
-          retries: 5
-          startPeriod: 60
+    # # This block uses the CloudReactor variant of the AWS OTEL collector as a a sidecar.
+    # # The original AWS OTEL collector is wrapped with proc_wrapper so it reports to
+    # # CloudReactor whenever the Task Execution starts and exits.
+    #
+    # # # If more than one container runs the process wrapper, list their names here:
+    # # wrapped_container_names:
+    # #  - collector
+
+    # # Otherwise, just set the name of the single container that runs the process wrapper:
+    # primary_wrapped_container_name: collector
+    #
+    # extra_container_cpu_units: 32
+    # extra_container_memory_mb: 128
+    # extra_container_definitions:
+    #   - name: collector
+    #     image: public.ecr.aws/cloudreactor/cloudreactor-aws-otel-collector:0.1.2
+    #     cpu: 32
+    #     memory: 128
+    #     essential: true
+    #     portMappings:
+    #       # health check
+    #       - containerPort: 13133
+    #         hostPort: 13133
+    #         protocol: tcp
+    #     healthCheck:
+    #       command:
+    #         - "CMD-SHELL"
+    #         - "wget -nv --tries=1 --spider http://localhost:13133/ || exit 1"
+    #       timeout: 30
+    #       retries: 5
+    #       startPeriod: 60
+    # End
   aws:
     # network:
     #   # If you are running on private subnets, this must be false.
@@ -554,7 +564,11 @@ project_task_name_to_config:
     # # -1 means no limit.
     # max_concurrency: 1
 
-    # min_service_instance_count
+    # # Minimum number of concurrent Task Executions during deployment.
+    # # AWS ECS will replace Task Executions running previous versions with new
+    # # Task Executions running the current version, but will keep at least
+    # # min_service_instance_count instances running during the replacement process.
+    # min_service_instance_count: 0
 
     # max_age_seconds: 7200
 

@@ -46,5 +46,4 @@ RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/5.1.1/
 COPY --chown=appuser:appuser src .
 RUN chmod +x write_file.sh
 
-# ENTRYPOINT ["./proc_wrapper.bin"]
-ENTRYPOINT "./write_file.sh"
+ENTRYPOINT ["./proc_wrapper.bin"]

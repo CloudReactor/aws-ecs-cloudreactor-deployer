@@ -304,7 +304,7 @@
                 }
                 {% endif %}
             ]
-            {% if is_main_container_wrapped and use_default_linux_parameters %}
+            {% if use_default_linux_parameters %}
             ,
             "linuxParameters": {
               "initProcessEnabled": true
@@ -322,7 +322,7 @@
         {% for container_definition in resolved_ecs.extra_container_definitions %}
           {% if container_definition.name in (wrapped_container_names | default([])) %}
             {% set container_env = (container_definition.environment | default([])) + (('[' + wrapped_env(container_definition.name) + ']') | from_json) %}
-            {% set container_linux_parameters = {'initProcessEnabled': true} if use_default_linux_parameters else {} %}
+            {% set container_linux_parameters = container_definition.linuxParameters | default({'initProcessEnabled': true}) %}
             {% set container_log_configuration = default_log_configuration(container_definition.name) | from_json %}
 
             {% set override_container_properties = {
