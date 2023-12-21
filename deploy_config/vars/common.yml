@@ -2,7 +2,7 @@ schema_version: 4
 
 project_metadata:
   name: "aws-ecs-cloudreactor-deployer-sample"
-  version_text: 4.1.0
+  version_text: 4.1.1
 
   # # Optionally, provide a steadily increasing whole number to indicate which
   # # build is more updated than another.
