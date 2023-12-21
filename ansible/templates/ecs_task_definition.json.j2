@@ -296,7 +296,9 @@
                 }{{ '' if loop.last else ',' }}
                 {% endfor %}
                 {% if is_main_container_wrapped %}
+                {% if environment_variables | length > 0 %}
                 ,
+                {% endif %}
                 {{ wrapped_env(main_container_name) }},
                 {
                     "name" : "PROC_WRAPPER_TASK_COMMAND",
