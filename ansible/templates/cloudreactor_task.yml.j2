@@ -79,7 +79,7 @@
 {%- if v is none -%}
 null
 {%- elif v is number -%}
-{{- v }}
+{{- v | string }}
 {%- elif v is boolean -%}
 {{- v | string | lower }}
 {%- elif v is mapping -%}
