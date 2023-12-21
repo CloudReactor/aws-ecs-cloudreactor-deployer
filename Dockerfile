@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/python:3.11.3-slim-bullseye
+FROM public.ecr.aws/docker/library/python:3.11.6-slim-bullseye
 
 # See https://github.com/hadolint/hadolint/wiki/DL4006
 # Needed since we use pipes in the curl command
@@ -45,6 +45,8 @@ RUN curl -fsSL https://download.docker.com/linux/debian/gpg | APT_KEY_DONT_WARN_
 RUN apt-get update && \
   apt-get -y --no-install-recommends install \
     docker-ce=5:24.0.1-1~debian.11~bullseye \
+    docker-ce-cli=5:24.0.1-1~debian.11~bullseye \
+    containerd.io docker-buildx-plugin \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip
@@ -61,8 +63,8 @@ RUN pip-compile --allow-unsafe --generate-hashes \
 # Install dependencies
 RUN pip install -r /tmp/deploy-requirements.txt
 
-RUN ansible-galaxy collection install community.docker:==3.4.6
-RUN ansible-galaxy collection install community.aws:==6.0.0
+RUN ansible-galaxy collection install community.docker:==3.5.0
+RUN ansible-galaxy collection install community.aws:==7.0.0
 
 # Can't do this because GitHub Actions must be run as root
 # Run as non-root user for better security
