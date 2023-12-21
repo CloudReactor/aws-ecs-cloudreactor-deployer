@@ -184,6 +184,12 @@
       "value" : {{ task_version_signature | to_json }}
   },
   {% endif %}
+  {% if build_task_execution_uuid != '__unset__' %}
+  {
+      "name" : "PROC_WRAPPER_BUILD_TASK_EXECUTION_UUID",
+      "value" : {{ build_task_execution_uuid | to_json }}
+  },
+  {% endif %}
   {% if deployment_task_execution_uuid != '__unset__' %}
   {
       "name" : "PROC_WRAPPER_DEPLOYMENT_TASK_EXECUTION_UUID",

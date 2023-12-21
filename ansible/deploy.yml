@@ -129,6 +129,7 @@
     resolved_sync_required_task_name_to_config: "{{ resolved_task_name_to_config | dict2items | json_query(resolved_sync_required_task_name_to_config_query) | items2dict }}"
     requires_build: "{{ (resolved_sync_required_task_name_to_config | dict2items | json_query('[?(((value.ecs.task_definition_arn==undefined)||(value.ecs.task_definition_arn==`__unset__`))&&((value.ecs.docker_image_name==undefined)||(value.ecs.docker_image_name==`__unset__`))&&(to_string(value.removed_from_task_manager)!=to_string(`true`)))]')) | length > 0 }}"
 
+    build_task_execution_uuid: "{{ lookup('env', 'PROC_WRAPPER_TASK_EXECUTION_UUID') | default('__unset__', true) }}"
     deployment_task_execution_uuid: "{{ lookup('env', 'PROC_WRAPPER_TASK_EXECUTION_UUID') | default('__unset__', true) }}"
 
     # Use this when referencing the Task name, possibly before the Task name is set, as in custom top-level variables.
