@@ -213,7 +213,7 @@ infrastructure_settings:
   tags: {{  project_env_task_aws.tags | to_yaml(width=2147483647) }}
   {% endif %}
 
-{% if resolved_ecs.service is defined %}
+{% if is_service and ((resolved_task_config.is_service_managed is not defined) or resolved_task_config.is_service_managed) %}
 service_provider_type: AWS ECS
 service_settings:
   {{ prop_def(resolved_ecs_service, 'force_new_deployment') }}
@@ -239,16 +239,20 @@ service_settings:
     {% endif %}
   {% endif %}
 
-  {% if resolved_ecs_service.deployment_configuration is defined %}
   deployment_configuration:
-    minimum_healthy_percent: {{ resolved_ecs_service.deployment_configuration.minimum_healthy_percent | default(100) }}
+    minimum_healthy_percent: {{ (resolved_ecs_service.deployment_configuration.minimum_healthy_percent | default(100 * (resolved_task_config.min_service_instance_count | default(service_instance_count, true)) / service_instance_count)) | round(0, 'floor') | int }}
+
+    {% if (resolved_task_config.max_concurrency is defined) and (resolved_task_config.max_concurrency != '__unset__') %}
+    maximum_percent: {{ resolved_ecs_service.deployment_configuration.maximum_percent | default(max_concurrency * 100) }}
+    {% else %}
     maximum_percent: {{ resolved_ecs_service.deployment_configuration.maximum_percent | default(200) }}
+    {% endif %}
+
     {% if resolved_ecs_service.deployment_configuration.deployment_circuit_breaker is defined %}
     deployment_circuit_breaker:
-      enable: {{ resolved_ecs_service.deployment_configuration.enable_circuit_breaker | default(true) }}
+      enable: {{ resolved_ecs_service.deployment_configuration.enable_circuit_breaker | default(true, true) }}
       {{ prop_def(resolved_ecs_service.deployment_configuration.deployment_circuit_breaker, 'rollback_on_failure') }}
     {% endif %}
-  {% endif %}
 {% endif %}
 
 log_query: "{{ log_query }}"
