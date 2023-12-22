@@ -151,22 +151,6 @@ run_environment:
 allocated_cpu_units: {{cpu_units}}
 allocated_memory_mb: {{memory_mb}}
 
-build:
-  {% if build_task_execution_uuid == '__unset__' %}
-  task_execution_uuid: null
-  {% else %}
-  task_execution_uuid:
-    uuid: {{ build_task_execution_uuid }}
-  {% endif %}
-
-deploy:
-  {% if deployment_task_execution_uuid == '__unset__' %}
-  task_execution_uuid: null
-  {% else %}
-  task_execution_uuid:
-    uuid: {{ deployment_task_execution_uuid }}
-  {% endif %}
-
 execution_method_type: AWS ECS
 execution_method_capability_details:
   task_definition_arn: {{ task_definition_arn }}
