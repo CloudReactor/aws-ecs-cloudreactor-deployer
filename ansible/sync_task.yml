@@ -19,7 +19,7 @@
     deployed_to_task_manager: "{{ cloudreactor_enabled and deployed and not removed_from_task_manager }}"
     resolved_aws_network: "{{ resolved_aws.network | default({}) }}"
     resolved_aws_logging: "{{ resolved_aws.logging | default({}) }}"
-    # ecs.service is allow for backward compatibility reasons, may deprecate in
+    # ecs.service is allowed for backward compatibility reasons, may deprecate in
     # a later release.
     resolved_ecs_service: "{{ resolved_task_config.service_settings | default(resolved_ecs.service | default({})) }}"
     task_definition_family: "{{ resolved_ecs.task_definition_family | default(project_name + '_' +  task_name + '_' + env, true) }}"
@@ -117,6 +117,7 @@
 - name: Output CloudReactor Task yaml for {{task_name}}
   debug:
     msg: "{{ ('CloudReactor Task YAML =\n' + lookup('ansible.builtin.file', task_build_dir + '/cloudreactor_task.yml')).split('\n') }}"
+    verbosity: 2
   when: deployed_to_task_manager
 
 - name: Read CloudReactor Task yaml for {{task_name}}
