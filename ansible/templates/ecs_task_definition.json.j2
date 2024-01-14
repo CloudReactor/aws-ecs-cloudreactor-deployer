@@ -38,6 +38,9 @@
   'log_level',
   'log_secrets',
   'include_timestamps_in_log',
+  'main_container_name',
+  'monitor_container_name',
+  'sidecar_container_mode',
   'rollbar_retries',
   'rollbar_retry_delay_seconds',
   'rollbar_timeout_seconds'
@@ -80,8 +83,8 @@
 {% set resolvable_env_var_name_prefix = wrapper.resolvable_env_var_name_prefix | default('') %}
 {% set resolvable_env_var_name_suffix = wrapper.resolvable_env_var_name_suffix | default('_FOR_PROC_WRAPPER_TO_RESOLVE') %}
 
-{% set primary_wrapped_container_name = resolved_ecs.primary_wrapped_container_name | default(main_container_name) %}
-{% set wrapped_container_names = resolved_task_config.wrapped_container_names | default([primary_wrapped_container_name]) %}
+{% set monitor_container_name = resolved_ecs.monitor_container_name | default(main_container_name) %}
+{% set wrapped_container_names = resolved_task_config.wrapped_container_names | default([monitor_container_name]) %}
 {% set is_main_container_wrapped = main_container_name in wrapped_container_names %}
 
 {% macro env_def(obj, name, maybe_secret=false, env_name='',
@@ -118,7 +121,7 @@
 {%- endmacro %}
 
 {% macro wrapped_env(container_name) -%}
-  {%- if container_name == primary_wrapped_container_name -%}
+  {%- if container_name == monitor_container_name -%}
     {%- set task_manager_task_name = (project_name + '_' +  task_name + '_' + env) -%}
   {%- else -%}
     {%- set task_manager_task_name = (project_name + '_' +  task_name + '_' + container_name + '_' +  env) -%}
@@ -218,6 +221,10 @@
   {
       "name" : "PROC_WRAPPER_MAIN_CONTAINER_NAME",
       "value" : {{ main_container_name | to_json }}
+  },
+  {
+      "name" : "PROC_WRAPPER_MONITOR_CONTAINER_NAME",
+      "value" : {{ monitor_container_name | to_json }}
   }
 {%- endmacro %}
 

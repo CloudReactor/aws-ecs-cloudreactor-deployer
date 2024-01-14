@@ -209,7 +209,6 @@ project_task_config:
     # enabled_execute_command: true
     # task_group: "{{ (project_name + '_' +  task_name + '_' + env) }}"
 
-
     # # Uncomment to add properties to the main container:
     # extra_main_container_properties
     #   secrets:
@@ -262,7 +261,7 @@ project_task_config:
     # #  - collector
 
     # # Otherwise, just set the name of the single container that runs the process wrapper:
-    # primary_wrapped_container_name: collector
+    # monitor_container_name: collector
     #
     # extra_container_cpu_units: 32
     # extra_container_memory_mb: 128
@@ -284,6 +283,9 @@ project_task_config:
     #       timeout: 30
     #       retries: 5
     #       startPeriod: 60
+    #     environment:
+    #       - name: PROC_WRAPPER_MAIN_CONTAINER_NAME_FOR_SIDECAR
+    #         value: main
     # End
   aws:
     # network:
