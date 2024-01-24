@@ -614,20 +614,8 @@ project_task_name_to_config:
     wrapper:
       enable_status_update_listener: true
 
-  # This task shows how to use the temporary file system provided by ECS
   write_file:
-    deployed: true
-    description: "File I/O"
     command: "./write_file.sh"
-    ecs:
-      extra_main_container_properties:
-        mountPoints:
-          - sourceVolume: "database_scratch"
-            containerPath: "/home/appuser/scratch"
-      extra_task_definition_properties:
-        volumes:
-          - name: "database_scratch"
-            host: {}
     env:
       TEMP_FILE_DIR: "/home/appuser/scratch"
 
