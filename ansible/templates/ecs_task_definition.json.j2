@@ -38,8 +38,6 @@
   'log_level',
   'log_secrets',
   'include_timestamps_in_log',
-  'main_container_name',
-  'monitor_container_name',
   'sidecar_container_mode',
   'rollbar_retries',
   'rollbar_retry_delay_seconds',
@@ -83,7 +81,6 @@
 {% set resolvable_env_var_name_prefix = wrapper.resolvable_env_var_name_prefix | default('') %}
 {% set resolvable_env_var_name_suffix = wrapper.resolvable_env_var_name_suffix | default('_FOR_PROC_WRAPPER_TO_RESOLVE') %}
 
-{% set monitor_container_name = resolved_ecs.monitor_container_name | default(main_container_name) %}
 {% set wrapped_container_names = resolved_task_config.wrapped_container_names | default([monitor_container_name]) %}
 {% set is_main_container_wrapped = main_container_name in wrapped_container_names %}
 
@@ -142,6 +139,7 @@
       "name" : "PROC_WRAPPER_TASK_NAME",
       "value" : {{ task_manager_task_name | to_json }}
   },
+  {%- if container_name == monitor_container_name -%}
   {
       "name" : "PROC_WRAPPER_TASK_IS_SERVICE",
       "value" : "{{ is_service | string | upper }}"
@@ -150,6 +148,7 @@
       "name" : "PROC_WRAPPER_TASK_MAX_CONCURRENCY",
       "value" : {% if max_concurrency is number %}{{ max_concurrency | string | to_json }}{% else %}"-1"{% endif %}
   },
+  {% endif %}
   {% if wrapper.env_locations is defined %}
   {
       "name": "PROC_WRAPPER_ENV_LOCATIONS",

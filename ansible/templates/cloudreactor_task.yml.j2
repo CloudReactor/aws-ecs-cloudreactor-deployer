@@ -164,6 +164,8 @@ execution_method_capability_details:
   main_container_cpu_units: {{ cpu_units - extra_container_cpu_units }}
   main_container_memory_mb: {{ memory_mb - extra_container_memory_mb }}
 
+  monitor_container_name: "{{ monitor_container_name }}"
+
   {{ prop_def(project_env_task_ecs, 'execution_role_arn') }}
   {{ prop_def(project_env_task_ecs, 'task_role_arn') }}
   {{ prop_def(project_env_task_ecs, 'platform_version') }}
@@ -231,7 +233,7 @@ service_settings:
     load_balancers:
       {% for load_balancer in resolved_ecs_service.load_balancer_settings.load_balancers %}
       - target_group_arn: "{{load_balancer.target_group_arn}}"
-        container_name:  "{{main_container_name}}"
+        container_name:  "{{load_balancer.container_name | default(main_container_name)}}"
         container_port: {{load_balancer.container_port}}
       {% endfor %}
     {% else %}

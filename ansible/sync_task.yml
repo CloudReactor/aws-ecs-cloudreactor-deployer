@@ -32,6 +32,7 @@
     predefined_task_definition_arn: "{{ resolved_ecs.task_definition_arn if (resolved_ecs.task_definition_arn is defined) and (resolved_ecs.task_definition_arn != '__unset__') else none }}"
     predefined_docker_image_name: "{{ resolved_ecs.docker_image_name if (resolved_ecs.docker_image_name is defined) and (resolved_ecs.docker_image_name != '__unset__') else none }}"
     resolved_aws_awslogs: "{{ resolved_aws_logging.awslogs | default({}) }}"
+    monitor_container_name: "{{ resolved_ecs.monitor_container_name | default(main_container_name, true) }}"
   tags:
     - always
 
@@ -216,10 +217,10 @@
       subnets: "{{ resolved_aws_network.subnets }}"
       security_groups: "{{ resolved_aws_network.security_groups }}"
     task_definition: "{{task_definition_family}}"
-    desired_count: "{{ resolved_task_config.service_instance_count | default(1) }}"
+    desired_count: "{{ resolved_task_config.service_instance_count | default(1, true) }}"
     deployment_configuration:
-      minimum_healthy_percent: "{{ (resolved_ecs_service.deployment_configuration | default({})).minimum_healthy_percent | default(0) }}"
-      maximum_percent: "{{ (resolved_ecs_service.deployment_configuration | default({})).maximum_percent | default(100) }}"
+      minimum_healthy_percent: "{{ (resolved_ecs_service.deployment_configuration.minimum_healthy_percent | default(0) }}"
+      maximum_percent: "{{ (resolved_ecs_service.deployment_configuration.maximum_percent | default(100) }}"
     delay: "{{ resolved_ecs_service.delay | default(10) }}"
   when: (not cloudreactor_enabled) and deployed and ((resolved_task_config.is_service_managed is not defined) or resolved_task_config.is_service_managed) and (resolved_ecs_service.load_balancer_settings is not defined) and (resolved_task_config.service_instance_count | default(0) | string != '0')
   tags:
@@ -238,18 +239,18 @@
       subnets: "{{ resolved_aws_network.subnets }}"
       security_groups: "{{ resolved_aws_network.security_groups }}"
     task_definition: "{{task_definition_family}}"
-    desired_count: "{{ resolved_task_config.service_instance_count | default(1) }}"
+    desired_count: "{{ resolved_task_config.service_instance_count | default(1, true) }}"
     deployment_configuration:
-      minimum_healthy_percent: "{{ (resolved_ecs_service.deployment_configuration | default({})).minimum_healthy_percent | default(100) }}"
-      maximum_percent: "{{ (resolved_ecs_service.deployment_configuration | default({})).maximum_percent | default(200) }}"
+      minimum_healthy_percent: "{{ resolved_ecs_service.deployment_configuration.minimum_healthy_percent | default(100, true) }}"
+      maximum_percent: "{{ resolved_ecs_service.deployment_configuration.maximum_percent | default(200) }}"
     delay: "{{ resolved_ecs_service.delay | default(30) }}"
     # Note this only supports a single load balancer per Task.
     # If you use CloudReactor to manage Tasks, it does support multiple load
     # balancers.
     load_balancers:
-      - targetGroupArn: "{{resolved_ecs_service.load_balancer_settings.load_balancers[0].target_group_arn}}"
-        containerName:  "{{project_name}}_{{task_name}}_{{env}}"
-        containerPort: "{{resolved_ecs_service.load_balancer_settings.load_balancers[0].container_port}}"
+      - targetGroupArn: "{{ resolved_ecs_service.load_balancer_settings.load_balancers[0].target_group_arn }}"
+        containerName:  "{{ resolved_ecs_service.load_balancer_settings.load_balancers[0].container_name | default(main_container_name) }}"
+        containerPort: "{{ resolved_ecs_service.load_balancer_settings.load_balancers[0].container_port }}"
     health_check_grace_period_seconds: "{{ resolved_ecs_service.load_balancer_settings.health_check_grace_period_seconds | default(30) }}"
   when: (not cloudreactor_enabled) and deployed and (resolved_ecs_service.load_balancer_settings is defined) and ((resolved_task_config.is_service_managed is not defined) or resolved_task_config.is_service_managed) and (resolved_ecs_service.load_balancer_settings is not defined) and (resolved_task_config.service_instance_count | default(0) | string != '0')
   tags:
