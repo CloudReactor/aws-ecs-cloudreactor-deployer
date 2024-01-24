@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/python:3.11.6-slim-bullseye
+FROM public.ecr.aws/docker/library/python:3.11.7-slim-bullseye
 
 # See https://github.com/hadolint/hadolint/wiki/DL4006
 # Needed since we use pipes in the curl command

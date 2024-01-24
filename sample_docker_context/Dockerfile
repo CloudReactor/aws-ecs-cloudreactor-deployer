@@ -1,9 +1,9 @@
 # We could also start from a python base image to be able to run the
 # proc_wrapper module.
-# FROM python:3.9.13-slim-bullseye
+# FROM python:3.9.13-slim-bookworm
 # This is good if we're only running python code.
-# But debian:bullseye-slim is more likely to be a base image that different
-# language environment inherit from.
+# But debian:bookworm-slim is more likely to be a base image that different
+# language environments inherit from.
 FROM public.ecr.aws/docker/library/debian:bookworm-slim
 
 LABEL maintainer="jeff@cloudreactor.io"
@@ -40,7 +40,7 @@ WORKDIR /home/appuser
 RUN mkdir scratch
 
 # Use the standalone executable for x64/AMD64 Linux.
-RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/5.1.1/bin/nuitka/debian-amd64/5.1.1/proc_wrapper.bin \
+RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/5.2.0/bin/pyinstaller/debian-amd64/5.2.0/proc_wrapper.bin \
   && chmod +x proc_wrapper.bin
 
 COPY --chown=appuser:appuser src .
