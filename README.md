@@ -16,32 +16,16 @@ It uses [Ansible](https://docs.ansible.com/ansible/latest/index.html)
 internally, but being a Docker image, you don't need to install the
 dependencies on your host machine.
 
+The deployer can deploy multiple tasks based on one of the following:
+1. An Docker image that it builds from a single Dockerfile (the default)
+2. A pre-defined Docker image name
+3. A pre-defined ECS Task Definition ARN
+
 ## Prerequisites
 
-### Dockerize your project and wrap the entrypoint
+### Containerize your project
 
-If you haven't already, Dockerize your project.
-Assuming you want to use CloudReactor to monitor your Tasks, ensure that
-your Docker image contains the files necessary to run
-[proc_wrapper](https://github.com/CloudReactor/cloudreactor-procwrapper).
-This could either be a standalone executable, or having python 3.7+ installed
-and installing the
-[cloudreactor-procwrapper](https://pypi.org/project/cloudreactor-procwrapper/)
-package. Your Dockerfile should call proc_wrapper as its entrypoint. If using
-a standalone Linux executable:
-
-```
-ENTRYPOINT ./proc_wrapper
-```
-
-If using the python package:
-
-```
-ENTRYPOINT python -m proc_wrapper
-```
-
-proc_wrapper will use the environment variable `PROC_WRAPPER_TASK_COMMAND` to
-determine what command to wrap.
+If you haven't already, containerize your project so that it can be run as a Docker container. The steps are dependent on the programming language your project is written in. Some [example projects][#Example-Projects] are available.
 
 ### Create a CloudReactor account
 
@@ -76,18 +60,15 @@ and one for your task to report its state. Go to the
 [CloudReactor dashboard](https://cloudreactor.io/api_keys) and select
 "API keys" in the menu that pops up when you click your username in the upper
 right corner. Select the button "Add new API key..." which will take you to a
-form to fill in details. Give the API key a name like `Example Project - staging`
-and associate it with the
-Run Environment you created. Ensure the Group is correct, the Enabled checkbox
-is checked, and the Access Level is `Task`. Then select the Save button. You
-should then see your new API key listed. Copy the value of the key. This is the
-`Task API key`.
+form to fill in details. Give the API key a name like
+`Example Project - staging` and associate it with the Run Environment you
+created. Ensure the Group is correct, the Enabled checkbox is checked, and
+the Access Level is `Task`. Then select the Save button. You should then see your new API key listed. Copy the value of the key. This is the `Task API key`.
 
 Then repeat the above instructions, except select the Access Level of
 `Developer`, and give it a name like `Deployment - staging`.
 The value of the key is the `Deployment API key`. You can reuse
-the same Deployment API Key for all projects you deploy to the same CloudReactor
-Run Environment.
+the same Deployment API Key for all projects you deploy to the same CloudReactor Run Environment.
 
 ### Create or identify a AWS role or user with sufficient permissions
 
@@ -110,10 +91,63 @@ set as [Action secrets](https://docs.github.com/en/actions/security-guides/using
 See [Deployer AWS Permissions](https://docs.cloudreactor.io/deployer_aws_permissions.html)
 for the exact permissions required.
 
+### Enable proc_wrapper
+
+Assuming you want to use CloudReactor to monitor your Tasks, you'll need to
+arrange for your code to communicate with the CloudReactor service.
+There are two options:
+
+#### Option 1: Wrap the entrypoint with proc_wrapper
+
+Ensure that your Docker image contains the files necessary to run
+[proc_wrapper](https://github.com/CloudReactor/cloudreactor-procwrapper).
+This could either be a standalone executable, or having python 3.7+ installed
+and installing the
+[cloudreactor-procwrapper](https://pypi.org/project/cloudreactor-procwrapper/)
+package.
+
+Your Dockerfile should call proc_wrapper as its entrypoint. If using
+a standalone Linux executable:
+
+```
+
+RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/5.3.0/bin/pyinstaller/debian-amd64/5.3.0/proc_wrapper.bin \
+  && chmod +x proc_wrapper.bin
+
+ENTRYPOINT ["./proc_wrapper.bin"]
+```
+
+If using the python package:
+
+```
+ENTRYPOINT ["python", "-m", "proc_wrapper"]
+```
+
+assuming that you have installed the
+[cloudreactor-procwrapper](https://pypi.org/project/cloudreactor-procwrapper/) package, usually with pip.
+
+proc_wrapper will use the environment variable `PROC_WRAPPER_TASK_COMMAND` to
+determine what command to wrap.
+
+#### Option 2: Run a sidecar container with proc_wrapper installed
+
+If you don't have the ability to modify an existing image, or don't want to
+make modifications to it, you can deploy a sidecar container with proc_wrapper
+installed on it, along with the main image. The sidecar container will monitor
+the main image and report its status to CloudReactor. This uses a small amount
+of additional CPU and memory.
+
+You can use a pre-built sidecar container, such as
+[cloudreactor-aws-otel-collector](https://github.com/CloudReactor/aws-otel-collector-cloudreactor)
+or build your own by making the changes as in Option 1.
+
+Once you have built a sidecar container and deployed it to a container
+repository, you'll add some extra configuration to enable it, described later.
+
 ## Configure the build
 
-These steps are needed for both command-line deployment and deployment using the
-GitHub Action.
+These steps are needed for both command-line deployment and deployment using
+the GitHub Action.
 
 First, copy the
  `deploy_config` directory of this project into your own,
@@ -179,17 +213,54 @@ safe to commit the file to source control. You may store the password in
 an external file if deploying by command-line, or in a GitHub secret if
 deploying by GitHub Action.
 
+
 ### ECS Task Definition settings
 
 * You can add additional properties to the main container running each Task,
 such as `mountPoints` and `portMappings`  by setting
 `extra_main_container_properties` in common.yml or `deploy_config/vars/<environment>.yml`.
-See the `file_io` Task for an example of this.
 * You can add AWS ECS task properties, such as `volumes` and `secrets`,
 by setting `extra_task_definition_properties` in the `ecs` property of each task
-configuration. See the `file_io` Task for an example of this.
+configuration.
 * You can add additional containers to the Task by setting `extra_container_definitions`
 in `deploy_config/vars/common.yml` or `deploy_config/vars/<environment>.yml`.
+
+### Running proc_wrapper as a sidecar
+
+To run a sidecar container that uses proc_wrapper to communicate with
+CloudReactor (instead of the main container), uncomment this section inside of
+`project_ecs`:
+
+    project_ecs:
+      ...
+      extra_main_container_properties:
+        dependsOn:
+          - containerName: collector
+            condition: HEALTHY
+      monitor_container_name: collector
+      extra_container_cpu_units: 32
+      extra_container_memory_mb: 128
+      extra_container_definitions:
+        - name: collector
+          image: public.ecr.aws/cloudreactor/cloudreactor-aws-otel-collector:0.1.3
+          cpu: 32
+          memory: 128
+          essential: true
+          portMappings:
+            # health check
+            - containerPort: 13133
+              hostPort: 13133
+              protocol: tcp
+          healthCheck:
+            command:
+              - "CMD-SHELL"
+              - "wget -nv --tries=1 --spider http://localhost:13133/ || exit 1"
+            timeout: 30
+            retries: 5
+            startPeriod: 60
+
+You can substitute `public.ecr.aws/cloudreactor/cloudreactor-aws-otel-collector`
+with any other container that runs `proc_wrapper` as its entrypoint.
 
 ### Configuration hierarchy
 

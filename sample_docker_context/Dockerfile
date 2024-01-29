@@ -40,7 +40,7 @@ WORKDIR /home/appuser
 RUN mkdir scratch
 
 # Use the standalone executable for x64/AMD64 Linux.
-RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/5.2.0/bin/pyinstaller/debian-amd64/5.2.0/proc_wrapper.bin \
+RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/5.3.0/bin/pyinstaller/debian-amd64/5.3.0/proc_wrapper.bin \
   && chmod +x proc_wrapper.bin
 
 COPY --chown=appuser:appuser src .
