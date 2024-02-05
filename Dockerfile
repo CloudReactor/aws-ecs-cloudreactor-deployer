@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/python:3.11.7-slim-bullseye
+FROM public.ecr.aws/docker/library/python:3.11.7-slim-bookworm
 
 # See https://github.com/hadolint/hadolint/wiki/DL4006
 # Needed since we use pipes in the curl command
@@ -36,24 +36,30 @@ RUN apt-get update \
     software-properties-common \
     unzip \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
-RUN add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
 
-# apt-key doesn't like being used as stdout
-# https://stackoverflow.com/questions/48162574/how-to-circumvent-apt-key-output-should-not-be-parsed
-RUN curl -fsSL https://download.docker.com/linux/debian/gpg | APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add -
+
+RUN install -m 0755 -d /etc/apt/keyrings
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc \
+  && chmod a+r /etc/apt/keyrings/docker.asc
+
+RUN echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 RUN apt-get update && \
   apt-get -y --no-install-recommends install \
-    docker-ce=5:24.0.1-1~debian.11~bullseye \
-    docker-ce-cli=5:24.0.1-1~debian.11~bullseye \
-    containerd.io docker-buildx-plugin \
+    docker-ce \
+    docker-ce-cli \
+    containerd.io \
+    docker-buildx-plugin \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip
 RUN ./aws/install
 
-RUN pip install --upgrade pip==23.1.2
-RUN pip install pip-tools==6.13.0 requests==2.31.0
+RUN pip install --upgrade pip==24.0
+RUN pip install pip-tools==6.14.0 requests==2.31.0
 
 COPY deploy-requirements.in /tmp/deploy-requirements.in
 
@@ -63,8 +69,8 @@ RUN pip-compile --allow-unsafe --generate-hashes \
 # Install dependencies
 RUN pip install -r /tmp/deploy-requirements.txt
 
-RUN ansible-galaxy collection install community.docker:==3.5.0
-RUN ansible-galaxy collection install community.aws:==7.0.0
+RUN ansible-galaxy collection install community.docker:==3.7.0
+RUN ansible-galaxy collection install community.aws:==7.1.0
 
 # Can't do this because GitHub Actions must be run as root
 # Run as non-root user for better security
