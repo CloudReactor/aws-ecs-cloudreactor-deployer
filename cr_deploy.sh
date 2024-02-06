@@ -272,19 +272,18 @@ if [ -z "$CLOUDREACTOR_TASK_VERSION_SIGNATURE" ]
           then
             CLOUDREACTOR_TASK_VERSION_SIGNATURE=$CODEBUILD_SOURCE_VERSION
           else
-            # Optional: use the latest git commit hash to set the version signature,
-            # so that the git commit can be linked in the CloudReactor dashboard.
-            # Otherwise, ansible will use the current date/time as the task version signature.
-            # You can comment out the next block if you don't use git, or set the
-            # CLOUDREACTOR_TASK_VERSION_SIGNATURE variable before calling this script.
-            if command -v git &> /dev/null
-              then
-                CLOUDREACTOR_TASK_VERSION_SIGNATURE=`git rev-parse HEAD`
-              else
-                echo "git not found, setting CLOUDREACTOR_TASK_VERSION_SIGNATURE to empty string"
-                CLOUDREACTOR_TASK_VERSION_SIGNATURE=""
+            # Set CLOUDREACTOR_DEPLOYER_NO_GIT to TRUE to disable git-based
+            # version computation.
+            # Otherwise, ansible will use the current date/time as the task
+            # version signature, if CLOUDREACTOR_TASK_VERSION_SIGNATURE is not
+            # set.
+            if [[ "${CLOUDREACTOR_DEPLOYER_NO_GIT,,}" != "true" ]] && command -v git &> /dev/null
+                then
+                  CLOUDREACTOR_TASK_VERSION_SIGNATURE=`git rev-parse HEAD`
+                else
+                  echo "git not found or not to be used, setting CLOUDREACTOR_TASK_VERSION_SIGNATURE to empty string"
+                  CLOUDREACTOR_TASK_VERSION_SIGNATURE=""
             fi
-            # End Optional
         fi
     fi
 fi
