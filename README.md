@@ -379,6 +379,15 @@ environment variables:
 | DEBUG_MODE                  | `FALSE` | If set to `TRUE`, docker will be run in interactive mode (`-ti`) and a bash shell will be started inside the container. |
 | DEPLOY_COMMAND            |    `python deploy.py`    | The command to use when running the image. Defaults to `bash` when `DEBUG_MODE` is `TRUE`. |
 
+`cr_deploy.sh` also contains commands to assume an AWS role, if
+`CLOUDREACTOR_DEPLOYER_ASSUME_ROLE_ARN` is set. It will use the
+[AWS Command Line Interface](https://aws.amazon.com/cli/) (either
+version 1 or 2 are fine)
+and [jq](https://github.com/jqlang/jq) (which must be pre-installed) to get an
+`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_SESSION_TOKEN`
+to pass to the deployer image. This may be useful when
+[running the deployer in an AWS CodeBuild environment](https://repost.aws/knowledge-center/codebuild-temporary-credentials-docker).
+
 If possible, try to avoid modifying `cr_deploy.sh`, because this project
 will frequently update it with options. Instead, create a wrapper script
 that configures some settings with environment variables, then calls
