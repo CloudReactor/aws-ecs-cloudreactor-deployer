@@ -219,6 +219,11 @@ if [[ "${USE_USER_AWS_CONFIG,,}" == "true" ]]
     fi
 fi
 
+if [ -n "$AWS_REGION" ]
+    then
+      export AWS_DEFAULT_REGION=$AWS_REGION
+fi
+
 if [ -n "$AWS_DEFAULT_REGION" ]
     then
       EXTRA_DOCKER_RUN_OPTIONS=" $EXTRA_DOCKER_RUN_OPTIONS -e AWS_DEFAULT_REGION"
