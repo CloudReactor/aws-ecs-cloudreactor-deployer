@@ -82,7 +82,7 @@
       username: "{{ lookup('env', 'CONTAINER_REGISTRY_PULL_USERNAME') | default(project_env_deployment.container_registry_pull_username | default(container_registry_username), true) }}"
       password: "{{ lookup('env', 'CONTAINER_REGISTRY_PULL_PASSWORD') | default(project_env_deployment.container_registry_pull_password | default(container_registry_password), true) }}"
 
-    source_docker_image_tag: "{{ build_options.docker_image_tag | default(env + '_' + task_version_signature) }}"
+    source_docker_image_tag: "{{ build_options.docker_image_tag | default(env + '_' + task_version_signature) | regex_replace('[^a-zA-Z0-9_.-]+', '_') | truncate(128, False, '', 0) }}"
     source_docker_image_name_without_tag: "{{ build_options.source_docker_image_name_without_tag | default(project_name) }}"
     source_docker_image_name: "{{ source_docker_image_name_without_tag }}:{{source_docker_image_tag}}"
     target_docker_image_tag: "{{ build_options.target_docker_image_tag | default(source_docker_image_tag) }}"
