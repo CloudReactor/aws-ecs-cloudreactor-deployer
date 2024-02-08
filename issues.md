@@ -1,5 +1,4 @@
 * Clone Git repo
-* Remove non-alpha chars in CONFIG_FILENAME_STEM in cr_deploy.sh
 * See if we can set expiration on CloudWatch log groups
 * Clean up old Docker images
 * Clean up old Task Definitions

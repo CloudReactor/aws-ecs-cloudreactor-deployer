@@ -84,7 +84,9 @@ if [ -z "$1" ]
     shift
 fi
 
-echo "DEPLOYMENT_ENVIRONMENT = $DEPLOYMENT_ENVIRONMENT"
+echo_to_stderr() { printf "%s\n" "$*" >&2; }
+
+echo_to_stderr "DEPLOYMENT_ENVIRONMENT = $DEPLOYMENT_ENVIRONMENT"
 
 if [ -z "$1" ] || [[ "$1" =~ ^- ]]
   then
@@ -99,16 +101,16 @@ fi
 
 if [ -z "$CONFIG_FILENAME_STEM" ]
   then
-    CONFIG_FILENAME_STEM="$DEPLOYMENT_ENVIRONMENT"
+    CONFIG_FILENAME_STEM=$(echo $DEPLOYMENT_ENVIRONMENT | sed 's/[^a-zA-Z0-9_-]//g')
 fi
 
 VAR_FILENAME="deploy_config/vars/$CONFIG_FILENAME_STEM.yml"
 
-echo "VAR_FILENAME = $VAR_FILENAME"
+echo_to_stderr "VAR_FILENAME = $VAR_FILENAME"
 
 if [[ ! -f $VAR_FILENAME ]]
   then
-    echo "$VAR_FILENAME does not exist, please copy deploy_config/vars/example.yml to $VAR_FILENAME and fill in your secrets."
+    echo_to_stderr "$VAR_FILENAME does not exist, please copy deploy_config/vars/example.yml to $VAR_FILENAME and fill in your secrets."
     exit 1
 fi
 
@@ -149,7 +151,7 @@ if [ -z "$DOCKER_CONTEXT_DIR" ]
     DOCKER_CONTEXT_DIR="$PWD"
 fi
 
-echo "Docker context dir = $DOCKER_CONTEXT_DIR"
+echo_to_stderr "Docker context dir = $DOCKER_CONTEXT_DIR"
 
 # The default Dockerfile location is /home/appuser/work/Dockerfile
 # (in the container's filesystem).
@@ -157,7 +159,7 @@ echo "Docker context dir = $DOCKER_CONTEXT_DIR"
 # container's filesystem, or a path relative to the Docker context directory.
 if [ -n "$DOCKERFILE_PATH" ]
   then
-    EXTRA_DOCKER_RUN_OPTIONS="$EXTRA_DOCKER_RUN_OPTIONS -e DOCKERFILE_PATH=$DOCKERFILE_PATH"
+    EXTRA_DOCKER_RUN_OPTIONS="$EXTRA_DOCKER_RUN_OPTIONS -e DOCKERFILE_PATH"
 fi
 
 # The default Docker image comes from GitHub Packages. However, if we
@@ -185,7 +187,7 @@ if [ -z "$DOCKER_IMAGE_NAME" ]
     fi
 fi
 
-echo "Docker image name = $DOCKER_IMAGE_NAME"
+echo_to_stderr "Docker image name = $DOCKER_IMAGE_NAME"
 
 # By default, the Docker image tag is 4, since this project uses
 # semantic versioning and non-compatible changes will increment the
@@ -197,23 +199,18 @@ if [ -z "$DOCKER_IMAGE_TAG" ]
     DOCKER_IMAGE_TAG="4"
 fi
 
-echo "Docker image tag = $DOCKER_IMAGE_TAG"
+echo_to_stderr "Docker image tag = $DOCKER_IMAGE_TAG"
 
-if [ "$DEBUG_MODE" == "TRUE" ]
+if [[ "${DEBUG_MODE,,}" == "true" ]]
   then
     EXTRA_DOCKER_RUN_OPTIONS="-ti $EXTRA_DOCKER_RUN_OPTIONS --entrypoint bash"
-fi
-
-if [ "$PASS_AWS_ACCESS_KEY" == "TRUE" ]
-  then
-    EXTRA_DOCKER_RUN_OPTIONS="-e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY $EXTRA_DOCKER_RUN_OPTIONS"
 fi
 
 # GitHub Actions must be run as root, but keep this as a variable in case
 # we publish another Docker image that runs as appuser.
 DOCKER_USER_HOME=/root
 
-if [ "$USE_USER_AWS_CONFIG" == "TRUE" ]
+if [[ "${USE_USER_AWS_CONFIG,,}" == "true" ]]
   then
     EXTRA_DOCKER_RUN_OPTIONS=" -v $HOME/.aws:$DOCKER_USER_HOME/.aws $EXTRA_DOCKER_RUN_OPTIONS"
     if [ -n "$AWS_PROFILE" ]
@@ -232,6 +229,21 @@ if [ -n "$ANSIBLE_VAULT_PASSWORD" ]
       EXTRA_DOCKER_RUN_OPTIONS=" $EXTRA_DOCKER_RUN_OPTIONS -e ANSIBLE_VAULT_PASSWORD"
 fi
 
+if [ -n "$CODEBUILD_CI" ];
+  then
+    if [ -z "$PROC_WRAPPER_TASK_NAME" ] && [ -n "$CODEBUILD_SOURCE_REPO_URL" ];
+      then
+        # Get the path after the last slash
+        export PROC_WRAPPER_TASK_NAME="${CODEBUILD_SOURCE_REPO_URL##*/}-deploy-$DEPLOYMENT_ENVIRONMENT"
+    fi
+fi
+
+if [ -z "$PROC_WRAPPER_TASK_NAME" ];
+  then
+    export PROC_WRAPPER_TASK_NAME="$(basename $(pwd))-deploy-$DEPLOYMENT_ENVIRONMENT"
+    echo_to_stderr "PROC_WRAPPER_TASK_NAME not set, using default value $PROC_WRAPPER_TASK_NAME"
+fi
+
 # Pass through environment variables for proc_wrapper, AWS CodeBuild
 while IFS='=' read -r -d '' n v; do
     if [[ $n == PROC_WRAPPER_* ]] || [[ $n == CODEBUILD_* ]];
@@ -240,27 +252,31 @@ while IFS='=' read -r -d '' n v; do
     fi
 done < <(env -0)
 
-if [ -n "$CODEBUILD_CI" ];
+if [ -n "$CLOUDREACTOR_DEPLOYER_ASSUME_ROLE_ARN" ]
   then
-    if [ -z "$PROC_WRAPPER_TASK_NAME" ] && [ -n "$CODEBUILD_SOURCE_REPO_URL" ];
+    if [ -x "$(command -v aws)" ] && [ -x "$(command -v jq)" ]
       then
-        # Get the path after the last slash
-        PROC_WRAPPER_TASK_NAME="${CODEBUILD_SOURCE_REPO_URL##*/}-deploy-$DEPLOYMENT_ENVIRONMENT"
-        EXTRA_DOCKER_RUN_OPTIONS="$EXTRA_DOCKER_RUN_OPTIONS -e PROC_WRAPPER_TASK_NAME=""$PROC_WRAPPER_TASK_NAME"""
-    fi
+        ROLE_SESSION_NAME="cloudreactor-deployer-${PROC_WRAPPER_TASK_NAME}"
+        ROLE_SESSION_NAME=$(echo $ROLE_SESSION_NAME | sed 's/[^a-zA-Z0-9_=.@-]//g' | sed 's/\(.\{128\}\).*/\1/')
 
-    if [ -z "$PROC_WRAPPER_AUTO_CREATE_TASK" ];
-      then
-        EXTRA_DOCKER_RUN_OPTIONS="$EXTRA_DOCKER_RUN_OPTIONS -e PROC_WRAPPER_AUTO_CREATE_TASK=TRUE"
-    fi
-
-    if [ -z "$PROC_WRAPPER_AUTO_CREATE_TASK_RUN_ENVIRONMENT_NAME" ];
-      then
-        EXTRA_DOCKER_RUN_OPTIONS="$EXTRA_DOCKER_RUN_OPTIONS -e PROC_WRAPPER_AUTO_CREATE_TASK_RUN_ENVIRONMENT_NAME=""$DEPLOYMENT_ENVIRONMENT"""
+        ASSUME_ROLE_OUTPUT_JSON=$(aws sts assume-role --role-arn "$CLOUDREACTOR_DEPLOYER_ASSUME_ROLE_ARN" --role-session-name "$ROLE_SESSION_NAME")
+        export AWS_ACCESS_KEY_ID=$(echo "${ASSUME_ROLE_OUTPUT_JSON}" | jq -r '.Credentials.AccessKeyId')
+        export AWS_SECRET_ACCESS_KEY=$(echo "${ASSUME_ROLE_OUTPUT_JSON}" | jq -r '.Credentials.SecretAccessKey')
+        export AWS_SESSION_TOKEN=$(echo "${ASSUME_ROLE_OUTPUT_JSON}" | jq -r '.Credentials.SessionToken')
+        PASS_AWS_ACCESS_KEY="TRUE"
+        EXTRA_DOCKER_RUN_OPTIONS="-e AWS_SESSION_TOKEN $EXTRA_DOCKER_RUN_OPTIONS"
+      else
+        echo_to_stderr "CLOUDREACTOR_DEPLOYER_ASSUME_ROLE_ARN is set to $CLOUDREACTOR_DEPLOYER_ASSUME_ROLE_ARN but aws-cli and jq are required to assume role"
+        exit 1
     fi
 fi
 
-echo "Extra Docker run options = '$EXTRA_DOCKER_RUN_OPTIONS'"
+if [[ "${PASS_AWS_ACCESS_KEY,,}" == "true" ]]
+  then
+    EXTRA_DOCKER_RUN_OPTIONS="-e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY $EXTRA_DOCKER_RUN_OPTIONS"
+fi
+
+echo_to_stderr "Extra Docker run options = '$EXTRA_DOCKER_RUN_OPTIONS'"
 
 if [ -z "$CLOUDREACTOR_TASK_VERSION_SIGNATURE" ]
   then
@@ -277,22 +293,22 @@ if [ -z "$CLOUDREACTOR_TASK_VERSION_SIGNATURE" ]
             # Otherwise, ansible will use the current date/time as the task
             # version signature, if CLOUDREACTOR_TASK_VERSION_SIGNATURE is not
             # set.
-            if [[ "${CLOUDREACTOR_DEPLOYER_NO_GIT,,}" != "true" ]] && command -v git &> /dev/null
+            if [[ "${CLOUDREACTOR_DEPLOYER_NO_GIT,,}" != "true" ]] && [ -x "$(command -v git)" ]
                 then
                   CLOUDREACTOR_TASK_VERSION_SIGNATURE=`git rev-parse HEAD`
                 else
-                  echo "git not found or not to be used, setting CLOUDREACTOR_TASK_VERSION_SIGNATURE to empty string"
+                  echo_to_stderr "git not found or not to be used, setting CLOUDREACTOR_TASK_VERSION_SIGNATURE to empty string"
                   CLOUDREACTOR_TASK_VERSION_SIGNATURE=""
             fi
         fi
     fi
 fi
 
-echo "CLOUDREACTOR_TASK_VERSION_SIGNATURE = $CLOUDREACTOR_TASK_VERSION_SIGNATURE"
+echo_to_stderr "CLOUDREACTOR_TASK_VERSION_SIGNATURE = $CLOUDREACTOR_TASK_VERSION_SIGNATURE"
 
 if [ -z "$DEPLOY_COMMAND" ]
   then
-    if [ "$DEBUG_MODE" == "TRUE" ]
+    if [[ "${DEBUG_MODE,,}" == "true" ]]
       then
         DEPLOY_COMMAND=""
       else
