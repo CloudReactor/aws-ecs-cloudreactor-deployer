@@ -17,7 +17,7 @@ internally, but being a Docker image, you don't need to install the
 dependencies on your host machine.
 
 The deployer can deploy multiple tasks based on one of the following:
-1. An Docker image that it builds from a single Dockerfile (the default)
+1. A Docker image that it builds from a single Dockerfile (the default)
 2. A pre-defined Docker image name
 3. A pre-defined ECS Task Definition ARN
 
@@ -25,7 +25,7 @@ The deployer can deploy multiple tasks based on one of the following:
 
 ### Containerize your project
 
-If you haven't already, containerize your project so that it can be run as a Docker container. The steps are dependent on the programming language your project is written in. Some [example projects][#Example-Projects] are available.
+If you haven't already, containerize your project so that it can be run as a Docker container. The steps are dependent on the programming language your project is written in. Some [example projects](#Example-Projects) are available.
 
 ### Create a CloudReactor account
 
@@ -111,7 +111,7 @@ a standalone Linux executable:
 
 ```
 
-RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/5.3.0/bin/pyinstaller/debian-amd64/5.3.0/proc_wrapper.bin \
+RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/5.3.2/bin/pyinstaller/debian-amd64/5.3.2/proc_wrapper.bin \
   && chmod +x proc_wrapper.bin
 
 ENTRYPOINT ["./proc_wrapper.bin"]
@@ -242,7 +242,7 @@ CloudReactor (instead of the main container), uncomment this section inside of
       extra_container_memory_mb: 128
       extra_container_definitions:
         - name: collector
-          image: public.ecr.aws/cloudreactor/cloudreactor-aws-otel-collector:0.1.3
+          image: public.ecr.aws/cloudreactor/cloudreactor-aws-otel-collector:0.1.4
           cpu: 32
           memory: 128
           essential: true
@@ -270,7 +270,7 @@ filter. The precedence of settings, from lowest to highest is:
 
 1. Settings found in your Run Environment that you set via the
 [CloudReactor AWS Setup Wizard](https://github.com/CloudReactor/cloudreactor-aws-setup-wizard) or the CloudReactor dashboard
-2. Deployment environment AWS and ECS settings -- found in `project_aws` and `project_ecs` in `deploy_config/vars/<environment>.yml`
+2. Deployment environment AWS and ECS settings -- found in `project_aws` and `project_ecs` in `deploy_config/vars/common.yml`
 2. Default Task settings -- found in `project_task_config` in `deploy_config/vars/common.yml`,
 defines default settings for all Tasks
 3. Per environment settings -- found in `env_to_task_config.<environment>` in
