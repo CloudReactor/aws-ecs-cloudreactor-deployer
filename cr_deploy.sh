@@ -226,12 +226,17 @@ fi
 
 if [ -n "$AWS_DEFAULT_REGION" ]
     then
-      EXTRA_DOCKER_RUN_OPTIONS=" $EXTRA_DOCKER_RUN_OPTIONS -e AWS_DEFAULT_REGION"
+      EXTRA_DOCKER_RUN_OPTIONS="$EXTRA_DOCKER_RUN_OPTIONS -e AWS_DEFAULT_REGION"
+fi
+
+if [ -n "$AWS_REGION" ]
+    then
+      EXTRA_DOCKER_RUN_OPTIONS="$EXTRA_DOCKER_RUN_OPTIONS -e AWS_REGION"
 fi
 
 if [ -n "$ANSIBLE_VAULT_PASSWORD" ]
     then
-      EXTRA_DOCKER_RUN_OPTIONS=" $EXTRA_DOCKER_RUN_OPTIONS -e ANSIBLE_VAULT_PASSWORD"
+      EXTRA_DOCKER_RUN_OPTIONS="$EXTRA_DOCKER_RUN_OPTIONS -e ANSIBLE_VAULT_PASSWORD"
 fi
 
 if [ -n "$CODEBUILD_CI" ];
@@ -241,11 +246,32 @@ if [ -n "$CODEBUILD_CI" ];
         # Get the path after the last slash
         export PROC_WRAPPER_TASK_NAME="${CODEBUILD_SOURCE_REPO_URL##*/}-deploy-$DEPLOYMENT_ENVIRONMENT"
     fi
+
+    if [ -z "$PROC_WRAPPER_TASK_NAME" ];
+      then
+        export PROC_WRAPPER_TASK_NAME="$(basename $(pwd))-deploy-$DEPLOYMENT_ENVIRONMENT"
+        echo_to_stderr "PROC_WRAPPER_TASK_NAME not set in AWS CodeBuild, using default value $PROC_WRAPPER_TASK_NAME"
+    fi
+
+    if [ -z "$PROC_WRAPPER_AUTO_CREATE_TASK" ];
+      then
+        export PROC_WRAPPER_AUTO_CREATE_TASK="TRUE"
+    fi
+
+    if [ -z "$PROC_WRAPPER_AUTO_CREATE_TASK_RUN_ENVIRONMENT" ]
+      then
+        export PROC_WRAPPER_AUTO_CREATE_TASK_RUN_ENVIRONMENT=$DEPLOYMENT_ENVIRONMENT
+    fi
+
+    if [ -z "$PROC_WRAPPER_TASK_IS_PASSIVE" ];
+      then
+        export PROC_WRAPPER_TASK_IS_PASSIVE="FALSE"
+    fi
 fi
 
 if [ -z "$PROC_WRAPPER_TASK_NAME" ];
   then
-    export PROC_WRAPPER_TASK_NAME="$(basename $(pwd))-deploy-$DEPLOYMENT_ENVIRONMENT"
+    export PROC_WRAPPER_TASK_NAME="$(basename $(pwd))-$DEPLOYMENT_ENVIRONMENT"
     echo_to_stderr "PROC_WRAPPER_TASK_NAME not set, using default value $PROC_WRAPPER_TASK_NAME"
 fi
 
@@ -264,12 +290,16 @@ if [ -n "$CLOUDREACTOR_DEPLOYER_ASSUME_ROLE_ARN" ]
         ROLE_SESSION_NAME="cloudreactor-deployer-${PROC_WRAPPER_TASK_NAME}"
         ROLE_SESSION_NAME=$(echo $ROLE_SESSION_NAME | sed 's/[^a-zA-Z0-9_=.@-]//g' | sed 's/\(.\{128\}\).*/\1/')
 
+        echo_to_stderr "Assuming role '$CLOUDREACTOR_DEPLOYER_ASSUME_ROLE_ARN' ..."
+
         ASSUME_ROLE_OUTPUT_JSON=$(aws sts assume-role --role-arn "$CLOUDREACTOR_DEPLOYER_ASSUME_ROLE_ARN" --role-session-name "$ROLE_SESSION_NAME")
         export AWS_ACCESS_KEY_ID=$(echo "${ASSUME_ROLE_OUTPUT_JSON}" | jq -r '.Credentials.AccessKeyId')
         export AWS_SECRET_ACCESS_KEY=$(echo "${ASSUME_ROLE_OUTPUT_JSON}" | jq -r '.Credentials.SecretAccessKey')
         export AWS_SESSION_TOKEN=$(echo "${ASSUME_ROLE_OUTPUT_JSON}" | jq -r '.Credentials.SessionToken')
         PASS_AWS_ACCESS_KEY="TRUE"
         EXTRA_DOCKER_RUN_OPTIONS="-e AWS_SESSION_TOKEN $EXTRA_DOCKER_RUN_OPTIONS"
+
+        echo_to_stderr "Successfully assumed role '$CLOUDREACTOR_DEPLOYER_ASSUME_ROLE_ARN'."
       else
         echo_to_stderr "CLOUDREACTOR_DEPLOYER_ASSUME_ROLE_ARN is set to $CLOUDREACTOR_DEPLOYER_ASSUME_ROLE_ARN but aws-cli and jq are required to assume role"
         exit 1
