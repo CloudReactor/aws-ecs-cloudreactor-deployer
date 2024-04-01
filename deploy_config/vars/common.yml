@@ -1,7 +1,8 @@
 schema_version: 4
 
 # Custom properties
-# sumologic_log_query: "/aws/fargate/{{ project_name }}-{{ env }}-{{ task_name_safe }}"
+log_query: "/aws/fargate/{{ project_name }}-{{ env }}-{{ task_name_safe }}"
+sumologic_log_query: "_sourceHost={{ log_query }}"
 
 project_metadata:
   name: "aws-ecs-cloudreactor-deployer-sample"
@@ -296,8 +297,9 @@ project_task_config:
   #    link_url_template: "https://rollbar.com/YourCompanyName/{{ project_name | urlencode }}/"
   #    # icon_url: "https://cdn.rollbar.com/static/img/favicon.ico"
   #  - name: SumoLogic
-  #    # We have to do some tricks because this file is parsed as Jinja2, then re-parsed on upload.
-  #    link_url_template: "https://service.us2.sumologic.com/ui/index.html#section/search/@{% raw %}{{ '{{' }}(current_timestamp * 1000) - 3600000{{ '}}' }},{{ '{{' }}current_timestamp * 1000{{ '}}' }}{% endraw %}@_sourceHost={{ sumologic_log_query | urlencode }}"
+  #    # Views logs for the last 24 hours
+  #    # See https://help.sumologic.com/docs/search/get-started-with-search/build-search/use-url-to-run-search/
+  #    link_url_template: "https://service.us2.sumologic.com/ui/#search/create?query={{ sumologic_log_query | urlencode }}&startTime=-1d"
   #    # Unfortunately, this icon does not show up, probably due to some cross-site inclusion limitations.
   #    # icon_url: "https://www.sumologic.com/favicon.ico"
   #    description: "{{ sumologic_log_query | to_yaml }}"
