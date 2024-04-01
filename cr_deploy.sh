@@ -72,6 +72,8 @@
 
 set -eo pipefail
 
+shopt -s nocasematch
+
 if [ -z "$1" ]
   then
     if [ -z "$DEPLOYMENT_ENVIRONMENT" ]
@@ -201,7 +203,7 @@ fi
 
 echo_to_stderr "Docker image tag = $DOCKER_IMAGE_TAG"
 
-if [[ "${DEBUG_MODE,,}" == "true" ]]
+if [[ "${DEBUG_MODE}" == "TRUE" ]]
   then
     EXTRA_DOCKER_RUN_OPTIONS="-ti $EXTRA_DOCKER_RUN_OPTIONS --entrypoint bash"
 fi
@@ -210,7 +212,7 @@ fi
 # we publish another Docker image that runs as appuser.
 DOCKER_USER_HOME=/root
 
-if [[ "${USE_USER_AWS_CONFIG,,}" == "true" ]]
+if [[ "${USE_USER_AWS_CONFIG}" == "TRUE" ]]
   then
     EXTRA_DOCKER_RUN_OPTIONS=" -v $HOME/.aws:$DOCKER_USER_HOME/.aws $EXTRA_DOCKER_RUN_OPTIONS"
     if [ -n "$AWS_PROFILE" ]
@@ -306,7 +308,7 @@ if [ -n "$CLOUDREACTOR_DEPLOYER_ASSUME_ROLE_ARN" ]
     fi
 fi
 
-if [[ "${PASS_AWS_ACCESS_KEY,,}" == "true" ]]
+if [[ "${PASS_AWS_ACCESS_KEY}" == "TRUE" ]]
   then
     EXTRA_DOCKER_RUN_OPTIONS="-e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY $EXTRA_DOCKER_RUN_OPTIONS"
 fi
@@ -328,7 +330,7 @@ if [ -z "$CLOUDREACTOR_TASK_VERSION_SIGNATURE" ]
             # Otherwise, ansible will use the current date/time as the task
             # version signature, if CLOUDREACTOR_TASK_VERSION_SIGNATURE is not
             # set.
-            if [[ "${CLOUDREACTOR_DEPLOYER_NO_GIT,,}" != "true" ]] && [ -x "$(command -v git)" ]
+            if [[ "${CLOUDREACTOR_DEPLOYER_NO_GIT}" != "TRUE" ]] && [ -x "$(command -v git)" ]
                 then
                   CLOUDREACTOR_TASK_VERSION_SIGNATURE=`git rev-parse HEAD`
                 else
@@ -343,7 +345,7 @@ echo_to_stderr "CLOUDREACTOR_TASK_VERSION_SIGNATURE = $CLOUDREACTOR_TASK_VERSION
 
 if [ -z "$DEPLOY_COMMAND" ]
   then
-    if [[ "${DEBUG_MODE,,}" == "true" ]]
+    if [[ "${DEBUG_MODE}" == "TRUE" ]]
       then
         DEPLOY_COMMAND=""
       else
