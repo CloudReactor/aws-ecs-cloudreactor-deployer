@@ -242,12 +242,12 @@ service_settings:
   {% endif %}
 
   deployment_configuration:
-    minimum_healthy_percent: {{ (resolved_ecs_service.deployment_configuration.minimum_healthy_percent | default(100 * (resolved_task_config.min_service_instance_count | default(service_instance_count, true)) / service_instance_count)) | round(0, 'floor') | int }}
+    minimum_healthy_percent: {{ (resolved_ecs_service.deployment_configuration.minimum_healthy_percent | default(100 * (resolved_task_config.min_service_instance_count | default(service_instance_count)) / service_instance_count)) | round(0, 'floor') | int }}
 
-    {% if (resolved_task_config.max_concurrency is defined) and (resolved_task_config.max_concurrency != '__unset__') %}
-    maximum_percent: {{ resolved_ecs_service.deployment_configuration.maximum_percent | default(max_concurrency * 100) }}
-    {% else %}
+    {% if (resolved_task_config.max_concurrency | default('__unset__', true)) == '__unset__' %}
     maximum_percent: {{ resolved_ecs_service.deployment_configuration.maximum_percent | default(200) }}
+    {% else %}
+    maximum_percent: {{ resolved_ecs_service.deployment_configuration.maximum_percent | default(max_concurrency * 100) }}
     {% endif %}
 
     {% if resolved_ecs_service.deployment_configuration.deployment_circuit_breaker is defined %}
