@@ -559,7 +559,7 @@ See [action.yml](action.yml) for a full list of options.
 
 * When deploying, you see
 
-      AnsibleFilterError: |combine expects dictionaries, got None"}
+      AnsibleFilterError: |combine expects dictionaries, got None
 
 This may be caused by defining a property like a task under `project_task_name_to_config`
 in `deploy_config/vars/common.yml`:

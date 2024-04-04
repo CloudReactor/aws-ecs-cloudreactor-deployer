@@ -5,13 +5,13 @@
 # ansible-vault or git-crypt, or that this file is included in .gitignore.
 # Otherwise you may commit secrets to your respository.
 
-# Can override project_metadata in common.yml
+# # Can override project_metadata in common.yml
 # env_metadata:
 #   name:
 #   version_text:
 #   source_repository_url:
 
-# Can override settings in project_cloudreactor in common.yml
+# # Can override settings in project_cloudreactor in common.yml
 env_cloudreactor:
   # Required: the API key used to deploy the Tasks.
   # The key must have Developer access level or above and be scoped to the
@@ -74,13 +74,13 @@ env_cloudreactor:
 #   docker_push_general_options:
 #   extra_docker_push_args:
 
-# You can override your Run Environment's AWS settings here, but it shouldn't
-# be necessary unless:
-# a) You haven't specified security groups or subnets in
-# your Run Environment; or,
-# b) Want to use custom settings for this project (possibly for security and/or
-# isolation reasons); or,
-# c) You are not using CloudReactor to monitor and manage your tasks.
+# # You can override your Run Environment's AWS settings here, but it shouldn't
+# # be necessary unless:
+# # a) You haven't specified security groups or subnets in
+# # your Run Environment; or,
+# # b) Want to use custom settings for this project (possibly for security and/or
+# # isolation reasons); or,
+# # c) You are not using CloudReactor to monitor and manage your tasks.
 # env_aws:
 #   account_id: 123456789012
 #   region: "us-west-2"
