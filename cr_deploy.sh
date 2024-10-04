@@ -26,6 +26,8 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# cr_deploy.sh version 4.2.2.0, last updated 2024-06-24
+
 # This script uses the aws-ecs-cloudreactor-deployer Docker image to
 # deploy Tasks to AWS ECS and CloudReactor.
 #
@@ -359,7 +361,7 @@ if [ -z "$DEPLOY_COMMAND" ]
 fi
 
 exec docker run --rm \
-  -e CLOUDREACTOR_TASK_VERSION_SIGNATURE="$CLOUDREACTOR_TASK_VERSION_SIGNATURE" \
+  -e CLOUDREACTOR_TASK_VERSION_SIGNATURE \
   -e HOST_PWD=$PWD \
   -e CONTAINER_DOCKER_CONTEXT_DIR=/home/appuser/work/docker_context \
   $ENV_FILE_OPTIONS \
