@@ -26,7 +26,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# cr_deploy.sh version 4.2.2.2, last updated 2025-01-04
+# cr_deploy.sh version 4.3.0.0, last updated 2025-03-25
 
 # This script uses the aws-ecs-cloudreactor-deployer Docker image to
 # deploy Tasks to AWS ECS and CloudReactor.
@@ -313,6 +313,12 @@ fi
 if [[ "${PASS_AWS_ACCESS_KEY}" == "TRUE" ]]
   then
     EXTRA_DOCKER_RUN_OPTIONS="-e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY $EXTRA_DOCKER_RUN_OPTIONS"
+fi
+
+# Allow the container to access the host's EC2 metadata service if running in EC2
+if [[ "${PROC_WRAPPER_EXECUTION_METHOD_TYPE}" == "AWS EC2" ]] && [[ "${PROC_WRAPPER_SEND_RUNTIME_METADATA}" != "FALSE" ]]
+  then
+    EXTRA_DOCKER_RUN_OPTIONS="$EXTRA_DOCKER_RUN_OPTIONS --add-host=169.254.169.254:host-gateway"
 fi
 
 echo_to_stderr "Extra Docker run options = '$EXTRA_DOCKER_RUN_OPTIONS'"
