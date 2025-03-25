@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/python:3.11.7-slim-bookworm
+FROM public.ecr.aws/docker/library/python:3.12.9-slim-bookworm
 
 # See https://github.com/hadolint/hadolint/wiki/DL4006
 # Needed since we use pipes in the curl command
@@ -58,8 +58,8 @@ RUN apt-get update && \
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip
 RUN ./aws/install
 
-RUN pip install --upgrade pip==24.0
-RUN pip install pip-tools==6.14.0 requests==2.31.0
+RUN pip install --upgrade pip==25.0.1
+RUN pip install pip-tools==7.4.1 requests==2.32.3
 
 COPY deploy-requirements.in /tmp/deploy-requirements.in
 
@@ -69,8 +69,8 @@ RUN pip-compile --allow-unsafe --generate-hashes \
 # Install dependencies
 RUN pip install -r /tmp/deploy-requirements.txt
 
-RUN ansible-galaxy collection install community.docker:==3.7.0
-RUN ansible-galaxy collection install community.aws:==7.1.0
+RUN ansible-galaxy collection install community.docker:==3.13.6
+RUN ansible-galaxy collection install community.aws:==9.1.0
 
 # Can't do this because GitHub Actions must be run as root
 # Run as non-root user for better security
