@@ -432,12 +432,41 @@ project_task_config:
     # # set the configuration dictionary in the environment.
     # env_var_name_for_config: null
 
+    # # The environment variable to read for the input value to send to the
+    # # process
+    # input_env_var_name: INPUT_VALUE
+
+    # # The name of the file containing the input value to send to the process.
+    # input_filename: input.json
+
+    # By default, the wrapper will delete the input file after it reads it,
+    # for security reasons. Set this to false to keep the result file around.
+    # cleanup_input_file: true
+
+    # # The format of the input value. Can be one of these: json, yaml, text
+    # input_value_format: json
+
+    # # The name of the file to read the result value from, after the process
+    # # writes the result to the file.
+    # result_filename: result.json
+
+    # # The format of the result value. Can be one of these: json, yaml, text
+    # result_value_format: json
+
+    # # By default, the wrapper will delete the result file after it reads it,
+    # # for security reasons. Set this to false to keep the result file around.
+    # cleanup_result_file: true
+
     # # If true, do not start processes if the API server is unavailable or the
     # # wrapper is misconfigured.
     # prevent_offline_execution: false
 
     # # Send the process ID to CloudReactor for debugging.
     # send_pid: true
+
+    # # Send the input value to CloudReactor for debugging.
+    # # This is useful for debugging, but may expose sensitive information.
+    # send_input_value: true
 
     # # Send the hostname to CloudReactor for debugging.
     # send_hostname: true
@@ -481,6 +510,57 @@ project_task_config:
     # # Timeout for contacting the CloudReactor API server, in seconds.
     # api_request_timeout_seconds: 30
 
+    # # The log level used by the wrapper, to control how verbose it is.
+    # # The default log level is INFO, set to DEBUG here for initial
+    # # deployments. Valid choices are DEBUG, INFO, WARNING, ERROR, and
+    # # CRITICAL.
+    log_level: DEBUG
+
+    # # Log sensitive information, such as the API key and fetched secrets.
+    # log_secrets: true
+
+    # # Log the input value. This is useful for debugging, but may expose
+    # # sensitive information.
+    # log_input_value: true
+
+    # # Log the result value. This is useful for debugging, but may expose
+    # # sensitive information.
+    # log_result_value: true
+
+    # Set to false to exclude timestamps from the log output, in case
+    # are timestamps are added by the logging provider. The deployer sets up
+    # CloudWatch Logs (which adds timestamps) for this project, so we
+    # set this to false here.
+    include_timestamps_in_log: false
+
+    # The maximum number of trailing log lines to send to CloudReactor if the
+    # process fails
+    # num_log_lines_sent_on_failure: 25
+
+    # The maximum number of trailing log lines to send to CloudReactor if the
+    # process times out
+    # num_log_lines_sent_on_timeout: 25
+
+    # The maximum number of trailing log lines to send to CloudReactor if the
+    # process succeeds
+    # num_log_lines_sent_on_success: 5
+
+    # The maximum number of length of each log line. If a log line is longer
+    # than this value, it will be truncated to this length before being sent.
+    max_log_line_length: 1000
+
+    # # By default, stdout and stderr and merged into the debug log tail
+    # # in CloudReactor. Set this to false to use the error log tail for stderr.
+    # merge_stdout_and_stderr_logs: true
+
+    # # Set to true to ignore stdout from the process, for the purposes of
+    # # sending logs to CloudReactor
+    # ignore_stdout: false
+
+    # # Set to true to ignore stderr from the process, for the purposes of
+    # # sending logs to CloudReactor
+    # ignore_stderr: false
+
     # # Listen for status updates from the process, sent on the status socket
     # # port via UDP.
     # enable_status_update_listener: true
@@ -493,20 +573,9 @@ project_task_config:
     # # The port used to receive status updates from the process.
     # status_update_socket_port: 2373
 
-    # # The log level used by the wrapper, to control how verbose it is.
-    # # The default log level is INFO, set to DEBUG here for initial
-    # # deployments. Valid choices are DEBUG, INFO, WARNING, ERROR, and
-    # # CRITICAL.
-    log_level: DEBUG
-
-    # # Log sensitive information, such as the API key and fetched secrets.
-    # log_secrets: true
-
-    # Set to false to exclude timestamps from the log output, in case
-    # are timestamps are added by the logging provider. The deployer sets up
-    # CloudWatch Logs (which adds timestamps) for this project, so we
-    # set this to false here.
-    include_timestamps_in_log: false
+    # managed_probability: 1.0
+    # failure_report_probability: 1.0
+    # timeout_report_probability: 1.0
 
     # # This data is sent back from the wrapper to CloudReactor when it starts.
     # # It may be used to identify properties about instance of the task that is
@@ -610,9 +679,6 @@ project_task_name_to_config:
     # default_input_value: null
     # input_value_schema: null
     # output_value_schema: null
-    # managed_probability: 1.0
-    # failure_report_probability: 1.0
-    # timeout_report_probability: 1.0
     wrapper:
       enable_status_update_listener: true
 
