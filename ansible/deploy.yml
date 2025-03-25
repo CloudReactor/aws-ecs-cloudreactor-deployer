@@ -49,6 +49,11 @@
 
     ecr_aws_account_id: "{{ build_options.ecr_aws_account_id | default(task_indep_aws.account_id) }}"
     ecr_aws_region: "{{ build_options.ecr_aws_region | default(aws_region) }}"
+    aws_ecr_tags_arg: >-
+      {% for key, value in (build_options.aws_ecr_tags | default({})).items() %}
+      Key={{ key | quote }},Value={{ value | quote }}{% if not loop.last %} {% endif %}
+      {% endfor %}
+
     container_registry_host: "{{ build_options.container_registry_host | default(ecr_aws_account_id + '.dkr.ecr.' + ecr_aws_region + '.amazonaws.com') }}"
     container_repository: "{{ build_options.container_repository | default(project_name) }}"
     # # Setting this causes "Cannot modify repository encryption type" error
@@ -58,6 +63,9 @@
 
     use_private_ecr: "{{ container_registry_host is match('\\d+\\.dkr\\.ecr\\.[a-z0-9\\-]+\\.amazonaws\\.com') }}"
     use_public_ecr: "{{ container_registry_host == 'public.ecr.aws' }}"
+
+    ecr_tags_arg: "{{ (build_options.ecr_tags | default({}).items() | map('join', '=') | join(' ')) if (build_options.ecr_tags is defined and build_options.ecr_tags | length > 0) else none }}"
+
     container_registry_username: "{{ lookup('env', 'CONTAINER_REGISTRY_USERNAME') | \
       default(('AWS' if (use_private_ecr or use_public_ecr) else build_options.container_registry_username) if requires_build else '__unset__', true) }}"
     container_registry_password: "{{ lookup('env', 'CONTAINER_REGISTRY_PASSWORD') | default(build_options.container_registry_password, true) | default('__unset__', true) }}"
@@ -297,9 +305,17 @@
       registry_id: "{{ ecr_aws_account_id }}"
       name: "{{container_repository}}"
       region: "{{ecr_aws_region}}"
+      scan_on_push: "{{ build_options.ecr_scan_on_push | default(false) }}"
       # Setting this causes "Cannot modify repository encryption type" error
       # encryption_configuration: "{{ ecr_encryption_configuration }}"
     when: requires_build and use_private_ecr
+    tags:
+      - upload
+      - create_ecr_repo
+
+  - name: Tag private ECR repository
+    command: "aws ecr tag-resource --region {{ecr_aws_region | quote}} --resource-arn arn:aws:ecr:{{ecr_aws_region | quote}}:{{ecr_aws_account_id}}:repository/{{container_repository | quote}} --tags {{aws_ecr_tags_arg}}"
+    when: requires_build and use_private_ecr and (build_options.aws_ecr_tags is defined)
     tags:
       - upload
       - create_ecr_repo

@@ -19,6 +19,13 @@ project_build_options:
   # ecr_aws_account_id: "1234556789013"
   # ecr_aws_region: "us-east-2"
 
+  ecr_scan_on_push: false
+
+  # Tags to apply to the ECR repository. Note that existing tags are not removed.
+  aws_ecr_tags:
+    Application: "{{ project_name }}"
+    Uploader: CloudReactor AWS ECS Deployer
+
   # # Uncomment and change container_repository to use ECR Public.
   # # Repositories can be created with Terraform, see:
   # # https://github.com/CloudReactor/example_aws_infrastructure_terraform/tree/master/public-ecr
