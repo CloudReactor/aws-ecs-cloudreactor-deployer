@@ -362,21 +362,19 @@ project_task_config:
     # # Top-level .env secret locations. The values in later locations take
     # # precedence over those in earlier locations.
     env_locations:
-      - "{{ '' if task_runtime_env_secret_path == '__unset__' else (
-            task_runtime_env_secret_path if task_runtime_env_secret_path.startswith('arn:') else
-            ('arn:aws:secretsmanager:' + aws_region + ':' + task_indep_aws.account_id + ':secret:' + task_runtime_env_secret_path)
-          )
-        }}"
+      - "{{ resolved_task_runtime_env_secret_path }}"
 
       # # Other examples
-      # - arn:aws:s3:::examplebucket/{{env}}/app/config.json
+      # - arn:aws:ssm:{{aws_region}}:{{ task_indep_aws.account_id }}:parameter/{{ project_name }}/{{env}}/env
+      # - arn:aws:s3:::examplebucket/{{env}}/{{ project_name }}/config.env
       # - file:///home/appuser/.env
 
     # # proc_wrapper can also load a configuration dictionary, merged from
     # # the sources below.
     # config_locations:
-    #   - arn:aws:secretsmanager:us-east-2:123456789012:secret:myapp/{{env}}/env
-    #   - arn:aws:s3:::examplebucket/{{env}}/app1/config.json
+    #   - arn:aws:secretsmanager:{{aws_region}}:{{ task_indep_aws.account_id }}:secret:{{ project_name }}/{{env}}/config.json
+    #   - arn:aws:s3:::examplebucket/{{env}}/{{ project_name }}/config.json
+    #   - aws:appconfig:{{ project_name }}/{{ env }}/myconfig
 
     # # Merge stategy for configuration / environment. Can be one of these:
     # # SHALLOW, REPLACE, ADDITIVE, TYPESAFE_REPLACE, TYPESAFE_ADDITIVE

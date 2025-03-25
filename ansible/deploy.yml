@@ -143,6 +143,10 @@
     # Use this when referencing the Task name, possibly before the Task name is set, as in custom top-level variables.
     # Otherwise, the variables that you declare that reference "item" or "task_name" may end up being undefined.
     task_name_safe: "{{ item | default('_TASK_NAME_PLACEHOLDER_') }}"
+    resolved_task_runtime_env_secret_path: "{{ '' if task_runtime_env_secret_path == '__unset__' else (
+        task_runtime_env_secret_path if task_runtime_env_secret_path.startswith('arn:') else
+        ('arn:aws:secretsmanager:' + aws_region + ':' + task_indep_aws.account_id + ':secret:' + task_runtime_env_secret_path)
+      ) }}"
   tasks:
   - name: Set project-level variables
     include_vars: "{{deploy_config_dir}}/vars/common.yml"
