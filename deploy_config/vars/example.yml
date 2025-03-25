@@ -13,9 +13,11 @@
 
 # # Can override settings in project_cloudreactor in common.yml
 env_cloudreactor:
-  # Required: the API key used to deploy the Tasks.
+  # The API key used to deploy the Tasks.
   # The key must have Developer access level or above and be scoped to the
   # Run Environment you are deploying to, or be unscoped.
+  # If this is not specified, environment variables CLOUDREACTOR_DEPLOY_API_KEY
+  # and PROC_WRAPPER_API_KEY will be used as defaults.
   deploy_api_key: xxx
 
   # # You can also specify the API key used by your Task.

@@ -34,7 +34,7 @@
     resolved_cloudreactor: "{{ project_cloudreactor | default({}) | combine(env_cloudreactor | default({}), recursive=true) }}"
     cloudreactor_enabled: "{{ resolved_cloudreactor.enabled | default(true) }}"
     cloudreactor_api_base_url: "{{ lookup('env', 'CLOUDREACTOR_API_BASE_URL') | default(resolved_cloudreactor.api_base_url | default('https://api.cloudreactor.io', true), true) }}"
-    cloudreactor_deploy_api_key: "{{ lookup('env', 'CLOUDREACTOR_DEPLOY_API_KEY') | default(resolved_cloudreactor.deploy_api_key, true) }}"
+    cloudreactor_deploy_api_key: "{{ lookup('env', 'CLOUDREACTOR_DEPLOY_API_KEY') | default(resolved_cloudreactor.deploy_api_key | default(lookup('env', 'PROC_WRAPPER_API_KEY')), true) }}"
 
     run_environment_name: "{{ resolved_cloudreactor.run_environment | default(env) }}"
     run_environment: "{{ run_environment_result.json.results[0] }}"
