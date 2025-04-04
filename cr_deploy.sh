@@ -243,37 +243,47 @@ if [ -n "$ANSIBLE_VAULT_PASSWORD" ]
       EXTRA_DOCKER_RUN_OPTIONS="$EXTRA_DOCKER_RUN_OPTIONS -e ANSIBLE_VAULT_PASSWORD"
 fi
 
-if [ -n "$CODEBUILD_CI" ];
+if [ -n "$CODEBUILD_CI" ]
   then
-    if [ -z "$PROC_WRAPPER_TASK_NAME" ] && [ -n "$CODEBUILD_SOURCE_REPO_URL" ];
+    if [ -z "$PROC_WRAPPER_TASK_NAME" ] && [ -n "$CODEBUILD_SOURCE_REPO_URL" ]
       then
         # Get the path after the last slash
         export PROC_WRAPPER_TASK_NAME="${CODEBUILD_SOURCE_REPO_URL##*/}-deploy-$DEPLOYMENT_ENVIRONMENT"
     fi
 
-    if [ -z "$PROC_WRAPPER_TASK_NAME" ];
+    if [ -z "$PROC_WRAPPER_TASK_NAME" ]
       then
         export PROC_WRAPPER_TASK_NAME="$(basename $(pwd))-deploy-$DEPLOYMENT_ENVIRONMENT"
         echo_to_stderr "PROC_WRAPPER_TASK_NAME not set in AWS CodeBuild, using default value $PROC_WRAPPER_TASK_NAME"
     fi
 
-    if [ -z "$PROC_WRAPPER_AUTO_CREATE_TASK" ];
+    if [ -z "$PROC_WRAPPER_AUTO_CREATE_TASK" ]
       then
         export PROC_WRAPPER_AUTO_CREATE_TASK="TRUE"
     fi
 
     if [ -z "$PROC_WRAPPER_AUTO_CREATE_TASK_RUN_ENVIRONMENT" ]
       then
-        export PROC_WRAPPER_AUTO_CREATE_TASK_RUN_ENVIRONMENT=$DEPLOYMENT_ENVIRONMENT
+        export PROC_WRAPPER_AUTO_CREATE_TASK_RUN_ENVIRONMENT_NAME=$DEPLOYMENT_ENVIRONMENT
     fi
 
-    if [ -z "$PROC_WRAPPER_TASK_IS_PASSIVE" ];
+    if [ -z "$PROC_WRAPPER_TASK_IS_PASSIVE" ]
       then
         export PROC_WRAPPER_TASK_IS_PASSIVE="FALSE"
     fi
+
+    if [ -z "$PROC_WRAPPER_TASK_VERSION_SIGNATURE" ] && [ -n "$CODEBUILD_RESOLVED_SOURCE_VERSION" ]
+      then
+        export PROC_WRAPPER_TASK_VERSION_SIGNATURE="$CODEBUILD_RESOLVED_SOURCE_VERSION"
+    fi
+
+    if [ -z "$PROC_WRAPPER_TASK_VERSION_SIGNATURE" ] && [ -n "$CODEBUILD_SOURCE_VERSION" ]
+      then
+        export PROC_WRAPPER_TASK_VERSION_SIGNATURE="$CODEBUILD_SOURCE_VERSION"
+    fi
 fi
 
-if [ -z "$PROC_WRAPPER_TASK_NAME" ];
+if [ -z "$PROC_WRAPPER_TASK_NAME" ]
   then
     export PROC_WRAPPER_TASK_NAME="$(basename $(pwd))-$DEPLOYMENT_ENVIRONMENT"
     echo_to_stderr "PROC_WRAPPER_TASK_NAME not set, using default value $PROC_WRAPPER_TASK_NAME"
@@ -281,7 +291,7 @@ fi
 
 # Pass through environment variables for proc_wrapper, AWS CodeBuild
 while IFS='=' read -r -d '' n v; do
-    if [[ $n == PROC_WRAPPER_* ]] || [[ $n == CODEBUILD_* ]];
+    if [[ $n == PROC_WRAPPER_* ]] || [[ $n == CODEBUILD_* ]]
         then
             EXTRA_DOCKER_RUN_OPTIONS="$EXTRA_DOCKER_RUN_OPTIONS -e $n"
     fi
