@@ -113,7 +113,7 @@
 
     # env_task_config comes from [env].yml.
     # It contains secret Task settings for all Tasks in the deployment
-    # environment, unless overridden.
+    # environment env, unless overridden.
     env_task_config_safe: "{{ env_task_config | default({}) }}"
 
     task_indep_task_config: "{{ task_indep_task_infra_dict | combine(project_task_config_safe, env_default_task_config, env_task_config_safe, recursive=true) }}"
@@ -122,7 +122,12 @@
     # deployment environment name to another mapping from Task name to
     # non-secret Task settings.
     env_to_task_name_to_config_safe: "{{ env_to_task_name_to_config | default({}) }}"
-    env_task_name_to_config: "{{ env_to_task_name_to_config_safe[env] | default({}) }}"
+
+    # env_task_name_to_config (defined in [env].yml) is a mapping from
+    # Task name to non-secret Task settings for the deployment environment env.
+    env_task_name_to_config_safe: "{{ env_task_name_to_config | default({}) }}"
+
+    resolved_env_task_name_to_config: "{{ env_to_task_name_to_config_safe[env] | default({}) | combine(env_task_name_to_config_safe, recursive=true) }}"
 
     indep_task_config_dict_entry:
       value: "{{ task_indep_task_config }}"
@@ -130,7 +135,7 @@
     # project_task_name_to_config (defined in common.yml) is a mapping from Task name
     # to non-secret Task settings common to all deployment environments,
     # unless overridden.
-    project_env_task_name_to_config_no_indep: "{{ project_task_name_to_config | default({}) | combine(env_task_name_to_config, recursive=true) }}"
+    project_env_task_name_to_config_no_indep: "{{ project_task_name_to_config | default({}) | combine(resolved_env_task_name_to_config, recursive=true) }}"
     resolved_task_name_to_config: "{{ project_env_task_name_to_config_no_indep | dict2items | map('combine', indep_task_config_dict_entry, recursive=true) | items2dict | combine(project_env_task_name_to_config_no_indep, recursive=true) }}"
     resolved_task_names: "{{ (resolved_task_name_to_config | dict2items | json_query('[?((value.deployed==undefined) || (to_string(value.deployed)==to_string(`true`)) || (to_string(value.removed_from_task_manager)==to_string(`true`)))].key')) if (task_names | upper) == 'ALL' else task_names.split(',') }}"
     resolved_sync_required_task_name_to_config_query: "{{ '[?(key==`' +  resolved_task_names | join('`)||(key==`') + '`)]' }}"
