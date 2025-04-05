@@ -261,7 +261,7 @@
   - debug:
       msg:
         - "project_task_name_to_config = {{ project_task_name_to_config }}"
-        - "env_task_name_to_config = {{ env_task_name_to_config }}"
+        - "env_task_name_to_config = {{ env_task_name_to_config_safe }}"
         - "project_task_config_safe = {{ project_task_config_safe }}"
         - "env_default_task_config = {{ env_default_task_config }}"
         - "env_task_config_safe = {{ env_task_config_safe }}"
