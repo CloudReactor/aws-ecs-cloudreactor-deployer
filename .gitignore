@@ -2,5 +2,9 @@ build/
 deploy.env
 deploy.*.env
 
+.DS_Store
+.idea/
+.vscode/
+
 # Contains custom settings for personal development
 dev_deploy.sh
