@@ -259,8 +259,8 @@ service_settings:
 
 log_query: "{{ log_query }}"
 
-{% call(alert_method) filtered_array_prop_def(resolved_task_config.alert_methods, 'alert_methods') %}
-  - name: "{{ alert_method.name }}"
+{% call(notification_profiles) filtered_array_prop_def(resolved_task_config.notification_profiles, 'notification_profiles') %}
+  - name: "{{ notification_profile.name }}"
 {% endcall %}
 
 {% call(link) filtered_array_prop_def(resolved_task_config.links, 'links') %}

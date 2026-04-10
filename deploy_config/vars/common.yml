@@ -294,9 +294,9 @@ project_task_config:
   env:
     DEPLOYMENT: "{{env | to_yaml}}"
 
-  # alert_methods:
-  #   - name: Alert Method 1
-  #   - name: Alert Method 2
+  # notification_profiles:
+  #   - name: Notification Profile 1
+  #   - name: Notification Profile 2
   #     included: false
 
   # links:
