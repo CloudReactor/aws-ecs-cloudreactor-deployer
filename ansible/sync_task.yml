@@ -219,8 +219,8 @@
     task_definition: "{{task_definition_family}}"
     desired_count: "{{ resolved_task_config.service_instance_count | default(1, true) }}"
     deployment_configuration:
-      minimum_healthy_percent: "{{ (resolved_ecs_service.deployment_configuration.minimum_healthy_percent | default(0) }}"
-      maximum_percent: "{{ (resolved_ecs_service.deployment_configuration.maximum_percent | default(100) }}"
+      minimum_healthy_percent: "{{ resolved_ecs_service.deployment_configuration.minimum_healthy_percent | default(0) }}"
+      maximum_percent: "{{ resolved_ecs_service.deployment_configuration.maximum_percent | default(100) }}"
     delay: "{{ resolved_ecs_service.delay | default(10) }}"
   when: (not cloudreactor_enabled) and deployed and ((resolved_task_config.is_service_managed is not defined) or resolved_task_config.is_service_managed) and (resolved_ecs_service.load_balancer_settings is not defined) and (resolved_task_config.service_instance_count | default(0) | string != '0')
   tags:
