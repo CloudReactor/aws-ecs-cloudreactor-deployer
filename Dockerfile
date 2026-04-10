@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/python:3.12.12-slim-trixie
+FROM --platform=linux/amd64 public.ecr.aws/docker/library/python:3.12.12-slim-trixie
 
 # See https://github.com/hadolint/hadolint/wiki/DL4006
 # Needed since we use pipes in the curl command

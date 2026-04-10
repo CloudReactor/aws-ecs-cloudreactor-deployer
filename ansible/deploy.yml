@@ -295,14 +295,15 @@
 
   - name: Output Docker build command
     debug:
-      msg: "Docker build command: 'docker {{docker_common_general_options}} {{docker_build_general_options}} build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{source_docker_image_name}} .'"
+      # For now, we always build for linux/amd64 since no ARM proc_wrapper binaries are available yet.
+      msg: "Docker build command: 'docker {{docker_common_general_options}} {{docker_build_general_options}} build -f {{dockerfile_path}} --build-arg env={{env}} --platform linux/amd64 {{extra_docker_build_args}} -t {{source_docker_image_name}} .'"
       verbosity: 1
     when: requires_build
     tags:
       - build
 
   - name: Build Docker image
-    command: "docker {{docker_common_general_options}} {{docker_build_general_options}} build -f {{dockerfile_path}} --build-arg env={{env}} {{extra_docker_build_args}} -t {{source_docker_image_name}} ."
+    command: "docker {{docker_common_general_options}} {{docker_build_general_options}} build -f {{dockerfile_path}} --build-arg env={{env}} --platform linux/amd64 {{extra_docker_build_args}} -t {{source_docker_image_name}} ."
     args:
       chdir: "{{ docker_context_dir }}"
     when: requires_build

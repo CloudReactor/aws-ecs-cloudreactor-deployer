@@ -4,7 +4,7 @@
 # This is good if we're only running python code.
 # But debian:bookworm-slim is more likely to be a base image that different
 # language environments inherit from.
-FROM public.ecr.aws/docker/library/debian:bookworm-slim
+FROM --platform=linux/amd64 public.ecr.aws/docker/library/debian:trixie-slim
 
 LABEL maintainer="jeff@cloudreactor.io"
 
@@ -17,7 +17,7 @@ WORKDIR /usr/src/app
 # during apt-get.
 #
 # See https://github.com/phusion/baseimage-docker/issues/58
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 # We do not pin versions for OS libraries, expecting that later
 # versions may have security updates.
