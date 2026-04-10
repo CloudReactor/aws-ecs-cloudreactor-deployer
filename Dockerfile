@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/python:3.12.9-slim-bookworm
+FROM public.ecr.aws/docker/library/python:3.12.12-slim-trixie
 
 # See https://github.com/hadolint/hadolint/wiki/DL4006
 # Needed since we use pipes in the curl command
@@ -6,21 +6,21 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Output directly to the terminal to prevent logs from being lost
 # https://stackoverflow.com/questions/59812009/what-is-the-use-of-pythonunbuffered-in-docker-file
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1
 
 # Don't write *.pyc files
-ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONDONTWRITEBYTECODE=1
 
 # Enable the fault handler for segfaults
 # https://docs.python.org/3/library/faulthandler.html
-ENV PYTHONFAULTHANDLER 1
+ENV PYTHONFAULTHANDLER=1
 
-ENV PIP_NO_INPUT 1
+ENV PIP_NO_INPUT=1
 # https://stackoverflow.com/questions/45594707/what-is-pips-no-cache-dir-good-for
-ENV PIP_NO_CACHE_DIR 1
-ENV PIP_DISABLE_PIP_VERSION_CHECK 1
+ENV PIP_NO_CACHE_DIR=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
-ENV ANSIBLE_CONFIG /home/appuser/work/ansible.cfg
+ENV ANSIBLE_CONFIG=/home/appuser/work/ansible.cfg
 
 RUN apt-get update \
   && apt-get upgrade -y \
@@ -33,7 +33,6 @@ RUN apt-get update \
     ca-certificates \
     curl \
     gnupg2 \
-    software-properties-common \
     unzip \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -55,8 +54,13 @@ RUN apt-get update && \
     docker-buildx-plugin \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip
-RUN ./aws/install
+ARG TARGETARCH
+ARG AWSCLI_VERSION=2.32.32
+
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-$(if [ "$TARGETARCH" = "amd64" ]; then echo "x86_64"; else echo "aarch64"; fi)-${AWSCLI_VERSION}.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    rm -rf awscliv2.zip aws
 
 RUN pip install --upgrade pip==25.0.1
 RUN pip install pip-tools==7.4.1 requests==2.32.3
