@@ -223,7 +223,7 @@
   - name: Output Runtime Environment
     debug:
       msg: "Runtime Environment is {{ run_environment }}"
-      verbosity: 1
+      verbosity: 2
     when: cloudreactor_enabled
     tags:
       - sync_tasks
@@ -231,7 +231,7 @@
   - name: Output Task Independent AWS settings
     debug:
       msg: "AWS settings: {{ task_indep_aws }}"
-      verbosity: 1
+      verbosity: 2
     tags:
       - upload
       - sync_tasks

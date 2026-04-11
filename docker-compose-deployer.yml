@@ -60,7 +60,7 @@ services:
     entrypoint: bash
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./ansible:/home/appuser/work
+      - ./ansible:/home/appuser/work/ansible
       - ./sample_docker_context/Dockerfile:/home/appuser/work/Dockerfile
       - ./sample_docker_context:/home/appuser/work/docker_context
       # WHY??
