@@ -9,8 +9,6 @@
 # set CLOUDREACTOR_TASK_VERSION_SIGNATURE
 # docker compose -f docker-compose-deployer.yml run --rm deploy
 
-version: "3.7"
-
 x-deployer-base: &deployer-base
   image: cloudreactor/aws-ecs-cloudreactor-deployer
   build:
