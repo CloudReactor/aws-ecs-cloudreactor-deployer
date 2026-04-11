@@ -127,3 +127,15 @@ env_task_name_to_config:
   smoke:
     env:
       SMOKE_SECRET_KEY: "xyz"
+  web_server:    
+    aws:
+      network:
+        security_groups:
+          - sg-aaa
+          - sg-bbb
+        subnets: 
+          - subnet-111
+          - subnet-222
+        assign_public_ip: true
+    ecs:
+      # task_definition_arn: arn:aws:ecs:us-east-1:015588194119:task-definition/aws-ecs-cloudreactor-deployer-sample_web_server_windows-dev:14
