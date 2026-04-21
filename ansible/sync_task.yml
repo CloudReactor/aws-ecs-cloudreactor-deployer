@@ -205,7 +205,7 @@
   tags: upload
 
 - name: Create ECS service without load balancer for {{task_name}}
-  ecs_service:
+  community.aws.ecs_service:
     state: present
     name: "{{project_name}}_{{task_name}}_{{env}}"
     cluster: "{{resolved_ecs.cluster_arn}}"
@@ -227,7 +227,7 @@
     - always
 
 - name: Create ECS service with load balancer for {{task_name}}
-  ecs_service:
+  community.aws.ecs_service:
     state: present
     name: "{{project_name}}_{{task_name}}_{{env}}"
     cluster: "{{resolved_ecs.cluster_arn}}"

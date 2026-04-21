@@ -350,7 +350,7 @@
       - upload
 
   - name: Upload container registry credentials to AWS Secrets Manager
-    community.aws.aws_secret:
+    community.aws.secretsmanager_secret:
       name: "{{ container_registry_credentials_secret_path }}"
       state: present
       json_secret: "{{ container_registry_pull_credentials | to_json }}"
@@ -362,7 +362,7 @@
   # Uploads your locally encrypted .env file to Secrets Manager each time you
   # deploy. This does not support secret paths that start with "arn:".
   - name: Upload .env file to AWS Secrets Manager
-    community.aws.aws_secret:
+    community.aws.secretsmanager_secret:
       name: "{{ task_runtime_env_secret_path }}"
       state: present
       secret_type: 'string'
