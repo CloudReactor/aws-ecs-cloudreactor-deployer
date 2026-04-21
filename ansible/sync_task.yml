@@ -252,7 +252,7 @@
         containerName:  "{{ resolved_ecs_service.load_balancer_settings.load_balancers[0].container_name | default(main_container_name) }}"
         containerPort: "{{ resolved_ecs_service.load_balancer_settings.load_balancers[0].container_port }}"
     health_check_grace_period_seconds: "{{ resolved_ecs_service.load_balancer_settings.health_check_grace_period_seconds | default(30) }}"
-  when: (not cloudreactor_enabled) and deployed and (resolved_ecs_service.load_balancer_settings is defined) and ((resolved_task_config.is_service_managed is not defined) or resolved_task_config.is_service_managed) and (resolved_ecs_service.load_balancer_settings is not defined) and (resolved_task_config.service_instance_count | default(0) | string != '0')
+  when: (not cloudreactor_enabled) and deployed and (resolved_ecs_service.load_balancer_settings is defined) and ((resolved_task_config.is_service_managed is not defined) or resolved_task_config.is_service_managed) and (resolved_task_config.service_instance_count | default(0) | string != '0')
   tags:
     - always
 
