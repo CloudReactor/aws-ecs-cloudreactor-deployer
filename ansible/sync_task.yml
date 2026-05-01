@@ -9,6 +9,9 @@
     deployed: "{{ resolved_task_config.deployed | default(true) }}"
     removed_from_task_manager: "{{ resolved_task_config.removed_from_task_manager | default(false) }}"
     cloudreactor_task_name: "{{ resolved_task_config.cloudreactor_task_name | default(project_name + '_' + task_name + '_' + env) }}"
+    resolved_schedule: "{{ resolved_task_config.schedule | default('') }}"
+    event_rule_name: "{{ project_name + '-' + task_name + '-' + env }}"
+    service_name: "{{project_name}}_{{task_name}}_{{env}}"
     resolved_aws: "{{ resolved_task_config.aws }}"
     resolved_ecs: "{{ resolved_task_config.ecs }}"
   tags:
@@ -17,6 +20,7 @@
 - name: Set per-Task variables step 3
   set_fact:
     deployed_to_task_manager: "{{ cloudreactor_enabled and deployed and not removed_from_task_manager }}"
+    locally_deployed: "{{ deployed and (not cloudreactor_enabled) }}"    
     resolved_aws_network: "{{ resolved_aws.network | default({}) }}"
     resolved_aws_logging: "{{ resolved_aws.logging | default({}) }}"
     # ecs.service is allowed for backward compatibility reasons, may deprecate in
@@ -28,9 +32,10 @@
     - always
 
 - name: Set per-Task variables step 4
-  set_fact:
+  set_fact:    
     predefined_task_definition_arn: "{{ resolved_ecs.task_definition_arn if (resolved_ecs.task_definition_arn is defined) and (resolved_ecs.task_definition_arn != '__unset__') else none }}"
     predefined_docker_image_name: "{{ resolved_ecs.docker_image_name if (resolved_ecs.docker_image_name is defined) and (resolved_ecs.docker_image_name != '__unset__') else none }}"
+    locally_enabled: "{{ locally_deployed and (resolved_task_config.enabled | default(true)) }}"
     resolved_aws_awslogs: "{{ resolved_aws_logging.awslogs | default({}) }}"
     monitor_container_name: "{{ resolved_ecs.monitor_container_name | default(main_container_name, true) }}"
   tags:
@@ -189,57 +194,85 @@
 - name: Create ECS scheduled event definition for {{task_name}}
   template: src=/home/appuser/work/templates/ecs_scheduled_event_definition.json.j2
             dest="{{ task_build_dir }}/ecs_scheduled_event_definition.json"
-  when: (not cloudreactor_enabled) and deployed and (resolved_task_config.schedule is defined)
+  when: locally_deployed and locally_enabled and (resolved_schedule != '')
   tags: upload
 
 - name: Create AWS events rule for {{task_name}}
-  command: "aws events put-rule --schedule-expression \"{{ resolved_task_config.schedule }})\" --name {{project_name}}-{{task_name}}-{{env}}"
-  when: (not cloudreactor_enabled) and deployed and (resolved_task_config.schedule is defined)
+  command: "aws events put-rule --schedule-expression {{ resolved_schedule | quote }} --name {{ event_rule_name | quote }}"
+  when: locally_deployed and locally_enabled and (resolved_schedule != '')
   tags: upload
 
 - name: Put AWS event target for {{task_name}}
   command: "aws events put-targets --cli-input-json file://ecs_scheduled_event_definition.json"
-  when: (not cloudreactor_enabled) and deployed and (resolved_task_config.schedule is defined)
+  when: locally_deployed and locally_enabled and (resolved_schedule != '')
   args:
     chdir: "{{ task_build_dir }}"
   tags: upload
 
+- name: Remove AWS event targets for {{task_name}}
+  command: "aws events remove-targets --rule {{ event_rule_name | quote }} --ids {{ event_rule_name | quote }}"
+  when: locally_deployed and ((not locally_enabled) or (resolved_schedule == ''))
+  tags: upload
+  ignore_errors: yes
+
+- name: Remove AWS events rule for {{task_name}}
+  command: "aws events delete-rule --name {{ event_rule_name | quote }}"
+  when: locally_deployed and ((not locally_enabled) or (resolved_schedule == ''))
+  tags: upload
+  ignore_errors: yes
+
+- name: Wait for old ECS service to finish draining for {{task_name}}
+  community.aws.ecs_service_info:
+    name: "{{service_name}}"
+    cluster: "{{resolved_ecs.cluster_arn}}"
+    region: "{{aws_region}}"
+  register: existing_service
+  until: not ((existing_service.services is defined) and (existing_service.services | length > 0) and (existing_service.services[0] is mapping) and (existing_service.services[0].status == 'DRAINING'))
+  retries: 60
+  delay: 30
+  ignore_errors: yes
+  when: locally_deployed and ((resolved_task_config.is_service_managed is not defined) or resolved_task_config.is_service_managed)
+  tags:
+    - always
+
 - name: Create ECS service without load balancer for {{task_name}}
   community.aws.ecs_service:
     state: present
-    name: "{{project_name}}_{{task_name}}_{{env}}"
+    name: "{{service_name}}"
     cluster: "{{resolved_ecs.cluster_arn}}"
     region: "{{aws_region}}"
-    launch_type: FARGATE
+    launch_type: "{{ (resolved_ecs.launch_type | default('FARGATE')) if (resolved_ecs.capacity_provider_strategy is not defined) else omit }}"
+    capacity_provider_strategy: "{{ resolved_ecs.capacity_provider_strategy | default(omit) }}"
     force_new_deployment: "{{ resolved_ecs_service.force_new_deployment | default(false) }}"
     network_configuration:
       assign_public_ip: "{{ resolved_aws_network.assign_public_ip | default(false) }}"
       subnets: "{{ resolved_aws_network.subnets }}"
       security_groups: "{{ resolved_aws_network.security_groups }}"
     task_definition: "{{task_definition_family}}"
-    desired_count: "{{ resolved_task_config.service_instance_count | default(1, true) }}"
+    desired_count: "{{ resolved_task_config.service_instance_count | default(1, true) if locally_enabled else 0 }}"
     deployment_configuration:
       minimum_healthy_percent: "{{ resolved_ecs_service.deployment_configuration.minimum_healthy_percent | default(0) }}"
       maximum_percent: "{{ resolved_ecs_service.deployment_configuration.maximum_percent | default(100) }}"
     delay: "{{ resolved_ecs_service.delay | default(10) }}"
-  when: (not cloudreactor_enabled) and deployed and ((resolved_task_config.is_service_managed is not defined) or resolved_task_config.is_service_managed) and (resolved_ecs_service.load_balancer_settings is not defined) and (resolved_task_config.service_instance_count | default(0) | string != '0')
+  when: locally_deployed and ((resolved_task_config.is_service_managed is not defined) or resolved_task_config.is_service_managed) and (resolved_ecs_service.load_balancer_settings is not defined) and (resolved_task_config.service_instance_count | default(0) | string != '0')
   tags:
     - always
 
 - name: Create ECS service with load balancer for {{task_name}}
   community.aws.ecs_service:
     state: present
-    name: "{{project_name}}_{{task_name}}_{{env}}"
+    name: "{{service_name}}"
     cluster: "{{resolved_ecs.cluster_arn}}"
     region: "{{aws_region}}"
-    launch_type: FARGATE
+    launch_type: "{{ (resolved_ecs.launch_type | default('FARGATE')) if (resolved_ecs.capacity_provider_strategy is not defined) else omit }}"
+    capacity_provider_strategy: "{{ resolved_ecs.capacity_provider_strategy | default(omit) }}"
     force_new_deployment: "{{ resolved_ecs_service.force_new_deployment | default(false) }}"
     network_configuration:
       assign_public_ip: "{{ resolved_aws_network.assign_public_ip | default(false) }}"
       subnets: "{{ resolved_aws_network.subnets }}"
       security_groups: "{{ resolved_aws_network.security_groups }}"
     task_definition: "{{task_definition_family}}"
-    desired_count: "{{ resolved_task_config.service_instance_count | default(1, true) }}"
+    desired_count: "{{ resolved_task_config.service_instance_count | default(1, true) if locally_enabled else 0 }}"
     deployment_configuration:
       minimum_healthy_percent: "{{ resolved_ecs_service.deployment_configuration.minimum_healthy_percent | default(100, true) }}"
       maximum_percent: "{{ resolved_ecs_service.deployment_configuration.maximum_percent | default(200) }}"
@@ -252,7 +285,19 @@
         containerName:  "{{ resolved_ecs_service.load_balancer_settings.load_balancers[0].container_name | default(main_container_name) }}"
         containerPort: "{{ resolved_ecs_service.load_balancer_settings.load_balancers[0].container_port }}"
     health_check_grace_period_seconds: "{{ resolved_ecs_service.load_balancer_settings.health_check_grace_period_seconds | default(30) }}"
-  when: (not cloudreactor_enabled) and deployed and (resolved_ecs_service.load_balancer_settings is defined) and ((resolved_task_config.is_service_managed is not defined) or resolved_task_config.is_service_managed) and (resolved_task_config.service_instance_count | default(0) | string != '0')
+  when: locally_deployed and (resolved_ecs_service.load_balancer_settings is defined) and ((resolved_task_config.is_service_managed is not defined) or resolved_task_config.is_service_managed) and (resolved_task_config.service_instance_count | default(0) | string != '0')
+  delay: 30
+  retries: 1000
+  tags:
+    - always
+
+- name: Remove ECS service for {{task_name}}
+  community.aws.ecs_service:
+    state: absent
+    name: "{{service_name}}"
+    cluster: "{{resolved_ecs.cluster_arn}}"
+    region: "{{aws_region}}"
+  when: locally_deployed and ((not locally_enabled) or (resolved_task_config.service_instance_count | default(0) | string == '0'))
   tags:
     - always
 

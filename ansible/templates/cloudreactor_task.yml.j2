@@ -154,9 +154,20 @@ allocated_memory_mb: {{memory_mb}}
 execution_method_type: AWS ECS
 execution_method_capability_details:
   task_definition_arn: {{ task_definition_arn }}
-  launch_type: FARGATE
+
+  {% if project_env_task_ecs.capacity_provider_strategy is defined %}  
+  capacity_provider_strategy:
+    {{ project_env_task_ecs.capacity_provider_strategy | to_yaml(width=2147483647) | indent(4) }}
+  {% else %}
+  launch_type: {{ project_env_task_ecs.launch_type | default('FARGATE') }}
+  {% endif %}
+
   supported_launch_types:
+  {% if project_env_task_ecs.supported_launch_types is defined %}
+  {{ project_env_task_ecs.supported_launch_types | to_yaml(width=2147483647) | indent(2, true) }}
+  {% else %}
     - FARGATE
+  {% endif %}
 
   {{ prop_def(project_env_task_ecs, 'cluster_arn') }}
 

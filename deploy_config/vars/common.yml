@@ -185,6 +185,23 @@ project_ecs:
   # # for supported platform versions. Can also be set to "LATEST".
   # platform_version: "LATEST"
 
+  # launch_type: FARGATE # Or "EC2" or "EXTERNAL". 
+  # supported_launch_types:
+  #   - FARGATE
+  #   - EC2
+  #   - EXTERNAL
+
+  # # Uncomment to use FARGATE_SPOT to save costs. See
+  # # https://aws.amazon.com/blogs/compute/deep-dive-into-fargate-spot-to-run-your-ecs-tasks-for-up-to-70-less/
+  # # Note that weight and base must be set for each capacity provider, and should be integers.
+  # capacity_provider_strategy:
+  #   - capacity_provider: FARGATE
+  #     weight: 0
+  #     base: 1
+  #   - capacity_provider: FARGATE_SPOT
+  #     weight: 1
+  #     base: 0
+
   # # By default, the entrypoint is run with the tinit init process so that
   # # commands in shell form (like calling proc_wrapper) pass on SIGTERM to
   # # the underlying commands. This is so AWS ECS can gracefully shutdown a
@@ -686,6 +703,12 @@ project_task_name_to_config:
     # output_value_schema: null
     wrapper:
       enable_status_update_listener: true
+    ecs:
+      # Always run this Task on FARGATE_SPOT, to save costs.      
+      capacity_provider_strategy:
+        - capacity_provider: FARGATE_SPOT
+          weight: 1
+          base: 0
 
   write_file:
     command: "./write_file.sh"
@@ -699,6 +722,16 @@ project_task_name_to_config:
     description: Template for a web server
     command: "python3 -m http.server"
     ecs:
+      # One instance of the web server will be kept running continuously.
+      # An additional instance will be run using FARGATE_SPOT.      
+      service_instance_count: 2
+      capacity_provider_strategy:
+        - capacity_provider: FARGATE
+          weight: 0
+          base: 1
+        - capacity_provider: FARGATE_SPOT
+          weight: 1
+          base: 0
       extra_main_container_properties:
         portMappings:
           - hostPort: 7070
