@@ -78,6 +78,8 @@
 {% macro prop_value(v) -%}
 {%- if v is none -%}
 null
+{%- elif v == '__inherit__' -%}
+__inherit__
 {%- elif v is number -%}
 {{- v | string }}
 {%- elif v is boolean -%}
@@ -192,6 +194,8 @@ infrastructure_settings:
 
     {% if subnets is none %}
     subnets: null
+    {% elif subnets == '__inherit__' %}
+    subnets: __inherit__    
     {% elif subnets != '__unset__' %}
     subnets:
     {% for subnet in subnets %}
@@ -201,6 +205,8 @@ infrastructure_settings:
 
     {% if security_groups is none %}
     security_groups: null
+    {% elif security_groups == '__inherit__' %}
+    security_groups: __inherit__
     {% elif security_groups != '__unset__' %}
     security_groups:
     {% for security_group in security_groups %}
