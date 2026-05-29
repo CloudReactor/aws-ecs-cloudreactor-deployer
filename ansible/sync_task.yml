@@ -36,6 +36,9 @@
     predefined_task_definition_arn: "{{ resolved_ecs.task_definition_arn if (resolved_ecs.task_definition_arn is defined) and (resolved_ecs.task_definition_arn != '__unset__') else none }}"
     predefined_docker_image_name: "{{ resolved_ecs.docker_image_name if (resolved_ecs.docker_image_name is defined) and (resolved_ecs.docker_image_name != '__unset__') else none }}"
     locally_enabled: "{{ locally_deployed and (resolved_task_config.enabled | default(true)) }}"
+    maybe_service_managed: "{{ (resolved_task_config.is_service_managed is not defined) or resolved_task_config.is_service_managed }}"
+    is_service_instance_count_positive: "{{ resolved_task_config.service_instance_count | default(0) | string != '0' }}"    
+    has_load_balancers: "{{ (resolved_ecs_service.load_balancers is defined) and ((resolved_ecs_service.load_balancers | length) > 0) }}"
     resolved_aws_awslogs: "{{ resolved_aws_logging.awslogs | default({}) }}"
     monitor_container_name: "{{ resolved_ecs.monitor_container_name | default(main_container_name, true) }}"
   tags:
@@ -56,6 +59,20 @@
 - name: Set per-Task variables step 7
   set_fact:
     log_query: "{{ awslogs_group }}"
+  tags:
+    - always
+
+- name: Initialize ECS service load balancers for {{task_name}}
+  set_fact:
+    ecs_service_load_balancers: []
+  tags:
+    - always
+
+- name: Build ECS service load balancers for {{task_name}}
+  set_fact:
+    ecs_service_load_balancers: "{{ ecs_service_load_balancers + [ {'targetGroupArn': item.target_group_arn, 'containerName': (item.container_name | default(main_container_name)), 'containerPort': item.container_port} ] }}"
+  loop: "{{ resolved_ecs_service.load_balancers | default([]) }}"
+  when: resolved_ecs_service.load_balancers is defined
   tags:
     - always
 
@@ -231,7 +248,7 @@
   retries: 60
   delay: 30
   ignore_errors: yes
-  when: locally_deployed and ((resolved_task_config.is_service_managed is not defined) or resolved_task_config.is_service_managed)
+  when: locally_deployed and maybe_service_managed
   tags:
     - always
 
@@ -254,7 +271,7 @@
       minimum_healthy_percent: "{{ resolved_ecs_service.deployment_configuration.minimum_healthy_percent | default(0) }}"
       maximum_percent: "{{ resolved_ecs_service.deployment_configuration.maximum_percent | default(100) }}"
     delay: "{{ resolved_ecs_service.delay | default(10) }}"
-  when: locally_deployed and ((resolved_task_config.is_service_managed is not defined) or resolved_task_config.is_service_managed) and (resolved_ecs_service.load_balancer_settings is not defined) and (resolved_task_config.service_instance_count | default(0) | string != '0')
+  when: locally_deployed and maybe_service_managed and is_service_instance_count_positive and (not has_load_balancers)
   tags:
     - always
 
@@ -277,15 +294,9 @@
       minimum_healthy_percent: "{{ resolved_ecs_service.deployment_configuration.minimum_healthy_percent | default(100, true) }}"
       maximum_percent: "{{ resolved_ecs_service.deployment_configuration.maximum_percent | default(200) }}"
     delay: "{{ resolved_ecs_service.delay | default(30) }}"
-    # Note this only supports a single load balancer per Task.
-    # If you use CloudReactor to manage Tasks, it does support multiple load
-    # balancers.
-    load_balancers:
-      - targetGroupArn: "{{ resolved_ecs_service.load_balancer_settings.load_balancers[0].target_group_arn }}"
-        containerName:  "{{ resolved_ecs_service.load_balancer_settings.load_balancers[0].container_name | default(main_container_name) }}"
-        containerPort: "{{ resolved_ecs_service.load_balancer_settings.load_balancers[0].container_port }}"
-    health_check_grace_period_seconds: "{{ resolved_ecs_service.load_balancer_settings.health_check_grace_period_seconds | default(30) }}"
-  when: locally_deployed and (resolved_ecs_service.load_balancer_settings is defined) and ((resolved_task_config.is_service_managed is not defined) or resolved_task_config.is_service_managed) and (resolved_task_config.service_instance_count | default(0) | string != '0')
+    health_check_grace_period_seconds: "{{ resolved_ecs_service.health_check_grace_period_seconds | default(30) }}"
+    load_balancers: "{{ ecs_service_load_balancers }}"    
+  when: locally_deployed and maybe_service_managed and is_service_instance_count_positive and has_load_balancers
   delay: 30
   retries: 1000
   tags:
