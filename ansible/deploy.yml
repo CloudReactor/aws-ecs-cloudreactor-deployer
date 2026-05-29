@@ -4,6 +4,8 @@
   hosts: 127.0.0.1
   connection: local
   vars:
+    unset_value: "__unset__"
+    inherit_value: "__inherit__"
     project_env_metadata: "{{ project_metadata | combine(env_metadata | default({}), recursive=true) }}"
     project_name: "{{ project_env_metadata.name }}"
     project_version_number: "{{ project_env_metadata.version_number }}"
@@ -26,9 +28,9 @@
     extra_docker_push_args: "{{ lookup('env', 'EXTRA_DOCKER_PUSH_ARGS') | default(build_options.extra_docker_push_args | default(''), true) }}"
 
     project_env_deployment: "{{ project_deployment | combine(env_deployment | default({}), recursive=true) }}"
-    task_runtime_env_secret_path: "{{ project_env_deployment.task_runtime_env_secret_path | default('__unset__') }}"
-    store_task_runtime_env_in_secrets_manager: "{{ (project_env_deployment.store_task_runtime_env_in_secrets_manager | default(false)) and (task_runtime_env_secret_path != '__unset__') }}"
-    container_registry_credentials_secret_path: "{{ project_env_deployment.container_registry_credentials_secret_path | default('__unset__') }}"
+    task_runtime_env_secret_path: "{{ project_env_deployment.task_runtime_env_secret_path | default(unset_value) }}"
+    store_task_runtime_env_in_secrets_manager: "{{ (project_env_deployment.store_task_runtime_env_in_secrets_manager | default(false)) and (task_runtime_env_secret_path != unset_value) }}"
+    container_registry_credentials_secret_path: "{{ project_env_deployment.container_registry_credentials_secret_path | default(unset_value) }}"
     store_container_registry_credentials_in_secrets_manager: "{{ project_env_deployment.store_container_registry_credentials_in_secrets_manager | default(false, true) }}"
 
     resolved_cloudreactor: "{{ project_cloudreactor | default({}) | combine(env_cloudreactor | default({}), recursive=true) }}"
@@ -67,8 +69,8 @@
     ecr_tags_arg: "{{ (build_options.ecr_tags | default({}).items() | map('join', '=') | join(' ')) if (build_options.ecr_tags is defined and build_options.ecr_tags | length > 0) else none }}"
 
     container_registry_username: "{{ lookup('env', 'CONTAINER_REGISTRY_USERNAME') | \
-      default(('AWS' if (use_private_ecr or use_public_ecr) else build_options.container_registry_username) if requires_build else '__unset__', true) }}"
-    container_registry_password: "{{ lookup('env', 'CONTAINER_REGISTRY_PASSWORD') | default(build_options.container_registry_password, true) | default('__unset__', true) }}"
+      default(('AWS' if (use_private_ecr or use_public_ecr) else build_options.container_registry_username) if requires_build else unset_value, true) }}"
+    container_registry_password: "{{ lookup('env', 'CONTAINER_REGISTRY_PASSWORD') | default(build_options.container_registry_password, true) | default(unset_value, true) }}"
 
     container_registry_password_command: "{{
       (
@@ -142,13 +144,13 @@
     resolved_sync_required_task_name_to_config: "{{ resolved_task_name_to_config | dict2items | json_query(resolved_sync_required_task_name_to_config_query) | items2dict }}"
     requires_build: "{{ (resolved_sync_required_task_name_to_config | dict2items | json_query('[?(((value.ecs.task_definition_arn==undefined)||(value.ecs.task_definition_arn==`__unset__`))&&((value.ecs.docker_image_name==undefined)||(value.ecs.docker_image_name==`__unset__`))&&(to_string(value.removed_from_task_manager)!=to_string(`true`)))]')) | length > 0 }}"
 
-    build_task_execution_uuid: "{{ lookup('env', 'PROC_WRAPPER_TASK_EXECUTION_UUID') | default('__unset__', true) }}"
-    deployment_task_execution_uuid: "{{ lookup('env', 'PROC_WRAPPER_TASK_EXECUTION_UUID') | default('__unset__', true) }}"
+    build_task_execution_uuid: "{{ lookup('env', 'PROC_WRAPPER_TASK_EXECUTION_UUID') | default(unset_value, true) }}"
+    deployment_task_execution_uuid: "{{ lookup('env', 'PROC_WRAPPER_TASK_EXECUTION_UUID') | default(unset_value, true) }}"
 
     # Use this when referencing the Task name, possibly before the Task name is set, as in custom top-level variables.
     # Otherwise, the variables that you declare that reference "item" or "task_name" may end up being undefined.
     task_name_safe: "{{ item | default('_TASK_NAME_PLACEHOLDER_') }}"
-    resolved_task_runtime_env_secret_path: "{{ '' if task_runtime_env_secret_path == '__unset__' else (
+    resolved_task_runtime_env_secret_path: "{{ '' if task_runtime_env_secret_path == unset_value else (
         task_runtime_env_secret_path if task_runtime_env_secret_path.startswith('arn:') else
         ('arn:aws:secretsmanager:' + aws_region + ':' + task_indep_aws.account_id + ':secret:' + task_runtime_env_secret_path)
       ) }}"

@@ -71,7 +71,7 @@
 {%- endmacro %}
 
 {% set task_name=item %}{# from 'with_items' in the calling task #}
-{% set service_instance_count=resolved_task_config.service_instance_count | default('__unset__') %}
+{% set service_instance_count=resolved_task_config.service_instance_count | default(unset_value) %}
 
 {% if resolved_task_config.is_service is defined %}
   {% set is_service=resolved_task_config.is_service %}
@@ -84,9 +84,9 @@
 {% endif %}
 
 {% set max_concurrency=resolved_task_config.max_concurrency | default(1) %}
-{% set global_task_version_number=project_version_number | default('__unset__') %}
+{% set global_task_version_number=project_version_number | default(unset_value) %}
 {% set task_version_number=resolved_task_config.task_version_number | default(global_task_version_number) %}
-{% set global_task_version_text=project_version_text | default('__unset__') %}
+{% set global_task_version_text=project_version_text | default(unset_value) %}
 {% set task_version_text=resolved_task_config.task_version_text | default(global_task_version_text) %}
 {% set wrapper=resolved_task_config.wrapper | default({}) %}
 {% set cpu_units=resolved_ecs.cpu_units | default(256) %}
@@ -104,7 +104,7 @@
 
 {% macro env_def(obj, name, maybe_secret=false, env_name='',
   formatter=default_formatter) -%}
-  {%- if (obj[name] is defined) and (obj[name] != '__unset__') -%}
+  {%- if (obj[name] is defined) and (obj[name] != unset_value) -%}
     {%- set v = obj[name] -%}
     {%- set is_secret = maybe_secret and (v is string) and
         (v.startswith('arn:aws:secretsmanager:') or
@@ -180,19 +180,19 @@
   },
   {% endif %}
   {{ env_def(resolved_task_config, 'work_dir') }}
-  {% if service_instance_count == '__unset__' %}
+  {% if service_instance_count == unset_value %}
   {
       "name" : "PROC_WRAPPER_PROCESS_TIMEOUT_SECONDS",
       "value" : {{ wrapper.process_timeout_seconds | default(-1) | string | to_json }}
   },
   {% endif %}
-  {% if task_version_number != '__unset__' %}
+  {% if task_version_number != unset_value %}
   {
       "name" : "PROC_WRAPPER_TASK_VERSION_NUMBER",
       "value" : {{ task_version_number | string | to_json }}
   },
   {% endif %}
-  {% if task_version_text != '__unset__' %}
+  {% if task_version_text != unset_value %}
   {
       "name" : "PROC_WRAPPER_TASK_VERSION_TEXT",
       "value" : {{ task_version_text | to_json }}
@@ -204,13 +204,13 @@
       "value" : {{ task_version_signature | to_json }}
   },
   {% endif %}
-  {% if build_task_execution_uuid != '__unset__' %}
+  {% if build_task_execution_uuid != unset_value %}
   {
       "name" : "PROC_WRAPPER_BUILD_TASK_EXECUTION_UUID",
       "value" : {{ build_task_execution_uuid | to_json }}
   },
   {% endif %}
-  {% if deployment_task_execution_uuid != '__unset__' %}
+  {% if deployment_task_execution_uuid != unset_value %}
   {
       "name" : "PROC_WRAPPER_DEPLOYMENT_TASK_EXECUTION_UUID",
       "value" : {{ deployment_task_execution_uuid | to_json }}
@@ -276,7 +276,7 @@
     "family": {{ task_definition_family | to_json }},
     "networkMode": "awsvpc",
     "executionRoleArn": {{ make_role_arn(resolved_ecs.execution_role_arn) | to_json }},
-    {% if (resolved_ecs.task_role_arn is defined) and (resolved_ecs.task_role_arn != '__unset__') %}
+    {% if (resolved_ecs.task_role_arn is defined) and (resolved_ecs.task_role_arn != unset_value) %}
     "taskRoleArn": {{ make_role_arn(resolved_ecs.task_role_arn) | to_json }},
     {% endif %}
     "cpu": "{{cpu_units}}",
@@ -297,7 +297,7 @@
         {
             "name": {{ main_container_name | to_json }},
             "image": {{ predefined_docker_image_name | default(target_docker_image_name, true) | to_json }},
-            {% if container_registry_credentials_secret_path != '__unset__' %}
+            {% if container_registry_credentials_secret_path != unset_value %}
             "repositoryCredentials": {
                 "credentialsParameter": "arn:aws:secretsmanager:{{ aws_region }}:{{ task_indep_aws.account_id }}:secret:{{ container_registry_credentials_secret_path }}"
             },

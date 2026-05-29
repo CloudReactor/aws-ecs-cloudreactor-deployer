@@ -1,7 +1,7 @@
 ---
 {% set task_name=item %}{# from 'with_items' in the calling task #}
 
-{% set service_instance_count=resolved_task_config.service_instance_count | default('__unset__') %}
+{% set service_instance_count=resolved_task_config.service_instance_count | default(unset_value) %}
 
 {% if resolved_task_config.is_service is defined %}
   {% set is_service=resolved_task_config.is_service %}
@@ -14,7 +14,7 @@
 {% endif %}
 
 {% set max_concurrency=resolved_task_config.max_concurrency | default(1) %}
-{% set max_age_seconds=resolved_task_config.max_age_seconds | default('__unset__') %}
+{% set max_age_seconds=resolved_task_config.max_age_seconds | default(unset_value) %}
 {% set wrapper=resolved_task_config.wrapper | default({}) %}
 {% set task_ecs=resolved_task_config.ecs | default({}) %}
 {% set project_env_task_ecs=project_env_ecs | combine(task_ecs, recursive=true) %}
@@ -55,13 +55,13 @@
 ] %}
 
 {% macro filtered_array_prop_def(arr, prop_name) -%}
-  {% if (arr is defined) and (arr != '__unset__') %}
+  {% if (arr is defined) and (arr != unset_value) %}
     {% set filtered_arr=arr | json_query('[?((@.included == undefined) || (to_string(@.included) == to_string(`true`)) || (to_string(@.included) == `True`))]')  %}
   {% else %}
-    {% set filtered_arr = '__unset__' %}
+    {% set filtered_arr = unset_value %}
   {% endif %}
 
-  {% if filtered_arr != '__unset__' %}
+  {% if filtered_arr != unset_value %}
     {% if filtered_arr is none -%}
   "{{- prop_name}}": null
     {% elif filtered_arr[0] is defined -%}
@@ -78,7 +78,7 @@
 {% macro prop_value(v) -%}
 {%- if v is none -%}
 null
-{%- elif v == '__inherit__' -%}
+{%- elif v == inherit_value -%}
 __inherit__
 {%- elif v is number -%}
 {{- v | string }}
@@ -91,9 +91,9 @@ __inherit__
 {%- endif -%}
 {%- endmacro %}
 
-{% macro prop_def(obj, name, prop_name='', default_value='__unset__') -%}
+{% macro prop_def(obj, name, prop_name='', default_value=unset_value) -%}
   {%- set v = obj[name] | default(default_value) -%}
-  {%- if v != '__unset__' -%}
+  {%- if v != unset_value -%}
     {%- if prop_name == '' -%}
       {%- set prop_name = name %}
     {%- endif -%}
@@ -101,8 +101,8 @@ __inherit__
   {%- endif -%}
 {%- endmacro %}
 
-{% set subnets=project_env_task_aws_network.subnets | default('__unset__') %}
-{% set security_groups=project_env_task_aws_network.security_groups | default('__unset__') %}
+{% set subnets=project_env_task_aws_network.subnets | default(unset_value) %}
+{% set security_groups=project_env_task_aws_network.security_groups | default(unset_value) %}
 
 # For debugging
 # resolved_task_config: {{ resolved_task_config | to_json }}
@@ -133,17 +133,17 @@ project_url: "{{source_repository_url}}"
 heartbeat_interval_seconds: 600
 {% endif %}
 
-{% if (resolved_task_config.max_concurrency is defined) and (resolved_task_config.max_concurrency != '__unset__') %}
+{% if (resolved_task_config.max_concurrency is defined) and (resolved_task_config.max_concurrency != unset_value) %}
 max_concurrency: {% if max_concurrency is number %}{{ max_concurrency }}{% else %}null{% endif %}
 {% endif %}
 
 is_service: {{is_service}}
 
-{% if service_instance_count != '__unset__' %}
+{% if service_instance_count != unset_value %}
 service_instance_count: {{service_instance_count}}
 {% endif %}
 
-{% if max_age_seconds != '__unset__' %}
+{% if max_age_seconds != unset_value %}
 max_age_seconds: {% if is_service %}null{% else %}{{ resolved_task_config.max_age_seconds | default('null') }}{% endif %}
 {% endif %}
 
@@ -194,9 +194,9 @@ infrastructure_settings:
 
     {% if subnets is none %}
     subnets: null
-    {% elif subnets == '__inherit__' %}
+    {% elif subnets == inherit_value %}
     subnets: __inherit__    
-    {% elif subnets != '__unset__' %}
+    {% elif subnets != unset_value %}
     subnets:
     {% for subnet in subnets %}
       - "{{ subnet }}"
@@ -205,9 +205,9 @@ infrastructure_settings:
 
     {% if security_groups is none %}
     security_groups: null
-    {% elif security_groups == '__inherit__' %}
+    {% elif security_groups == inherit_value %}
     security_groups: __inherit__
-    {% elif security_groups != '__unset__' %}
+    {% elif security_groups != unset_value %}
     security_groups:
     {% for security_group in security_groups %}
       - "{{ security_group }}"
@@ -230,7 +230,7 @@ infrastructure_settings:
       region: "{{ resolved_aws_awslogs.region | default(aws_region) }}"
   {% endif %}
 
-  {% if (project_env_task_aws.tags is defined) and (project_env_task_aws.tags != '__unset__') %}
+  {% if (project_env_task_aws.tags is defined) and (project_env_task_aws.tags != unset_value) %}
   tags: {{  project_env_task_aws.tags | to_yaml(width=2147483647) }}
   {% endif %}
 
@@ -238,7 +238,7 @@ infrastructure_settings:
 service_provider_type: AWS ECS
 service_settings:
   {{ prop_def(resolved_ecs_service, 'force_new_deployment') }}
-  {% if (resolved_ecs_service.tags is defined) and (resolved_ecs_service.tags != '__unset__') %}
+  {% if (resolved_ecs_service.tags is defined) and (resolved_ecs_service.tags != unset_value) %}
   tags:
 {{ resolved_ecs_service.tags | to_yaml(width=2147483647) | indent(4, true) }}
   {% endif %}
@@ -257,7 +257,7 @@ service_settings:
   deployment_configuration:
     minimum_healthy_percent: {{ (resolved_ecs_service.deployment_configuration.minimum_healthy_percent | default(100 * (resolved_task_config.min_service_instance_count | default(service_instance_count)) / service_instance_count)) | round(0, 'floor') | int }}
 
-    {% if (resolved_task_config.max_concurrency | default('__unset__', true)) == '__unset__' %}
+    {% if (resolved_task_config.max_concurrency | default(unset_value, true)) == unset_value %}
     maximum_percent: {{ resolved_ecs_service.deployment_configuration.maximum_percent | default(200) }}
     {% else %}
     maximum_percent: {{ resolved_ecs_service.deployment_configuration.maximum_percent | default(max_concurrency * 100) }}

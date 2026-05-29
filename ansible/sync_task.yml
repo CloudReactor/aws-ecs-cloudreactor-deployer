@@ -31,8 +31,8 @@
 
 - name: Set per-Task variables step 4
   set_fact:    
-    predefined_task_definition_arn: "{{ resolved_ecs.task_definition_arn if (resolved_ecs.task_definition_arn is defined) and (resolved_ecs.task_definition_arn != '__unset__') else none }}"
-    predefined_docker_image_name: "{{ resolved_ecs.docker_image_name if (resolved_ecs.docker_image_name is defined) and (resolved_ecs.docker_image_name != '__unset__') else none }}"
+    predefined_task_definition_arn: "{{ resolved_ecs.task_definition_arn if (resolved_ecs.task_definition_arn is defined) and (resolved_ecs.task_definition_arn != unset_value) else none }}"
+    predefined_docker_image_name: "{{ resolved_ecs.docker_image_name if (resolved_ecs.docker_image_name is defined) and (resolved_ecs.docker_image_name != unset_value) else none }}"
     locally_enabled: "{{ locally_deployed and (resolved_task_config.enabled | default(true)) }}"
     maybe_service_managed: "{{ (resolved_task_config.is_service_managed is not defined) or resolved_task_config.is_service_managed }}"
     is_service_instance_count_positive: "{{ resolved_task_config.service_instance_count | default(0) | string != '0' }}"    
