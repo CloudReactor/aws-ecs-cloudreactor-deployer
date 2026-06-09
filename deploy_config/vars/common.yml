@@ -721,10 +721,10 @@ project_task_name_to_config:
     deployed: false
     description: Template for a web server
     command: "python3 -m http.server"
+    service_instance_count: 2
     ecs:
       # One instance of the web server will be kept running continuously.
-      # An additional instance will be run using FARGATE_SPOT.      
-      service_instance_count: 2
+      # An additional instance will be run using FARGATE_SPOT.
       capacity_provider_strategy:
         - capacity_provider: FARGATE
           weight: 0
@@ -754,6 +754,103 @@ project_task_name_to_config:
       tags:
         - key: TaskType
           value: Service
+      # # Full example with all service_settings fields:
+      # alarms:
+      #   alarm_names:
+      #     - High5xxErrorRate
+      #     - HighLatency
+      #   rollback: true
+      #   enable: true
+      # strategy: ROLLING # or BLUE_GREEN
+      # bake_time_in_minutes: 5
+      # lifecycle_hooks:
+      #   - hook_target_arn: arn:aws:lambda:us-west-1:123456789012:function:ecs-deploy-hook
+      #     lifecycle_stages:
+      #       - PRE_SCALE_UP
+      #       - POST_SCALE_UP
+      #     hook_details:
+      #       owner: platform
+      #       runbook: https://example.com/runbooks/ecs-hook
+      # linear_configuration:
+      #   step_percent: 20
+      #   step_bake_time_in_minutes: 2
+      # canary_configuration:
+      #   canary_percent: 10
+      #   canary_bake_time_in_minutes: 5
+      # # scheduling_strategy: REPLICA # or DAEMON      
+      # availability_zone_rebalancing: ENABLED # or DISABLED
+      # load_balancers:
+      #   - target_group_arn: arn:aws:elasticloadbalancing:us-west-1:123456789012:targetgroup/web-primary/abc123
+      #     load_balancer_name: web-alb
+      #     container_name: web
+      #     container_port: 7070
+      #     advanced_configuration:
+      #       alternate_target_group_arn: arn:aws:elasticloadbalancing:us-west-1:123456789012:targetgroup/web-canary/def456
+      #       production_listener_rule: arn:aws:elasticloadbalancing:us-west-1:123456789012:listener-rule/app/web-alb/aaa/bbb/ccc
+      #       test_listener_rule: arn:aws:elasticloadbalancing:us-west-1:123456789012:listener-rule/app/web-alb/aaa/bbb/ddd      
+      # service_registries:
+      #   - registry_arn: arn:aws:servicediscovery:us-west-1:123456789012:service/srv-abcxyz
+      #     port: 7070
+      #     container_name: web
+      #     container_port: 7070
+      # service_connect_configuration:
+      #   enabled: true
+      #   namespace: my-namespace
+      #   services:
+      #     - port_name: http
+      #       discovery_name: web
+      #       client_aliases:
+      #         - port: 7070
+      #           dns_name: web.internal
+      #           test_traffic_rules:
+      #             header:
+      #               name: x-canary
+      #               value:
+      #                 exact: "true"
+      #       ingress_port_override: 17070
+      #       timeout:
+      #         idle_timeout_seconds: 300
+      #         per_request_timeout_seconds: 30
+      #       tls:
+      #         issued_certificate_authority:
+      #           aws_pca_authority_arn: arn:aws:acm-pca:us-west-1:123456789012:certificate-authority/abcdef12-3456-7890-abcd-ef1234567890
+      #         kms_key: arn:aws:kms:us-west-1:123456789012:key/abcdef12-3456-7890-abcd-ef1234567890
+      #   log_configuration:
+      #     log_driver: awslogs
+      #     options:
+      #       awslogs-group: /aws/ecs/web
+      #       awslogs-region: us-west-1
+      #       awslogs-stream-prefix: service-connect
+      #     secret_options:
+      #       - name: token
+      #         value_from: arn:aws:secretsmanager:us-west-1:123456789012:secret:service-connect-token
+      #   access_log_configuration:
+      #     format: '{"request_method":"%REQ(:METHOD)%","path":"%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"}'
+      #     include_query_parameters: ENABLED
+      # volume_configurations:
+      #   - name: data
+      #     managed_ebs_volume:
+      #       encrypted: true
+      #       kms_key_id: arn:aws:kms:us-west-1:123456789012:key/abcdef12-3456-7890-abcd-ef1234567890
+      #       volume_type: gp3
+      #       size_in_gib: 20
+      #       snapshot_id: snap-0123456789abcdef0
+      #       volume_initialization_rate: 100
+      #       iops: 3000
+      #       throughput: 125
+      #       tag_specifications:
+      #         - resource_type: volume
+      #           tags:
+      #             - key: Name
+      #               value: web-service-data
+      #             - key: Environment
+      #               value: staging
+      #           propagate_tags: SERVICE
+      #       filesystem_type: xfs
+      # vpc_lattice_configurations:
+      #   - target_group_arn: arn:aws:vpc-lattice:us-west-1:123456789012:targetgroup/tg-abc123
+      #     port_name: http
+      # service_arn: arn:aws:ecs:us-west-1:123456789012:service/my-cluster/my-service      
     links:
       - name: Web Server
         link_url_template: "http://flask-example-xxx.us-west-1.elb.amazonaws.com/"

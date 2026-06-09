@@ -68,8 +68,10 @@
 
 - name: Build ECS service load balancers for {{task_name}}
   set_fact:
-    ecs_service_load_balancers: "{{ ecs_service_load_balancers + [ {'targetGroupArn': item.target_group_arn, 'containerName': (item.container_name | default(main_container_name)), 'containerPort': item.container_port} ] }}"
+    ecs_service_load_balancers: "{{ ecs_service_load_balancers + [ {'targetGroupArn': lb.target_group_arn, 'containerName': (lb.container_name | default(main_container_name)), 'containerPort': lb.container_port} ] }}"
   loop: "{{ resolved_ecs_service.load_balancers | default([]) }}"
+  loop_control:
+    loop_var: lb
   when: resolved_ecs_service.load_balancers is defined
   tags:
     - always
