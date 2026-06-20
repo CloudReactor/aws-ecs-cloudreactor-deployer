@@ -111,7 +111,7 @@ a standalone Linux executable:
 
 ```
 
-RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/5.3.2/bin/pyinstaller/debian-amd64/5.3.2/proc_wrapper.bin \
+RUN wget -nv https://github.com/CloudReactor/cloudreactor-procwrapper/raw/6.0.2/bin/pyinstaller/debian-amd64/6.0.2/proc_wrapper.bin \
   && chmod +x proc_wrapper.bin
 
 ENTRYPOINT ["./proc_wrapper.bin"]
@@ -324,7 +324,7 @@ host machine's docker service.
 3) Use build tools installed in a custom deployer image. In this case, you'll
 want to create a new image based on `cloudreactor/aws-ecs-cloudreactor-deployer`:
 
-        FROM cloudreactor/aws-ecs-cloudreactor-deployer:4.3.2
+        FROM cloudreactor/aws-ecs-cloudreactor-deployer:6.0.0
         # Example: get the JDK to build JAR files
         RUN apt-get update && \
           apt-get -t stretch-backports install openjdk-11-jdk
@@ -531,7 +531,7 @@ the master branch:
         steps:
         - uses: actions/checkout@v3
         - name: Deploy to AWS ECS and CloudReactor
-          uses: CloudReactor/aws-ecs-cloudreactor-deployer@v5.0.0
+          uses: CloudReactor/aws-ecs-cloudreactor-deployer@v6.0.0
           with:
             aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
             aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

@@ -26,7 +26,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# cr_deploy.sh version 5.0.0.0, last updated 2026-04-10
+# cr_deploy.sh version 6.0.0.0, last updated 2026-06-19
 
 # This script uses the aws-ecs-cloudreactor-deployer Docker image to
 # deploy Tasks to AWS ECS and CloudReactor.
@@ -194,14 +194,14 @@ fi
 
 echo_to_stderr "Docker image name = $DOCKER_IMAGE_NAME"
 
-# By default, the Docker image tag is 5, since this project uses
+# By default, the Docker image tag is 6, since this project uses
 # semantic versioning and non-compatible changes will increment the
 # major version number.
 # For repeatable builds, pin the DOCKER_IMAGE_TAG to a version that is
 # known to work.
 if [ -z "$DOCKER_IMAGE_TAG" ]
   then
-    DOCKER_IMAGE_TAG="5"
+    DOCKER_IMAGE_TAG="6"
 fi
 
 echo_to_stderr "Docker image tag = $DOCKER_IMAGE_TAG"
