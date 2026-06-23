@@ -26,7 +26,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# cr_deploy.sh version 6.0.0.0, last updated 2026-06-19
+# cr_deploy.sh version 6.0.1.0, last updated 2026-06-22
 
 # This script uses the aws-ecs-cloudreactor-deployer Docker image to
 # deploy Tasks to AWS ECS and CloudReactor.
