@@ -174,7 +174,6 @@ project_ecs:
   # # Required when deploying a scheduled task without CloudReactor
   # execution_role_arn: arn:aws:iam::123456789012:role/ecsEventsRole
 
-  # # Results in an empty string if task_role_arn is null, but that's ok.
   # task_role_arn: "{{project_name}}_{{env}}"
 
   # # See https://aws.amazon.com/fargate/pricing/ for supported combinations.
@@ -301,7 +300,7 @@ project_ecs:
 # They override the settings in your Run Environment.
 # To manage a setting in the CloudReactor UI, omit the property name and value.
 # To clear a property name and value, using the default value in the
-# Run Environment, set the property value to null.
+# Run Environment, set the property value to "__inherit__" or the ansible variable INHERIT_VALUE.
 # See https://apidocs.cloudreactor.io/#operation/tasks_create for a list of all
 # properties.
 # These properties can also be applied to project_task_name_to_config[task_name] and
