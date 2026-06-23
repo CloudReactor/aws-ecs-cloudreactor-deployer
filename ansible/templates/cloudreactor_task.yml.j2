@@ -28,7 +28,7 @@
 {% set removed_execution_method_properties = [
   'cpu_units', 'memory_mb', 'extra_container_cpu_units', 'extra_container_memory_mb', 
   'extra_main_container_properties', 'extra_container_definitions',
-  'task_definition_family'
+  'extra_task_definition_properties', 'task_definition_family'
 ] %}
 {% set execution_method_capability_details=project_env_task_ecs | combine({
   'task_definition_arn': task_definition_arn,
